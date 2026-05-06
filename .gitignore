@@ -1,0 +1,33 @@
+node_modules/
+dist/
+.env
+.env.local
+*.env.local
+
+# Azure Functions
+api/local.settings.json
+!api/local.settings.json.example
+
+# Prisma
+prisma/migrations/
+
+# Build artifacts
+frontend/dist/
+api/dist/
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/

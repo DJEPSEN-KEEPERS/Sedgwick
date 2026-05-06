@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Recurse c:\\\\Sedgwick -Name | Where-Object { $_ -notmatch \"node_modules\" } | Sort-Object)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d.get\\('main','not set'\\)\\)\")"
+    ]
+  }
+}

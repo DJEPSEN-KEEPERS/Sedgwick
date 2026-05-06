@@ -1,0 +1,578 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  SEDGWICK_ADMIN
+  INSURER_USER
+  CONTRACTOR_USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum TwoFactorMethod {
+  TOTP
+  SMS
+}
+
+enum PriorityLevel {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+  CANCELLED
+}
+
+enum ProjectMilestone {
+  CASE_RECEIVED
+  BIDDING_IN_PROGRESS
+  CONTRACTOR_SELECTED
+  WORK_SCHEDULED
+  WORK_STARTED
+  WORK_COMPLETED
+  FINAL_REPORT_SUBMITTED
+  CASE_CLOSED
+}
+
+enum EntrepriseType {
+  CARPENTER
+  MASON
+  PLUMBER
+  GLAZIER
+  ELECTRICIAN
+  PAINTER
+  ROOFER
+  OTHER
+}
+
+enum EntrepriseMilestone {
+  NOT_STARTED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  SIGNED_OFF
+}
+
+enum ChannelType {
+  SEDGWICK_CONTRACTOR
+  SEDGWICK_INSURER
+  SEDGWICK_BIDDER
+}
+
+enum InvitationStatus {
+  PENDING
+  INTERESTED
+  NOT_INTERESTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id                String          @id @default(cuid())
+  email             String          @unique
+  phone             String?
+  fullName          String
+  role              UserRole
+  status            UserStatus      @default(ACTIVE)
+  passwordHash      String
+  twoFactorEnabled  Boolean         @default(true)
+  twoFactorMethod   TwoFactorMethod @default(TOTP)
+  twoFactorSecret   String?
+  lastLoginAt       DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  insurerUser       InsuranceCompanyUser?
+  contractorUser    ContractorUser?
+  auditLogs         AuditLog[]
+  notifications     Notification[]
+  notificationPrefs NotificationPreference[]
+  chatMessages      ChatMessage[]
+  statusUpdates     EntrepriseStatusUpdate[]
+  approvedUpdates   EntrepriseStatusUpdate[] @relation("ApprovedBy")
+  finalReports      FinalReport[]
+  approvedReports   FinalReport[]            @relation("ReportApprovedBy")
+  selectedBids      Bid[]                    @relation("SelectedBy")
+  invitedBids       BidInvitation[]          @relation("InvitedBy")
+}
+
+// ─── Insurance Companies ──────────────────────────────────────────────────────
+
+model InsuranceCompany {
+  id                String                 @id @default(cuid())
+  name              String
+  externalReference String?                @unique
+  apiKey            String                 @unique
+  status            String                 @default("active")
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  users             InsuranceCompanyUser[]
+  projects          Project[]
+}
+
+model InsuranceCompanyUser {
+  id                 String           @id @default(cuid())
+  insuranceCompanyId String
+  userId             String           @unique
+  createdAt          DateTime         @default(now())
+
+  insuranceCompany   InsuranceCompany @relation(fields: [insuranceCompanyId], references: [id])
+  user               User             @relation(fields: [userId], references: [id])
+}
+
+// ─── Contractors ──────────────────────────────────────────────────────────────
+
+model Contractor {
+  id                  String                     @id @default(cuid())
+  companyName         String
+  cvrNumber           String                     @unique
+  contactName         String
+  contactEmail        String
+  contactPhone        String
+  description         String?
+  maxParallelProjects Int                        @default(5)
+  currentWorkload     Int                        @default(0)
+  status              String                     @default("active")
+  sedgwickRatingAvg   Float                      @default(0)
+  clientRatingAvg     Float                      @default(0)
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
+
+  users               ContractorUser[]
+  regions             ContractorRegion[]
+  skills              ContractorSkill[]
+  certifications      ContractorCertification[]
+  recommendations     ContractorRecommendation[]
+  bidInvitations      BidInvitation[]
+  bids                Bid[]
+  entreprises         Entreprise[]
+  sedgwickReviews     ContractorReview[]
+  clientReviews       ClientReview[]
+  selectedProjects    Project[]
+}
+
+model ContractorUser {
+  id           String     @id @default(cuid())
+  contractorId String
+  userId       String     @unique
+  createdAt    DateTime   @default(now())
+
+  contractor   Contractor @relation(fields: [contractorId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+}
+
+model ContractorRegion {
+  id           String     @id @default(cuid())
+  contractorId String
+  regionName   String
+  createdAt    DateTime   @default(now())
+
+  contractor   Contractor @relation(fields: [contractorId], references: [id])
+}
+
+model Skill {
+  id          String                @id @default(cuid())
+  name        String
+  category    String
+  createdAt   DateTime              @default(now())
+
+  contractors ContractorSkill[]
+  projects    ProjectRequiredSkill[]
+}
+
+model ContractorSkill {
+  id           String     @id @default(cuid())
+  contractorId String
+  skillId      String
+  createdAt    DateTime   @default(now())
+
+  contractor   Contractor @relation(fields: [contractorId], references: [id])
+  skill        Skill      @relation(fields: [skillId], references: [id])
+}
+
+model ContractorCertification {
+  id           String     @id @default(cuid())
+  contractorId String
+  name         String
+  issuer       String?
+  validUntil   DateTime?
+  createdAt    DateTime   @default(now())
+
+  contractor   Contractor @relation(fields: [contractorId], references: [id])
+}
+
+// ─── Projects & Entreprises ───────────────────────────────────────────────────
+
+model Project {
+  id                    String           @id @default(cuid())
+  claimId               String           @unique
+  insurerCaseId         String
+  insurancePolicyNumber String
+  insuranceCompanyId    String
+  createdViaApi         Boolean          @default(true)
+  creationDate          DateTime         @default(now())
+  damageType            String
+  damageDescription     String
+  priorityLevel         PriorityLevel    @default(NORMAL)
+  buildingType          String
+  address               String
+  postalCode            String
+  city                  String
+  region                String
+  gpsLat                Float?
+  gpsLng                Float?
+  maxApprovedPrice      Float?
+  estimatedScope        String?
+  requestedStartDate    DateTime?
+  requestedDeadline     DateTime?
+  slaCategory           String?
+  contactName           String
+  contactPhone          String
+  contactEmail          String
+  currentMilestone      ProjectMilestone @default(CASE_RECEIVED)
+  progressPercent       Int              @default(0)
+  selectedContractorId  String?
+  status                ProjectStatus    @default(ACTIVE)
+  finalCompletionDate   DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  insuranceCompany      InsuranceCompany         @relation(fields: [insuranceCompanyId], references: [id])
+  selectedContractor    Contractor?              @relation(fields: [selectedContractorId], references: [id])
+  requiredSkills        ProjectRequiredSkill[]
+  attachments           ProjectAttachment[]
+  entreprises           Entreprise[]
+  recommendations       ContractorRecommendation[]
+  bidInvitations        BidInvitation[]
+  chatChannels          ChatChannel[]
+  auditLogs             AuditLog[]
+  bids                  Bid[]
+}
+
+model ProjectRequiredSkill {
+  id        String   @id @default(cuid())
+  projectId String
+  skillId   String
+  createdAt DateTime @default(now())
+
+  project   Project  @relation(fields: [projectId], references: [id])
+  skill     Skill    @relation(fields: [skillId], references: [id])
+}
+
+model ProjectAttachment {
+  id                 String   @id @default(cuid())
+  projectId          String
+  uploadedByUserId   String
+  fileName           String
+  fileType           String
+  blobUrl            String
+  fileSizeMb         Float
+  attachmentCategory String   @default("general")
+  isClientVisible    Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  project            Project  @relation(fields: [projectId], references: [id])
+}
+
+model Entreprise {
+  id               String              @id @default(cuid())
+  projectId        String
+  contractorId     String?
+  type             EntrepriseType
+  description      String?
+  isRelevant       Boolean             @default(true)
+  markedRelevantBy String?
+  currentMilestone EntrepriseMilestone @default(NOT_STARTED)
+  progressPercent  Int                 @default(0)
+  scheduledStart   DateTime?
+  scheduledEnd     DateTime?
+  actualStart      DateTime?
+  actualEnd        DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  project          Project             @relation(fields: [projectId], references: [id])
+  contractor       Contractor?         @relation(fields: [contractorId], references: [id])
+  statusUpdates    EntrepriseStatusUpdate[]
+  finalReport      FinalReport?
+}
+
+// ─── Bidding ──────────────────────────────────────────────────────────────────
+
+model ContractorRecommendation {
+  id           String     @id @default(cuid())
+  projectId    String
+  contractorId String
+  matchScore   Float
+  matchReason  String
+  createdAt    DateTime   @default(now())
+
+  project      Project    @relation(fields: [projectId], references: [id])
+  contractor   Contractor @relation(fields: [contractorId], references: [id])
+}
+
+model BidInvitation {
+  id              String           @id @default(cuid())
+  projectId       String
+  contractorId    String
+  invitedByUserId String
+  status          InvitationStatus @default(PENDING)
+  invitedAt       DateTime         @default(now())
+  respondedAt     DateTime?
+
+  project         Project          @relation(fields: [projectId], references: [id])
+  contractor      Contractor       @relation(fields: [contractorId], references: [id])
+  invitedBy       User             @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+  bid             Bid?
+}
+
+model Bid {
+  id               String        @id @default(cuid())
+  projectId        String
+  contractorId     String
+  bidInvitationId  String        @unique
+  bidAmount        Float
+  currency         String        @default("DKK")
+  comments         String?
+  submittedAt      DateTime      @default(now())
+  isSelected       Boolean       @default(false)
+  selectedAt       DateTime?
+  selectedByUserId String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  project          Project       @relation(fields: [projectId], references: [id])
+  contractor       Contractor    @relation(fields: [contractorId], references: [id])
+  bidInvitation    BidInvitation @relation(fields: [bidInvitationId], references: [id])
+  selectedBy       User?         @relation("SelectedBy", fields: [selectedByUserId], references: [id])
+  attachments      BidAttachment[]
+}
+
+model BidAttachment {
+  id         String   @id @default(cuid())
+  bidId      String
+  fileName   String
+  fileType   String
+  blobUrl    String
+  fileSizeMb Float
+  createdAt  DateTime @default(now())
+
+  bid        Bid      @relation(fields: [bidId], references: [id])
+}
+
+// ─── Progress & Final Reports ─────────────────────────────────────────────────
+
+model EntrepriseStatusUpdate {
+  id                 String              @id @default(cuid())
+  entrepriseId       String
+  submittedByUserId  String
+  milestone          EntrepriseMilestone
+  progressPercent    Int
+  startedFlag        Boolean             @default(false)
+  completedFlag      Boolean             @default(false)
+  expectedCompletion DateTime?
+  comments           String?
+  approvalStatus     ApprovalStatus      @default(PENDING)
+  approvedByUserId   String?
+  approvedAt         DateTime?
+  createdAt          DateTime            @default(now())
+
+  entreprise         Entreprise          @relation(fields: [entrepriseId], references: [id])
+  submittedBy        User                @relation(fields: [submittedByUserId], references: [id])
+  approvedBy         User?               @relation("ApprovedBy", fields: [approvedByUserId], references: [id])
+  attachments        StatusUpdateAttachment[]
+}
+
+model StatusUpdateAttachment {
+  id             String                 @id @default(cuid())
+  statusUpdateId String
+  fileName       String
+  fileType       String
+  blobUrl        String
+  fileSizeMb     Float
+  createdAt      DateTime               @default(now())
+
+  statusUpdate   EntrepriseStatusUpdate @relation(fields: [statusUpdateId], references: [id])
+}
+
+model FinalReport {
+  id                String         @id @default(cuid())
+  entrepriseId      String         @unique
+  contractorId      String
+  submittedByUserId String
+  summary           String?
+  submittedAt       DateTime?
+  approvalStatus    ApprovalStatus @default(PENDING)
+  approvedByUserId  String?
+  approvedAt        DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  entreprise        Entreprise     @relation(fields: [entrepriseId], references: [id])
+  submittedBy       User           @relation(fields: [submittedByUserId], references: [id])
+  approvedBy        User?          @relation("ReportApprovedBy", fields: [approvedByUserId], references: [id])
+  answers           FinalReportAnswer[]
+  attachments       FinalReportAttachment[]
+}
+
+model FinalReportAnswer {
+  id            String      @id @default(cuid())
+  finalReportId String
+  questionKey   String
+  questionLabel String
+  answerValue   String
+  createdAt     DateTime    @default(now())
+
+  finalReport   FinalReport @relation(fields: [finalReportId], references: [id])
+}
+
+model FinalReportAttachment {
+  id            String      @id @default(cuid())
+  finalReportId String
+  fileName      String
+  fileType      String
+  blobUrl       String
+  fileSizeMb    Float
+  createdAt     DateTime    @default(now())
+
+  finalReport   FinalReport @relation(fields: [finalReportId], references: [id])
+}
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
+model ChatChannel {
+  id              String      @id @default(cuid())
+  projectId       String
+  channelType     ChannelType
+  name            String
+  createdByUserId String
+  createdAt       DateTime    @default(now())
+
+  project         Project     @relation(fields: [projectId], references: [id])
+  participants    ChatChannelParticipant[]
+  messages        ChatMessage[]
+}
+
+model ChatChannelParticipant {
+  id        String      @id @default(cuid())
+  channelId String
+  userId    String
+  createdAt DateTime    @default(now())
+
+  channel   ChatChannel @relation(fields: [channelId], references: [id])
+}
+
+model ChatMessage {
+  id           String      @id @default(cuid())
+  channelId    String
+  senderUserId String
+  messageBody  String
+  messageType  String      @default("text")
+  createdAt    DateTime    @default(now())
+
+  channel      ChatChannel @relation(fields: [channelId], references: [id])
+  sender       User        @relation(fields: [senderUserId], references: [id])
+  attachments  ChatMessageAttachment[]
+}
+
+model ChatMessageAttachment {
+  id         String      @id @default(cuid())
+  messageId  String
+  fileName   String
+  fileType   String
+  blobUrl    String
+  fileSizeMb Float
+  createdAt  DateTime    @default(now())
+
+  message    ChatMessage @relation(fields: [messageId], references: [id])
+}
+
+// ─── Notifications, Reviews & Audit ──────────────────────────────────────────
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String
+  channel   String
+  eventType String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  eventType String
+  channel   String
+  title     String
+  message   String
+  status    String    @default("pending")
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model ContractorReview {
+  id             String     @id @default(cuid())
+  projectId      String
+  reviewerUserId String
+  contractorId   String
+  score          Int
+  comment        String?
+  createdAt      DateTime   @default(now())
+
+  contractor     Contractor @relation(fields: [contractorId], references: [id])
+}
+
+model ClientReview {
+  id             String     @id @default(cuid())
+  projectId      String
+  reviewerUserId String
+  contractorId   String
+  score          Int
+  comment        String?
+  createdAt      DateTime   @default(now())
+
+  contractor     Contractor @relation(fields: [contractorId], references: [id])
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  entityType   String
+  entityId     String
+  action       String
+  oldValueJson String?
+  newValueJson String?
+  createdAt    DateTime @default(now())
+
+  user         User?    @relation(fields: [userId], references: [id])
+  project      Project? @relation(fields: [entityId], references: [id])
+}
