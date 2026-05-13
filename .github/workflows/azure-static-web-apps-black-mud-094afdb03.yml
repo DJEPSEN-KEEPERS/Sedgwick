@@ -57,8 +57,8 @@ jobs:
             npx prisma generate --schema=./prisma/schema.prisma &&
             npm run build &&
             mkdir -p .oryx_prod_node_modules/node_modules/.prisma &&
-            cp -r node_modules/.prisma/. .oryx_prod_node_modules/node_modules/.prisma/ &&
-            cp -r node_modules/@prisma/client/. .oryx_prod_node_modules/node_modules/@prisma/client/
+            cp -r ../node_modules/.prisma/. .oryx_prod_node_modules/node_modules/.prisma/ &&
+            cp -r ../node_modules/@prisma/client/. .oryx_prod_node_modules/node_modules/@prisma/client/
           output_location: "dist"
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
