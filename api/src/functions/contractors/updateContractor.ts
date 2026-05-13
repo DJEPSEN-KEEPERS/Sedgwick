@@ -1,4 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
@@ -26,7 +27,7 @@ async function updateContractorHandler(req: HttpRequest, context: InvocationCont
 
     const { regions, ...fields } = body
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       if (regions !== undefined) {
         await tx.contractorRegion.deleteMany({ where: { contractorId } })
         if (regions.length > 0) {

@@ -38,7 +38,7 @@ async function listPendingHandler(req: HttpRequest, context: InvocationContext):
       }),
     ])
 
-    const statusUpdates = rawUpdates.map((u) => ({
+    const statusUpdates = rawUpdates.map((u: any) => ({
       id: u.id,
       projectId: u.entreprise.project.id,
       projectClaimId: u.entreprise.project.claimId,
@@ -47,7 +47,7 @@ async function listPendingHandler(req: HttpRequest, context: InvocationContext):
       milestone: u.milestone,
       progressPercent: u.progressPercent,
       comments: u.comments ?? undefined,
-      attachments: u.attachments.map((a) => ({
+      attachments: u.attachments.map((a: any) => ({
         id: a.id,
         fileName: a.fileName,
         fileType: a.fileType,
@@ -56,15 +56,15 @@ async function listPendingHandler(req: HttpRequest, context: InvocationContext):
       submittedAt: u.createdAt.toISOString(),
     }))
 
-    const finalReports = rawReports.map((r) => ({
+    const finalReports = rawReports.map((r: any) => ({
       id: r.id,
       projectId: r.entreprise.project.id,
       projectClaimId: r.entreprise.project.claimId,
       entrepriseType: r.entreprise.type,
       contractorName: r.entreprise.contractor?.companyName ?? '—',
       summary: r.summary ?? undefined,
-      answers: r.answers.map((a) => ({ questionLabel: a.questionLabel, answerValue: a.answerValue })),
-      attachments: r.attachments.map((a) => ({
+      answers: r.answers.map((a: any) => ({ questionLabel: a.questionLabel, answerValue: a.answerValue })),
+      attachments: r.attachments.map((a: any) => ({
         id: a.id,
         fileName: a.fileName,
         fileType: a.fileType,

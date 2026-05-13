@@ -18,7 +18,7 @@ async function getRecommendationsHandler(req: HttpRequest, context: InvocationCo
       where: { id: { in: contractorIds } },
       include: { regions: true, skills: { include: { skill: true } }, certifications: true },
     })
-    const contractorMap = new Map(contractors.map((c) => [c.id, c]))
+    const contractorMap = new Map(contractors.map((c: any) => [c.id, c]))
 
     const enriched = results.map((r) => ({
       contractorId: r.contractorId,

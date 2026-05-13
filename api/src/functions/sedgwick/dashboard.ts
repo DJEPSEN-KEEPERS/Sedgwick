@@ -115,7 +115,7 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
       : 0
 
     const pendingItems = [
-      ...pendingStatusUpdates.map((u) => ({
+      ...pendingStatusUpdates.map((u: any) => ({
         type: 'statusUpdate' as const,
         id: u.id,
         projectClaimId: u.entreprise.project.claimId,
@@ -126,7 +126,7 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
         progressPercent: u.progressPercent,
         comments: u.comments ?? undefined,
       })),
-      ...pendingFinalReports.map((r) => ({
+      ...pendingFinalReports.map((r: any) => ({
         type: 'finalReport' as const,
         id: r.id,
         projectClaimId: r.entreprise.project.claimId,
@@ -136,7 +136,7 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
       })),
     ].sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime())
 
-    const recentMessagesFormatted = recentMessages.map((m) => ({
+    const recentMessagesFormatted = recentMessages.map((m: any) => ({
       id: m.id,
       channelId: m.channelId,
       projectId: m.channel.projectId,

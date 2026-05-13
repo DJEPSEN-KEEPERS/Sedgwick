@@ -27,7 +27,7 @@ export default function ContractorsPage() {
       )
     }
     if (regionFilter) {
-      list = list.filter((c) => c.regions.some((r) => r.toLowerCase().includes(regionFilter.toLowerCase())))
+      list = list.filter((c) => c.regions.some((r: any) => (r.regionName ?? r).toLowerCase().includes(regionFilter.toLowerCase())))
     }
     list.sort((a, b) => {
       const av = sortBy === 'companyName' ? a[sortBy] : a[sortBy]
@@ -101,13 +101,13 @@ export default function ContractorsPage() {
                       <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{c.cvrNumber}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex flex-wrap gap-1">
-                          {c.regions.slice(0, 2).map((r, i) => <Badge key={i} variant="gray" className="text-xs">{r}</Badge>)}
+                          {c.regions.slice(0, 2).map((r: any, i: number) => <Badge key={i} variant="gray" className="text-xs">{r.regionName ?? r}</Badge>)}
                           {c.regions.length > 2 && <Badge variant="gray" className="text-xs">+{c.regions.length - 2}</Badge>}
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
                         <div className="flex flex-wrap gap-1">
-                          {c.skills.slice(0, 3).map((s) => <Badge key={s.id} variant="default" className="text-xs">{s.name}</Badge>)}
+                          {c.skills.slice(0, 3).map((s: any) => <Badge key={s.id} variant="default" className="text-xs">{s.skill?.name ?? s.name}</Badge>)}
                           {c.skills.length > 3 && <Badge variant="gray" className="text-xs">+{c.skills.length - 3}</Badge>}
                         </div>
                       </td>

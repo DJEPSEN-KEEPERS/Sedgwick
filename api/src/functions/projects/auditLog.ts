@@ -16,7 +16,7 @@ async function projectAuditLogHandler(req: HttpRequest, context: InvocationConte
       take: 100,
     })
 
-    const formatted = logs.map((log) => ({
+    const formatted = logs.map((log: any) => ({
       id: log.id,
       action: log.action,
       entityType: log.entityType,

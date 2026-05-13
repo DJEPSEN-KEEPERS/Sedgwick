@@ -1,7 +1,5 @@
 import type { HttpRequest, InvocationContext } from '@azure/functions'
 import { verifyAccessToken, type JwtPayload } from '../lib/jwt'
-import { writeAuditLog } from '../lib/auditLog'
-import type { UserRole } from '@prisma/client'
 
 export interface AuthContext {
   user: JwtPayload
@@ -24,7 +22,7 @@ export function authenticate(req: HttpRequest): JwtPayload {
   }
 }
 
-export function requireRoles(user: JwtPayload, ...roles: UserRole[]): void {
+export function requireRoles(user: JwtPayload, ...roles: string[]): void {
   if (!roles.includes(user.role)) {
     throw new AuthError('Insufficient permissions', 403)
   }

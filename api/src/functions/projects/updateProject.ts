@@ -2,11 +2,9 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
-import type { ProjectMilestone, ProjectStatus, PriorityLevel } from '@prisma/client'
-
 interface UpdateProjectBody {
   damageDescription?: string
-  priorityLevel?: PriorityLevel
+  priorityLevel?: string
   maxApprovedPrice?: number
   estimatedScope?: string
   requestedStartDate?: string
@@ -15,8 +13,8 @@ interface UpdateProjectBody {
   contactName?: string
   contactPhone?: string
   contactEmail?: string
-  currentMilestone?: ProjectMilestone
-  status?: ProjectStatus
+  currentMilestone?: string
+  status?: string
   finalCompletionDate?: string
 }
 

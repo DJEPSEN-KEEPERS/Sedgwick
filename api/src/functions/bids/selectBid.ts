@@ -1,4 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
@@ -17,7 +18,7 @@ async function selectBidHandler(req: HttpRequest, context: InvocationContext): P
     })
     if (!bid) return { status: 404, jsonBody: { error: 'Tilbud ikke fundet' } }
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.bid.updateMany({ where: { projectId: bid.projectId, isSelected: true }, data: { isSelected: false } })
       const selected = await tx.bid.update({
         where: { id: bidId },

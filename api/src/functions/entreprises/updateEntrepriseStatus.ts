@@ -2,10 +2,8 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
 import { prisma } from '../../lib/prisma'
 import { authenticate, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
-import type { EntrepriseMilestone } from '@prisma/client'
-
 interface UpdateStatusBody {
-  milestone: EntrepriseMilestone
+  milestone: string
   progressPercent: number
   comments?: string
   startedFlag?: boolean

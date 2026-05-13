@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "windows"]
 }
 
 datasource db {
@@ -7,103 +8,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
-
-enum UserRole {
-  SEDGWICK_ADMIN
-  INSURER_USER
-  CONTRACTOR_USER
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
-enum TwoFactorMethod {
-  TOTP
-  SMS
-}
-
-enum PriorityLevel {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
-
-enum ProjectStatus {
-  ACTIVE
-  COMPLETED
-  ARCHIVED
-  CANCELLED
-}
-
-enum ProjectMilestone {
-  CASE_RECEIVED
-  BIDDING_IN_PROGRESS
-  CONTRACTOR_SELECTED
-  WORK_SCHEDULED
-  WORK_STARTED
-  WORK_COMPLETED
-  FINAL_REPORT_SUBMITTED
-  CASE_CLOSED
-}
-
-enum EntrepriseType {
-  CARPENTER
-  MASON
-  PLUMBER
-  GLAZIER
-  ELECTRICIAN
-  PAINTER
-  ROOFER
-  OTHER
-}
-
-enum EntrepriseMilestone {
-  NOT_STARTED
-  SCHEDULED
-  IN_PROGRESS
-  COMPLETED
-  SIGNED_OFF
-}
-
-enum ChannelType {
-  SEDGWICK_CONTRACTOR
-  SEDGWICK_INSURER
-  SEDGWICK_BIDDER
-}
-
-enum InvitationStatus {
-  PENDING
-  INTERESTED
-  NOT_INTERESTED
-}
-
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 model User {
-  id                String          @id @default(cuid())
-  email             String          @unique
+  id                String    @id @default(cuid())
+  email             String    @unique
   phone             String?
   fullName          String
-  role              UserRole
-  status            UserStatus      @default(ACTIVE)
+  role              String    // SEDGWICK_ADMIN | INSURER_USER | CONTRACTOR_USER
+  status            String    @default("ACTIVE")
   passwordHash      String
-  twoFactorEnabled  Boolean         @default(true)
-  twoFactorMethod   TwoFactorMethod @default(TOTP)
+  twoFactorEnabled  Boolean   @default(true)
+  twoFactorMethod   String    @default("TOTP")
   twoFactorSecret   String?
   lastLoginAt       DateTime?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   insurerUser       InsuranceCompanyUser?
   contractorUser    ContractorUser?
@@ -140,8 +60,8 @@ model InsuranceCompanyUser {
   userId             String           @unique
   createdAt          DateTime         @default(now())
 
-  insuranceCompany   InsuranceCompany @relation(fields: [insuranceCompanyId], references: [id])
-  user               User             @relation(fields: [userId], references: [id])
+  insuranceCompany   InsuranceCompany @relation(fields: [insuranceCompanyId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  user               User             @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 // ─── Contractors ──────────────────────────────────────────────────────────────
@@ -181,8 +101,8 @@ model ContractorUser {
   userId       String     @unique
   createdAt    DateTime   @default(now())
 
-  contractor   Contractor @relation(fields: [contractorId], references: [id])
-  user         User       @relation(fields: [userId], references: [id])
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  user         User       @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ContractorRegion {
@@ -191,7 +111,7 @@ model ContractorRegion {
   regionName   String
   createdAt    DateTime   @default(now())
 
-  contractor   Contractor @relation(fields: [contractorId], references: [id])
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model Skill {
@@ -210,8 +130,8 @@ model ContractorSkill {
   skillId      String
   createdAt    DateTime   @default(now())
 
-  contractor   Contractor @relation(fields: [contractorId], references: [id])
-  skill        Skill      @relation(fields: [skillId], references: [id])
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  skill        Skill      @relation(fields: [skillId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ContractorCertification {
@@ -222,22 +142,22 @@ model ContractorCertification {
   validUntil   DateTime?
   createdAt    DateTime   @default(now())
 
-  contractor   Contractor @relation(fields: [contractorId], references: [id])
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 // ─── Projects & Entreprises ───────────────────────────────────────────────────
 
 model Project {
-  id                    String           @id @default(cuid())
-  claimId               String           @unique
+  id                    String    @id @default(cuid())
+  claimId               String    @unique
   insurerCaseId         String
   insurancePolicyNumber String
   insuranceCompanyId    String
-  createdViaApi         Boolean          @default(true)
-  creationDate          DateTime         @default(now())
+  createdViaApi         Boolean   @default(true)
+  creationDate          DateTime  @default(now())
   damageType            String
   damageDescription     String
-  priorityLevel         PriorityLevel    @default(NORMAL)
+  priorityLevel         String    @default("NORMAL")
   buildingType          String
   address               String
   postalCode            String
@@ -253,23 +173,22 @@ model Project {
   contactName           String
   contactPhone          String
   contactEmail          String
-  currentMilestone      ProjectMilestone @default(CASE_RECEIVED)
-  progressPercent       Int              @default(0)
+  currentMilestone      String    @default("CASE_RECEIVED")
+  progressPercent       Int       @default(0)
   selectedContractorId  String?
-  status                ProjectStatus    @default(ACTIVE)
+  status                String    @default("ACTIVE")
   finalCompletionDate   DateTime?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  insuranceCompany      InsuranceCompany         @relation(fields: [insuranceCompanyId], references: [id])
-  selectedContractor    Contractor?              @relation(fields: [selectedContractorId], references: [id])
+  insuranceCompany      InsuranceCompany         @relation(fields: [insuranceCompanyId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  selectedContractor    Contractor?              @relation(fields: [selectedContractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   requiredSkills        ProjectRequiredSkill[]
   attachments           ProjectAttachment[]
   entreprises           Entreprise[]
   recommendations       ContractorRecommendation[]
   bidInvitations        BidInvitation[]
   chatChannels          ChatChannel[]
-  auditLogs             AuditLog[]
   bids                  Bid[]
 }
 
@@ -279,8 +198,8 @@ model ProjectRequiredSkill {
   skillId   String
   createdAt DateTime @default(now())
 
-  project   Project  @relation(fields: [projectId], references: [id])
-  skill     Skill    @relation(fields: [skillId], references: [id])
+  project   Project  @relation(fields: [projectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  skill     Skill    @relation(fields: [skillId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ProjectAttachment {
@@ -295,28 +214,28 @@ model ProjectAttachment {
   isClientVisible    Boolean  @default(false)
   createdAt          DateTime @default(now())
 
-  project            Project  @relation(fields: [projectId], references: [id])
+  project            Project  @relation(fields: [projectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model Entreprise {
-  id               String              @id @default(cuid())
+  id               String    @id @default(cuid())
   projectId        String
   contractorId     String?
-  type             EntrepriseType
+  type             String    // CARPENTER | MASON | PLUMBER | GLAZIER | ELECTRICIAN | PAINTER | ROOFER | OTHER
   description      String?
-  isRelevant       Boolean             @default(true)
+  isRelevant       Boolean   @default(true)
   markedRelevantBy String?
-  currentMilestone EntrepriseMilestone @default(NOT_STARTED)
-  progressPercent  Int                 @default(0)
+  currentMilestone String    @default("NOT_STARTED")
+  progressPercent  Int       @default(0)
   scheduledStart   DateTime?
   scheduledEnd     DateTime?
   actualStart      DateTime?
   actualEnd        DateTime?
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  project          Project             @relation(fields: [projectId], references: [id])
-  contractor       Contractor?         @relation(fields: [contractorId], references: [id])
+  project          Project    @relation(fields: [projectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  contractor       Contractor? @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   statusUpdates    EntrepriseStatusUpdate[]
   finalReport      FinalReport?
 }
@@ -331,44 +250,44 @@ model ContractorRecommendation {
   matchReason  String
   createdAt    DateTime   @default(now())
 
-  project      Project    @relation(fields: [projectId], references: [id])
-  contractor   Contractor @relation(fields: [contractorId], references: [id])
+  project      Project    @relation(fields: [projectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  contractor   Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model BidInvitation {
-  id              String           @id @default(cuid())
+  id              String    @id @default(cuid())
   projectId       String
   contractorId    String
   invitedByUserId String
-  status          InvitationStatus @default(PENDING)
-  invitedAt       DateTime         @default(now())
+  status          String    @default("PENDING")
+  invitedAt       DateTime  @default(now())
   respondedAt     DateTime?
 
-  project         Project          @relation(fields: [projectId], references: [id])
-  contractor      Contractor       @relation(fields: [contractorId], references: [id])
-  invitedBy       User             @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+  project         Project    @relation(fields: [projectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  contractor      Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  invitedBy       User       @relation("InvitedBy", fields: [invitedByUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   bid             Bid?
 }
 
 model Bid {
-  id               String        @id @default(cuid())
+  id               String    @id @default(cuid())
   projectId        String
   contractorId     String
-  bidInvitationId  String        @unique
+  bidInvitationId  String    @unique
   bidAmount        Float
-  currency         String        @default("DKK")
+  currency         String    @default("DKK")
   comments         String?
-  submittedAt      DateTime      @default(now())
-  isSelected       Boolean       @default(false)
+  submittedAt      DateTime  @default(now())
+  isSelected       Boolean   @default(false)
   selectedAt       DateTime?
   selectedByUserId String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  project          Project       @relation(fields: [projectId], references: [id])
-  contractor       Contractor    @relation(fields: [contractorId], references: [id])
-  bidInvitation    BidInvitation @relation(fields: [bidInvitationId], references: [id])
-  selectedBy       User?         @relation("SelectedBy", fields: [selectedByUserId], references: [id])
+  project          Project       @relation(fields: [projectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  contractor       Contractor    @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  bidInvitation    BidInvitation @relation(fields: [bidInvitationId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  selectedBy       User?         @relation("SelectedBy", fields: [selectedByUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   attachments      BidAttachment[]
 }
 
@@ -381,29 +300,29 @@ model BidAttachment {
   fileSizeMb Float
   createdAt  DateTime @default(now())
 
-  bid        Bid      @relation(fields: [bidId], references: [id])
+  bid        Bid      @relation(fields: [bidId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 // ─── Progress & Final Reports ─────────────────────────────────────────────────
 
 model EntrepriseStatusUpdate {
-  id                 String              @id @default(cuid())
+  id                 String    @id @default(cuid())
   entrepriseId       String
   submittedByUserId  String
-  milestone          EntrepriseMilestone
+  milestone          String
   progressPercent    Int
-  startedFlag        Boolean             @default(false)
-  completedFlag      Boolean             @default(false)
+  startedFlag        Boolean   @default(false)
+  completedFlag      Boolean   @default(false)
   expectedCompletion DateTime?
   comments           String?
-  approvalStatus     ApprovalStatus      @default(PENDING)
+  approvalStatus     String    @default("PENDING")
   approvedByUserId   String?
   approvedAt         DateTime?
-  createdAt          DateTime            @default(now())
+  createdAt          DateTime  @default(now())
 
-  entreprise         Entreprise          @relation(fields: [entrepriseId], references: [id])
-  submittedBy        User                @relation(fields: [submittedByUserId], references: [id])
-  approvedBy         User?               @relation("ApprovedBy", fields: [approvedByUserId], references: [id])
+  entreprise         Entreprise @relation(fields: [entrepriseId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  submittedBy        User       @relation(fields: [submittedByUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  approvedBy         User?      @relation("ApprovedBy", fields: [approvedByUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   attachments        StatusUpdateAttachment[]
 }
 
@@ -416,25 +335,25 @@ model StatusUpdateAttachment {
   fileSizeMb     Float
   createdAt      DateTime               @default(now())
 
-  statusUpdate   EntrepriseStatusUpdate @relation(fields: [statusUpdateId], references: [id])
+  statusUpdate   EntrepriseStatusUpdate @relation(fields: [statusUpdateId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model FinalReport {
-  id                String         @id @default(cuid())
-  entrepriseId      String         @unique
+  id                String    @id @default(cuid())
+  entrepriseId      String    @unique
   contractorId      String
   submittedByUserId String
   summary           String?
   submittedAt       DateTime?
-  approvalStatus    ApprovalStatus @default(PENDING)
+  approvalStatus    String    @default("PENDING")
   approvedByUserId  String?
   approvedAt        DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  entreprise        Entreprise     @relation(fields: [entrepriseId], references: [id])
-  submittedBy       User           @relation(fields: [submittedByUserId], references: [id])
-  approvedBy        User?          @relation("ReportApprovedBy", fields: [approvedByUserId], references: [id])
+  entreprise        Entreprise  @relation(fields: [entrepriseId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  submittedBy       User        @relation(fields: [submittedByUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  approvedBy        User?       @relation("ReportApprovedBy", fields: [approvedByUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   answers           FinalReportAnswer[]
   attachments       FinalReportAttachment[]
 }
@@ -447,7 +366,7 @@ model FinalReportAnswer {
   answerValue   String
   createdAt     DateTime    @default(now())
 
-  finalReport   FinalReport @relation(fields: [finalReportId], references: [id])
+  finalReport   FinalReport @relation(fields: [finalReportId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model FinalReportAttachment {
@@ -459,20 +378,20 @@ model FinalReportAttachment {
   fileSizeMb    Float
   createdAt     DateTime    @default(now())
 
-  finalReport   FinalReport @relation(fields: [finalReportId], references: [id])
+  finalReport   FinalReport @relation(fields: [finalReportId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 
 model ChatChannel {
-  id              String      @id @default(cuid())
+  id              String    @id @default(cuid())
   projectId       String
-  channelType     ChannelType
+  channelType     String    // SEDGWICK_CONTRACTOR | SEDGWICK_INSURER | SEDGWICK_BIDDER
   name            String
   createdByUserId String
-  createdAt       DateTime    @default(now())
+  createdAt       DateTime  @default(now())
 
-  project         Project     @relation(fields: [projectId], references: [id])
+  project         Project   @relation(fields: [projectId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   participants    ChatChannelParticipant[]
   messages        ChatMessage[]
 }
@@ -483,7 +402,7 @@ model ChatChannelParticipant {
   userId    String
   createdAt DateTime    @default(now())
 
-  channel   ChatChannel @relation(fields: [channelId], references: [id])
+  channel   ChatChannel @relation(fields: [channelId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ChatMessage {
@@ -494,8 +413,8 @@ model ChatMessage {
   messageType  String      @default("text")
   createdAt    DateTime    @default(now())
 
-  channel      ChatChannel @relation(fields: [channelId], references: [id])
-  sender       User        @relation(fields: [senderUserId], references: [id])
+  channel      ChatChannel @relation(fields: [channelId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  sender       User        @relation(fields: [senderUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   attachments  ChatMessageAttachment[]
 }
 
@@ -508,7 +427,7 @@ model ChatMessageAttachment {
   fileSizeMb Float
   createdAt  DateTime    @default(now())
 
-  message    ChatMessage @relation(fields: [messageId], references: [id])
+  message    ChatMessage @relation(fields: [messageId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 // ─── Notifications, Reviews & Audit ──────────────────────────────────────────
@@ -522,7 +441,7 @@ model NotificationPreference {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model Notification {
@@ -536,7 +455,7 @@ model Notification {
   sentAt    DateTime?
   createdAt DateTime  @default(now())
 
-  user      User      @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ContractorReview {
@@ -548,7 +467,7 @@ model ContractorReview {
   comment        String?
   createdAt      DateTime   @default(now())
 
-  contractor     Contractor @relation(fields: [contractorId], references: [id])
+  contractor     Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model ClientReview {
@@ -560,7 +479,7 @@ model ClientReview {
   comment        String?
   createdAt      DateTime   @default(now())
 
-  contractor     Contractor @relation(fields: [contractorId], references: [id])
+  contractor     Contractor @relation(fields: [contractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }
 
 model AuditLog {
@@ -573,6 +492,5 @@ model AuditLog {
   newValueJson String?
   createdAt    DateTime @default(now())
 
-  user         User?    @relation(fields: [userId], references: [id])
-  project      Project? @relation(fields: [entityId], references: [id])
+  user         User?    @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: NoAction)
 }

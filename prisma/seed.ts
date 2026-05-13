@@ -1,6 +1,20 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-import { generateTotpSecret, encryptSecret } from '../api/src/lib/totp'
+import { authenticator } from 'otplib'
+import crypto from 'crypto'
+
+function generateTotpSecret(): string {
+  return authenticator.generateSecret()
+}
+
+function encryptSecret(text: string): string {
+  const key = (process.env.JWT_SECRET ?? 'sedgwick-local-dev-secret-min-32-chars-change-in-prod')
+    .padEnd(32, '0').slice(0, 32)
+  const iv = crypto.randomBytes(16)
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(key), iv)
+  const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()])
+  return iv.toString('hex') + ':' + encrypted.toString('hex')
+}
 
 const prisma = new PrismaClient()
 
@@ -141,11 +155,28 @@ async function main() {
     },
   })
 
+  // djepsen admin user
+  const djepsenHash = await bcrypt.hash('Keepers4life', 12)
+  await prisma.user.upsert({
+    where: { email: 'djepsen@keepers.dk' },
+    update: {},
+    create: {
+      email: 'djepsen@keepers.dk',
+      fullName: 'Daniel Jepsen',
+      role: 'SEDGWICK_ADMIN',
+      passwordHash: djepsenHash,
+      twoFactorEnabled: true,
+      twoFactorMethod: 'TOTP',
+      twoFactorSecret: encryptSecret(generateTotpSecret()),
+    },
+  })
+
   console.log('✅ Seed completed')
   console.log('  admin@sedgwick.dk / Sedgwick2024!')
+  console.log('  djepsen@keepers.dk / Keepers4life')
   console.log('  case@tryg.dk / Sedgwick2024!')
   console.log('  peter@hansenbyg.dk / Sedgwick2024!')
-  console.log('  (TOTP secret stored encrypted — use Authenticator app)')
+  console.log('  (TOTP secrets stored encrypted — scan QR via /api/auth/setup-totp)')
 }
 
 main()
