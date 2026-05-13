@@ -44,14 +44,6 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Build API (standalone)
-        run: |
-          cd api
-          npm install --no-workspaces --ignore-scripts
-          npx prisma generate --schema=./prisma/schema.prisma
-          npm run build
-          npm prune --omit=dev --no-workspaces
-
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -61,8 +53,13 @@ jobs:
           app_location: "frontend"
           app_build_command: "npm run build"
           api_location: "api"
+          api_build_command: >-
+            npx prisma generate --schema=./prisma/schema.prisma &&
+            npm run build &&
+            mkdir -p .oryx_prod_node_modules/node_modules/.prisma &&
+            cp -r node_modules/.prisma/. .oryx_prod_node_modules/node_modules/.prisma/ &&
+            cp -r node_modules/@prisma/client/. .oryx_prod_node_modules/node_modules/@prisma/client/
           output_location: "dist"
-          skip_api_build: true
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
   close_pull_request_job:
