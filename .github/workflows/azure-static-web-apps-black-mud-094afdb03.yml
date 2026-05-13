@@ -23,6 +23,9 @@ jobs:
           submodules: true
           lfs: false
 
+      - name: Copy Prisma schema for Oryx API build
+        run: mkdir -p api/prisma && cp prisma/schema.prisma api/prisma/schema.prisma
+
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
 
@@ -43,9 +46,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Copy Prisma schema for Oryx API build
-        run: mkdir -p api/prisma && cp prisma/schema.prisma api/prisma/schema.prisma
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
