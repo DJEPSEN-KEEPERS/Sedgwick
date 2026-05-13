@@ -14,8 +14,12 @@
     "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: *.blob.core.windows.net; connect-src 'self' https://*.azurestaticapps.net"
   },
   "mimeTypes": {
+    ".js": "application/javascript",
+    ".mjs": "application/javascript",
     ".json": "application/json",
+    ".css": "text/css",
     ".woff": "font/woff",
-    ".woff2": "font/woff2"
+    ".woff2": "font/woff2",
+    ".svg": "image/svg+xml"
   }
 }
