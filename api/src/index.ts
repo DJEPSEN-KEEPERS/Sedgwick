@@ -1,3 +1,6 @@
+// Health check
+import './functions/health'
+
 // Auth
 import './functions/auth/login'
 import './functions/auth/verify2fa'
