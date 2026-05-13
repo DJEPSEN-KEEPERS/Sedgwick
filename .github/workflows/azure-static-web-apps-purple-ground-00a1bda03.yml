@@ -29,7 +29,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Copy Prisma schema for Oryx API build
+      - name: Generate Prisma client and compile API
+        run: npm run db:generate && npm run build:api
+
+      - name: Copy Prisma schema for Oryx production install
         run: mkdir -p api/prisma && cp prisma/schema.prisma api/prisma/schema.prisma
 
       - name: Deploy to Azure Static Web Apps
@@ -42,6 +45,7 @@ jobs:
           app_build_command: "npm run build"
           api_location: "api"
           output_location: "dist"
+          api_build_command: "echo 'API pre-built in CI'"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
