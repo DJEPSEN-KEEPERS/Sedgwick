@@ -23,7 +23,7 @@ jobs:
           submodules: true
           lfs: false
 
-      - name: Copy Prisma schema for Oryx API build
+      - name: Copy Prisma schema for API build
         run: mkdir -p api/prisma && cp prisma/schema.prisma api/prisma/schema.prisma
 
       - name: Install OIDC Client from Core Package
@@ -44,8 +44,13 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Build API (standalone)
+        run: |
+          cd api
+          npm install --no-workspaces --ignore-scripts
+          npx prisma generate --schema=./prisma/schema.prisma
+          npm run build
+          npm prune --omit=dev --no-workspaces
 
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
@@ -57,6 +62,7 @@ jobs:
           app_build_command: "npm run build"
           api_location: "api"
           output_location: "dist"
+          skip_api_build: true
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
   close_pull_request_job:
