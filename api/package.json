@@ -4,8 +4,9 @@
   "private": true,
   "main": "dist/index.js",
   "scripts": {
+    "postinstall": "prisma generate --schema=../prisma/schema.prisma",
     "dev": "func start",
-    "build": "prisma generate --schema=../prisma/schema.prisma && tsc",
+    "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "otplib": "^12.0.1",
+    "prisma": "^5.22.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
@@ -24,7 +26,6 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.17.6",
     "@types/qrcode": "^1.5.5",
-    "prisma": "^5.22.0",
     "typescript": "^5.6.3"
   }
 }
