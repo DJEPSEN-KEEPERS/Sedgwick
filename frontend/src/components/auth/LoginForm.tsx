@@ -47,7 +47,14 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
         setTempToken(res.tempToken)
         setStep('twofactor')
       } else {
-        navigate('/')
+        // Direct login — check if TOTP needs to be configured
+        const user = useAuthStore.getState().user
+        if (user && !user.twoFactorEnabled) {
+          setStep('setup-totp')
+          handleSetupTotp()
+        } else {
+          navigate(user?.role ? ROLE_REDIRECT[user.role as UserRole] : '/')
+        }
       }
     } catch {
       // error already in store
@@ -70,10 +77,19 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
     setSetupLoading(true)
     setSetupError('')
     try {
+      // Use access token if logged in, otherwise tempToken for first-time setup
+      const accessToken = useAuthStore.getState().accessToken
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      const body: Record<string, string> = {}
+      if (accessToken) {
+        headers['Authorization'] = `Bearer ${accessToken}`
+      } else {
+        body['tempToken'] = tempToken
+      }
       const res = await fetch(`${BASE_URL}/auth/setup-totp`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tempToken }),
+        headers,
+        body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Opsætning fejlede')
