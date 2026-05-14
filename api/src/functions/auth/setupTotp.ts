@@ -7,18 +7,26 @@ import { generateTotpSecret, encryptSecret, generateTotpUri } from '../../lib/to
 
 async function setupTotpHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
-    // Extract bearer token
-    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? ''
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-    if (!token) return { status: 401, jsonBody: { error: 'Mangler authorization token' } }
-
-    // Accept either a full access token or a temp_2fa token (first-time setup)
+    // Accept either Authorization header (full access token) or tempToken in body (first-time setup)
     let userId: string
-    try {
-      userId = verifyAccessToken(token).sub
-    } catch {
+
+    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? ''
+    const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+
+    if (headerToken) {
+      // Logged-in user resetting TOTP
       try {
-        const decoded = verifyTempToken(token)
+        userId = verifyAccessToken(headerToken).sub
+      } catch {
+        return { status: 401, jsonBody: { error: 'Ugyldig eller udløbet token' } }
+      }
+    } else {
+      // First-time setup via tempToken in body
+      const body = await req.json().catch(() => ({})) as { tempToken?: string }
+      const bodyToken = body.tempToken ?? ''
+      if (!bodyToken) return { status: 401, jsonBody: { error: 'Mangler token' } }
+      try {
+        const decoded = verifyTempToken(bodyToken)
         if (decoded.type !== 'temp_2fa') {
           return { status: 401, jsonBody: { error: 'Ugyldig token type' } }
         }

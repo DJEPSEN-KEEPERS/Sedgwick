@@ -72,10 +72,8 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
     try {
       const res = await fetch(`${BASE_URL}/auth/setup-totp`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${tempToken}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tempToken }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Opsætning fejlede')
