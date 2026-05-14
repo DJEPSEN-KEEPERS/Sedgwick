@@ -1,26 +1,31 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
 import QRCode from 'qrcode'
 import { prisma } from '../../lib/prisma'
-import { authenticate, errorResponse } from '../../middleware/authMiddleware'
-import { verifyTempToken } from '../../lib/jwt'
+import { errorResponse } from '../../middleware/authMiddleware'
+import { verifyAccessToken, verifyTempToken } from '../../lib/jwt'
 import { generateTotpSecret, encryptSecret, generateTotpUri } from '../../lib/totp'
 
 async function setupTotpHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
-    let userId: string
+    // Extract bearer token
+    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+    if (!token) return { status: 401, jsonBody: { error: 'Mangler authorization token' } }
 
     // Accept either a full access token or a temp_2fa token (first-time setup)
+    let userId: string
     try {
-      const jwtUser = authenticate(req)
-      userId = jwtUser.sub
+      userId = verifyAccessToken(token).sub
     } catch {
-      const authHeader = req.headers.get('authorization') ?? ''
-      const token = authHeader.replace(/^Bearer\s+/i, '')
-      const decoded = verifyTempToken(token)
-      if (decoded.type !== 'temp_2fa') {
-        return { status: 401, jsonBody: { error: 'Ikke autoriseret' } }
+      try {
+        const decoded = verifyTempToken(token)
+        if (decoded.type !== 'temp_2fa') {
+          return { status: 401, jsonBody: { error: 'Ugyldig token type' } }
+        }
+        userId = decoded.sub
+      } catch {
+        return { status: 401, jsonBody: { error: 'Ugyldig eller udløbet token' } }
       }
-      userId = decoded.sub
     }
 
     const user = await prisma.user.findUnique({ where: { id: userId } })
