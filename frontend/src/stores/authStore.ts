@@ -43,8 +43,14 @@ export const useAuthStore = create<AuthState>()(
           const res = await api.post<{
             requiresTwoFactor: boolean
             tempToken?: string
-            message: string
+            accessToken?: string
+            refreshToken?: string
+            user?: AuthUser
+            message?: string
           }>('/auth/login', { email, password })
+          if (!res.requiresTwoFactor && res.accessToken && res.refreshToken && res.user) {
+            get().setTokens(res.accessToken, res.refreshToken, res.user)
+          }
           set({ isLoading: false })
           return { requiresTwoFactor: res.requiresTwoFactor, tempToken: res.tempToken }
         } catch (err) {

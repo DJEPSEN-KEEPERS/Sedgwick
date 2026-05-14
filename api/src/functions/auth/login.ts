@@ -1,7 +1,7 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
 import bcrypt from 'bcryptjs'
 import { prisma } from '../../lib/prisma'
-import { signTempToken } from '../../lib/jwt'
+import { signTempToken, signAccessToken, signRefreshToken } from '../../lib/jwt'
 import { writeAuditLog } from '../../lib/auditLog'
 import { errorResponse } from '../../middleware/authMiddleware'
 
@@ -47,7 +47,25 @@ async function loginHandler(req: HttpRequest, context: InvocationContext): Promi
       return { status: 401, jsonBody: { error: 'Ugyldige loginoplysninger' } }
     }
 
-    // 2FA always required
+    // Only require 2FA if it has been configured
+    if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+      const linkedEntityId =
+        user.insurerUser?.insuranceCompanyId ?? user.contractorUser?.contractorId ?? null
+      const accessToken = signAccessToken({ sub: user.id, email: user.email, role: user.role, linkedEntityId })
+      const refreshToken = signRefreshToken(user.id)
+      await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } })
+      await writeAuditLog({ userId: user.id, entityType: 'User', entityId: user.id, action: 'LOGIN_SUCCESS' })
+      return {
+        status: 200,
+        jsonBody: {
+          requiresTwoFactor: false,
+          accessToken,
+          refreshToken,
+          user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role, phone: user.phone, twoFactorEnabled: user.twoFactorEnabled, twoFactorMethod: user.twoFactorMethod, linkedEntityId },
+        },
+      }
+    }
+
     const tempToken = signTempToken(user.id)
 
     await writeAuditLog({
