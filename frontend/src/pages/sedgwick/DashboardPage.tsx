@@ -123,15 +123,14 @@ export default function SedgwickDashboard() {
 
   if (loading) return <PageSkeleton />
 
-  // Fallback demo data
   const stats = data?.stats ?? {
-    activeProjects: 87,
-    newThisWeek: 4,
-    bidsAwaiting: 12,
-    urgentBids: 3,
-    pendingApprovals: 5,
-    oldestApprovalDays: 2,
-    slaBreaches: 3,
+    activeProjects: 0,
+    newThisWeek: 0,
+    bidsAwaiting: 0,
+    urgentBids: 0,
+    pendingApprovals: 0,
+    oldestApprovalDays: 0,
+    slaBreaches: 0,
   }
 
   const recentProjects = data?.recentProjects ?? []
@@ -146,6 +145,12 @@ export default function SedgwickDashboard() {
         <h1 className="text-2xl font-display font-bold text-gray-900">Dashboard</h1>
         <p className="text-sm text-gray-500 mt-0.5">Sedgwick operationscentral</p>
       </div>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="font-semibold">API-fejl:</span> {error}
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4 mb-6">
