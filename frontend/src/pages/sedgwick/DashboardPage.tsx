@@ -449,7 +449,7 @@ function DebugPanel() {
   useEffect(() => {
     const token = localStorage.getItem('accessToken') ?? ''
     fetch('/api/auth/debug-token', {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { 'X-Auth-Token': token },
     })
       .then((r) => r.json())
       .then((d) => { setResult(d); setRan(true) })

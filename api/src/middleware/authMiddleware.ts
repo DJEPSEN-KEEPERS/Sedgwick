@@ -6,6 +6,11 @@ export interface AuthContext {
 }
 
 export function extractBearerToken(req: HttpRequest): string | null {
+  // Prefer X-Auth-Token — Azure SWA proxy can corrupt the Authorization header
+  const customToken = req.headers.get('x-auth-token') ?? req.headers.get('X-Auth-Token')
+  if (customToken) return customToken
+
+  // Fall back to standard Authorization: Bearer header (local dev / other clients)
   const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) return null
   return authHeader.slice(7)

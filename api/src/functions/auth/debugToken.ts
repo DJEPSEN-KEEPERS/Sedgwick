@@ -11,8 +11,9 @@ app.http('auth-debug-token', {
   authLevel: 'anonymous',
   route: 'auth/debug-token',
   handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
+    const customToken = req.headers.get('x-auth-token') ?? req.headers.get('X-Auth-Token') ?? ''
     const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? ''
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+    const token = customToken || (authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '')
 
     const secret = process.env.JWT_SECRET ?? ''
     const secretHint = secret

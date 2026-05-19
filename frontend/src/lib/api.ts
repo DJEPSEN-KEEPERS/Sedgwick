@@ -44,7 +44,7 @@ async function tryRefreshToken(): Promise<boolean> {
 class ApiClient {
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem('accessToken')
-    return token ? { Authorization: `Bearer ${token}` } : {}
+    return token ? { 'X-Auth-Token': token } : {}
   }
 
   private async handleResponse<T>(res: Response): Promise<T> {
@@ -73,7 +73,7 @@ class ApiClient {
           ...init,
           headers: {
             ...init.headers,
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            'X-Auth-Token': localStorage.getItem('accessToken') ?? '',
           },
         }
         return fetch(input, retryInit)
