@@ -1,0 +1,61 @@
+/**
+ * TEMPORARY diagnostic endpoint — remove after debugging.
+ * GET /api/auth/debug-token
+ * Returns info about the Authorization header and JWT verification.
+ */
+import { app, type HttpRequest, type HttpResponseInit } from '@azure/functions'
+import jwt from 'jsonwebtoken'
+
+app.http('auth-debug-token', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'auth/debug-token',
+  handler: async (req: HttpRequest): Promise<HttpResponseInit> => {
+    const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+
+    const secret = process.env.JWT_SECRET ?? ''
+    const secretHint = secret
+      ? `${secret.slice(0, 4)}...${secret.slice(-4)} (len=${secret.length})`
+      : '(not set)'
+
+    let decoded: object | null = null
+    let verifyError: string | null = null
+    let verifyOk = false
+
+    // Decode without verification (just base64)
+    if (token) {
+      try {
+        const parts = token.split('.')
+        if (parts.length === 3) {
+          decoded = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'))
+        }
+      } catch {
+        decoded = null
+      }
+    }
+
+    // Attempt full verification
+    if (token && secret) {
+      try {
+        jwt.verify(token, secret)
+        verifyOk = true
+      } catch (e) {
+        verifyError = e instanceof Error ? e.message : String(e)
+      }
+    }
+
+    return {
+      status: 200,
+      jsonBody: {
+        hasAuthHeader: !!authHeader,
+        tokenPresent: !!token,
+        tokenFirstChars: token ? token.slice(0, 20) + '…' : null,
+        secretHint,
+        decoded,
+        verifyOk,
+        verifyError,
+      },
+    }
+  },
+})
