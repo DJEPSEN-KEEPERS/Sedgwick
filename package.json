@@ -16,7 +16,7 @@
     "db:migrate": "npx prisma migrate deploy --schema=prisma/schema.prisma",
     "db:studio": "npx prisma studio --schema=prisma/schema.prisma",
     "db:seed": "npx ts-node prisma/seed.ts",
-    "db:seed:demo": "npx ts-node prisma/seedDemo.ts"
+    "db:seed:demo": "npx tsx prisma/seedDemo.ts"
   },
   "devDependencies": {
     "prisma": "^5.22.0",

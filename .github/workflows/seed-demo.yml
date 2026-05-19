@@ -25,4 +25,4 @@ jobs:
       - name: Run demo seed
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx ts-node prisma/seedDemo.ts
+        run: npx tsx prisma/seedDemo.ts
