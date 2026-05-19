@@ -99,7 +99,7 @@ function StatCard({
 
 export default function SedgwickDashboard() {
   const navigate = useNavigate()
-  const { data, loading, refetch } = useApi<DashboardData>('/dashboard')
+  const { data, loading, error, refetch } = useApi<DashboardData>('/dashboard')
   const { mutate: approve } = useMutation('post')
   const { mutate: reject } = useMutation('post')
 
