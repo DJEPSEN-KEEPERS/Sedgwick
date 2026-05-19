@@ -147,8 +147,9 @@ export default function SedgwickDashboard() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span className="font-semibold">API-fejl:</span> {error}
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 space-y-2">
+          <p><span className="font-semibold">API-fejl:</span> {error}</p>
+          <DebugPanel />
         </div>
       )}
 
@@ -437,6 +438,29 @@ function SlaIndicator({ project }: { project: Project }) {
 function EmptyTableRow({ message }: { message: string }) {
   return (
     <div className="px-4 py-8 text-center text-sm text-gray-400">{message}</div>
+  )
+}
+
+function DebugPanel() {
+  const [result, setResult] = useState<Record<string, unknown> | null>(null)
+  const [ran, setRan] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken') ?? ''
+    fetch('/api/auth/debug-token', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((d) => { setResult(d); setRan(true) })
+      .catch((e) => { setResult({ fetchError: String(e) }); setRan(true) })
+  }, [])
+
+  if (!ran) return <p className="text-xs text-red-500 italic">Kører diagnostik…</p>
+
+  return (
+    <pre className="mt-1 rounded bg-red-100 p-2 text-xs text-red-800 overflow-auto whitespace-pre-wrap break-all">
+      {JSON.stringify(result, null, 2)}
+    </pre>
   )
 }
 
