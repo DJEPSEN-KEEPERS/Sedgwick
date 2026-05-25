@@ -9,6 +9,7 @@ require("./functions/auth/refresh");
 require("./functions/auth/me");
 require("./functions/auth/logout");
 require("./functions/auth/setupTotp");
+require("./functions/auth/debugToken");
 // Projects
 require("./functions/projects/list");
 require("./functions/projects/get");
@@ -50,8 +51,9 @@ require("./functions/files/getSignedUrl");
 // Dashboards
 require("./functions/sedgwick/dashboard");
 require("./functions/insurer/dashboard");
-// Users & Skills
+// Users, Insurers & Skills
 require("./functions/users/listUsers");
+require("./functions/insurers/list");
 require("./functions/skills/listSkills");
 // Notifications
 require("./functions/notifications/preferences");

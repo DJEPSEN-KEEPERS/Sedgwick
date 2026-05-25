@@ -8,6 +8,7 @@ import './functions/auth/refresh'
 import './functions/auth/me'
 import './functions/auth/logout'
 import './functions/auth/setupTotp'
+import './functions/auth/debugToken'
 
 // Projects
 import './functions/projects/list'
@@ -58,8 +59,9 @@ import './functions/files/getSignedUrl'
 import './functions/sedgwick/dashboard'
 import './functions/insurer/dashboard'
 
-// Users & Skills
+// Users, Insurers & Skills
 import './functions/users/listUsers'
+import './functions/insurers/list'
 import './functions/skills/listSkills'
 
 // Notifications
