@@ -60,7 +60,7 @@ function UsersTab() {
   const { data: users, loading, refetch } = useApi<User[]>('/users')
   const { data: insurers }    = useApi<InsurerOption[]>('/insurers')
   const { data: contractors } = useApi<ContractorOption[]>('/contractors?pageSize=200')
-  const { mutate: createUser, loading: creating } = useMutation('post')
+  const { mutate: createUser, loading: creating, error: mutationError } = useMutation('post')
 
   const [showForm, setShowForm]           = useState(false)
   const [fullName, setFullName]           = useState('')
@@ -111,7 +111,7 @@ function UsersTab() {
       setShowForm(false)
       refetch()
     } else {
-      setFormError('Oprettelse fejlede — tjek at e-mail ikke allerede er i brug')
+      setFormError(mutationError ?? 'Oprettelse fejlede')
     }
   }
 
