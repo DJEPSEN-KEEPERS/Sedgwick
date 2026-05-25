@@ -7,11 +7,41 @@ const functions_1 = require("@azure/functions");
 const qrcode_1 = __importDefault(require("qrcode"));
 const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
+const jwt_1 = require("../../lib/jwt");
 const totp_1 = require("../../lib/totp");
 async function setupTotpHandler(req, context) {
     try {
-        const jwtUser = (0, authMiddleware_1.authenticate)(req);
-        const user = await prisma_1.prisma.user.findUnique({ where: { id: jwtUser.sub } });
+        // Accept either Authorization header (full access token) or tempToken in body (first-time setup)
+        let userId;
+        const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
+        const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        if (headerToken) {
+            // Logged-in user resetting TOTP
+            try {
+                userId = (0, jwt_1.verifyAccessToken)(headerToken).sub;
+            }
+            catch {
+                return { status: 401, jsonBody: { error: 'Ugyldig eller udløbet token' } };
+            }
+        }
+        else {
+            // First-time setup via tempToken in body
+            const body = await req.json().catch(() => ({}));
+            const bodyToken = body.tempToken ?? '';
+            if (!bodyToken)
+                return { status: 401, jsonBody: { error: 'Mangler token' } };
+            try {
+                const decoded = (0, jwt_1.verifyTempToken)(bodyToken);
+                if (decoded.type !== 'temp_2fa') {
+                    return { status: 401, jsonBody: { error: 'Ugyldig token type' } };
+                }
+                userId = decoded.sub;
+            }
+            catch {
+                return { status: 401, jsonBody: { error: 'Ugyldig eller udløbet token' } };
+            }
+        }
+        const user = await prisma_1.prisma.user.findUnique({ where: { id: userId } });
         if (!user)
             return { status: 404, jsonBody: { error: 'Bruger ikke fundet' } };
         const secret = (0, totp_1.generateTotpSecret)();
@@ -20,7 +50,7 @@ async function setupTotpHandler(req, context) {
         const qrCodeDataUrl = await qrcode_1.default.toDataURL(uri);
         // Store encrypted secret (not yet active until confirmed)
         await prisma_1.prisma.user.update({
-            where: { id: user.id },
+            where: { id: userId },
             data: { twoFactorSecret: encryptedSecret },
         });
         return {

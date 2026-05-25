@@ -11,9 +11,6 @@ async function listProjectsHandler(req: HttpRequest, context: InvocationContext)
     const status   = url.searchParams.get('status')   ?? undefined
     const search   = url.searchParams.get('search')   ?? undefined
     const priority = url.searchParams.get('priority') ?? undefined
-    // 'mine' = only projects linked to the current user's entity (always true for
-    // INSURER_USER and CONTRACTOR_USER due to scope; for SEDGWICK_ADMIN it has no effect)
-    const mine = url.searchParams.get('mine') === 'true'
 
     // ── Scope by role ─────────────────────────────────────────────────────────
     const scopeWhere =

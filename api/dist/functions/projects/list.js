@@ -7,16 +7,33 @@ async function listProjectsHandler(req, context) {
     try {
         const jwtUser = (0, authMiddleware_1.authenticate)(req);
         const url = new URL(req.url);
-        const pageSize = Math.min(200, Math.max(1, parseInt(url.searchParams.get('pageSize') ?? '20')));
+        const pageSize = Math.min(200, Math.max(1, parseInt(url.searchParams.get('pageSize') ?? '50')));
         const status = url.searchParams.get('status') ?? undefined;
         const search = url.searchParams.get('search') ?? undefined;
-        const where = jwtUser.role === 'INSURER_USER' && jwtUser.linkedEntityId
-            ? { insuranceCompanyId: jwtUser.linkedEntityId, ...(status ? { status } : {}) }
+        const priority = url.searchParams.get('priority') ?? undefined;
+        // ── Scope by role ─────────────────────────────────────────────────────────
+        const scopeWhere = jwtUser.role === 'INSURER_USER' && jwtUser.linkedEntityId
+            ? { insuranceCompanyId: jwtUser.linkedEntityId }
             : jwtUser.role === 'CONTRACTOR_USER' && jwtUser.linkedEntityId
-                ? { selectedContractorId: jwtUser.linkedEntityId, ...(status ? { status } : {}) }
-                : status
-                    ? { status }
-                    : {};
+                ? { selectedContractorId: jwtUser.linkedEntityId }
+                : {};
+        // ── Build combined where ──────────────────────────────────────────────────
+        const where = {
+            ...scopeWhere,
+            ...(status ? { status } : {}),
+            ...(priority ? { priorityLevel: priority } : {}),
+            ...(search
+                ? {
+                    OR: [
+                        { claimId: { contains: search } },
+                        { address: { contains: search } },
+                        { city: { contains: search } },
+                        { damageType: { contains: search } },
+                        { contactName: { contains: search } },
+                    ],
+                }
+                : {}),
+        };
         const projects = await prisma_1.prisma.project.findMany({
             where,
             include: {
@@ -26,19 +43,6 @@ async function listProjectsHandler(req, context) {
             },
             orderBy: { updatedAt: 'desc' },
             take: pageSize,
-            ...(search
-                ? {
-                    where: {
-                        ...where,
-                        OR: [
-                            { claimId: { contains: search } },
-                            { address: { contains: search } },
-                            { city: { contains: search } },
-                            { damageType: { contains: search } },
-                        ],
-                    },
-                }
-                : {}),
         });
         return { status: 200, jsonBody: projects };
     }

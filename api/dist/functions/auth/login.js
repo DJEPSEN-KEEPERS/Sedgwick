@@ -40,7 +40,23 @@ async function loginHandler(req, context) {
             });
             return { status: 401, jsonBody: { error: 'Ugyldige loginoplysninger' } };
         }
-        // 2FA always required
+        // Only require 2FA if it has been configured
+        if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+            const linkedEntityId = user.insurerUser?.insuranceCompanyId ?? user.contractorUser?.contractorId ?? null;
+            const accessToken = (0, jwt_1.signAccessToken)({ sub: user.id, email: user.email, role: user.role, linkedEntityId });
+            const refreshToken = (0, jwt_1.signRefreshToken)(user.id);
+            await prisma_1.prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+            await (0, auditLog_1.writeAuditLog)({ userId: user.id, entityType: 'User', entityId: user.id, action: 'LOGIN_SUCCESS' });
+            return {
+                status: 200,
+                jsonBody: {
+                    requiresTwoFactor: false,
+                    accessToken,
+                    refreshToken,
+                    user: { id: user.id, email: user.email, fullName: user.fullName, role: user.role, phone: user.phone, twoFactorEnabled: user.twoFactorEnabled, twoFactorMethod: user.twoFactorMethod, linkedEntityId },
+                },
+            };
+        }
         const tempToken = (0, jwt_1.signTempToken)(user.id);
         await (0, auditLog_1.writeAuditLog)({
             userId: user.id,
