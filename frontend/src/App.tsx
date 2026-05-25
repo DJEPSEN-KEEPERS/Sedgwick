@@ -32,6 +32,7 @@ const InsurerProjectDetail  = lazy(() => import('@/pages/insurer/ProjectDetailPa
 
 // ─── Contractor pages ──────────────────────────────────────────────────────────
 const ContractorDashboard        = lazy(() => import('@/pages/contractor/DashboardPage'))
+const ContractorProjectsPage     = lazy(() => import('@/pages/contractor/ProjectsPage'))
 const ContractorInvitationsPage  = lazy(() => import('@/pages/contractor/InvitationsPage'))
 const ContractorBidSubmitPage    = lazy(() => import('@/pages/contractor/BidSubmitPage'))
 const ContractorJobsPage         = lazy(() => import('@/pages/contractor/JobsPage'))
@@ -117,6 +118,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/contractor/dashboard" replace />} />
           <Route path="dashboard"                       element={<ContractorDashboard />} />
+          <Route path="projects"                        element={<ContractorProjectsPage />} />
           <Route path="invitations"                     element={<ContractorInvitationsPage />} />
           <Route path="bids/submit/:projectId"          element={<ContractorBidSubmitPage />} />
           <Route path="jobs"                            element={<ContractorJobsPage />} />
