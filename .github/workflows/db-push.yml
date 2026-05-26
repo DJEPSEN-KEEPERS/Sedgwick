@@ -1,0 +1,28 @@
+name: Database schema push
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "push" to confirm schema push to production'
+        required: true
+
+jobs:
+  db-push:
+    if: ${{ github.event.inputs.confirm == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Prisma CLI
+        run: npm install --prefix api
+
+      - name: Push schema to database
+        working-directory: api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx prisma db push --schema=../prisma/schema.prisma --accept-data-loss
