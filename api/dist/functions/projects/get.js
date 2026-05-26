@@ -41,6 +41,7 @@ async function getProjectHandler(req, context) {
                         bid: true,
                     },
                 },
+                responsibleUser: { select: { id: true, fullName: true, email: true } },
                 chatChannels: {
                     select: { id: true, channelType: true, name: true, createdAt: true },
                 },

@@ -145,6 +145,12 @@ export interface ContractorCertification {
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
+export interface ResponsibleUser {
+  id: string
+  fullName: string
+  email: string
+}
+
 export interface Project {
   id: string
   claimId: string
@@ -152,6 +158,8 @@ export interface Project {
   insurancePolicyNumber: string
   insuranceCompanyId: string
   insuranceCompany?: InsuranceCompany
+  responsibleUserId?: string | null
+  responsibleUser?: ResponsibleUser | null
   damageType: string
   damageDescription: string
   priorityLevel: PriorityLevel

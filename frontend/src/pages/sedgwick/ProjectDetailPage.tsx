@@ -30,7 +30,10 @@ export default function ProjectDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'overview')
 
-  const { data: project, loading } = useApi<Project>(`/projects/${projectId}`)
+  const { data: project, loading, refetch } = useApi<Project>(`/projects/${projectId}`)
+
+  // Allow child tabs to trigger a refetch after inline updates
+  const handleProjectUpdate = () => refetch()
 
   useEffect(() => {
     setSearchParams(activeTab !== 'overview' ? { tab: activeTab } : {}, { replace: true })
@@ -111,7 +114,7 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'overview'    && <OverviewTab project={project} />}
+      {activeTab === 'overview'    && <OverviewTab project={project} onProjectUpdate={handleProjectUpdate} />}
       {activeTab === 'entreprises' && <EntreprisesTab projectId={project.id} />}
       {activeTab === 'bidding'     && <BiddingTab projectId={project.id} />}
       {activeTab === 'progress'    && <ProgressTab project={project} />}

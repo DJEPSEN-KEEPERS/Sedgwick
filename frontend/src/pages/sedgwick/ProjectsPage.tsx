@@ -261,6 +261,7 @@ function ProjectsTable({
     { key: 'region', label: 'Region', sortable: true },
     { key: 'priorityLevel', label: 'Prioritet' },
     { key: 'currentMilestone', label: 'Status' },
+    { key: 'responsibleUserId', label: 'Ansvarlig' },
     { key: 'selectedContractorId', label: 'Håndværker' },
     { key: 'requestedDeadline', label: 'SLA' },
     { key: 'updatedAt', label: 'Opdateret', sortable: true },
@@ -300,6 +301,16 @@ function ProjectsTable({
                 <td className="px-4 py-2.5 text-xs text-gray-600">{p.region}</td>
                 <td className="px-4 py-2.5"><PriorityBadge level={p.priorityLevel} /></td>
                 <td className="px-4 py-2.5"><MilestoneBadge milestone={p.currentMilestone} /></td>
+                <td className="px-4 py-2.5 text-xs text-gray-600">
+                  {p.responsibleUser ? (
+                    <span className="flex items-center gap-1">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[10px] font-display font-semibold text-primary-700 shrink-0">
+                        {p.responsibleUser.fullName.charAt(0).toUpperCase()}
+                      </span>
+                      {p.responsibleUser.fullName}
+                    </span>
+                  ) : <span className="text-gray-400 italic">Ikke tildelt</span>}
+                </td>
                 <td className="px-4 py-2.5 text-xs text-gray-600">{p.selectedContractor?.companyName ?? '—'}</td>
                 <td className="px-4 py-2.5"><SlaCell deadline={p.requestedDeadline} /></td>
                 <td className="px-4 py-2.5 text-xs text-gray-400">{formatRelativeTime(p.updatedAt)}</td>
@@ -339,7 +350,19 @@ function ProjectCardFull({ project, onClick }: { project: Project; onClick: () =
           )}
         </div>
         <ProjectProgressBar currentMilestone={project.currentMilestone} compact />
-        <p className="text-xs text-gray-400 mt-2">{formatRelativeTime(project.updatedAt)}</p>
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-xs text-gray-400">{formatRelativeTime(project.updatedAt)}</p>
+          {project.responsibleUser ? (
+            <span className="flex items-center gap-1 text-xs text-gray-500">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-primary-100 text-[9px] font-display font-semibold text-primary-700">
+                {project.responsibleUser.fullName.charAt(0).toUpperCase()}
+              </span>
+              {project.responsibleUser.fullName.split(' ')[0]}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-300 italic">Ikke tildelt</span>
+          )}
+        </div>
       </CardContent>
     </Card>
   )

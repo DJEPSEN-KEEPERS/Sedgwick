@@ -43,6 +43,7 @@ async function listProjectsHandler(req: HttpRequest, context: InvocationContext)
       include: {
         insuranceCompany:   { select: { id: true, name: true } },
         selectedContractor: { select: { id: true, companyName: true } },
+        responsibleUser:    { select: { id: true, fullName: true, email: true } },
         entreprises:        { select: { id: true, type: true, currentMilestone: true, progressPercent: true } },
       },
       orderBy: { updatedAt: 'desc' },

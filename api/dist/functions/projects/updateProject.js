@@ -20,6 +20,10 @@ async function updateProjectHandler(req, context) {
             'slaCategory', 'contactName', 'contactPhone', 'contactEmail',
             'currentMilestone', 'status',
         ];
+        // responsibleUserId may be set to null (unassign) or a string (assign)
+        if (body.responsibleUserId !== undefined) {
+            updateData.responsibleUserId = body.responsibleUserId ?? null;
+        }
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
                 updateData[field] = body[field];
@@ -37,6 +41,9 @@ async function updateProjectHandler(req, context) {
         const updated = await prisma_1.prisma.project.update({
             where: { id: projectId },
             data: updateData,
+            include: {
+                responsibleUser: { select: { id: true, fullName: true, email: true } },
+            },
         });
         await (0, auditLog_1.writeAuditLog)({
             userId: jwtUser.sub,
