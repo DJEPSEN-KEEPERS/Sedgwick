@@ -25,4 +25,4 @@ jobs:
         working-directory: api
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npx prisma db push --schema=../prisma/schema.prisma --accept-data-loss
+        run: npx prisma db push --schema=../prisma/schema.prisma --accept-data-loss --skip-generate
