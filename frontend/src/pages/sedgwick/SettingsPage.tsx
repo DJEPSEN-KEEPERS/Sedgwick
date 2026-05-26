@@ -6,9 +6,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import type { User } from '@/types'
+import type { User, InsuranceCompany } from '@/types'
 
-const TABS = ['Brugere', 'Notifikationer', 'Kompetencer', 'Entreprisetyper']
+const TABS = ['Brugere', 'Forsikringsselskaber', 'Håndværkere', 'Notifikationer', 'Kompetencer', 'Entreprisetyper']
 const ENTREPRISE_TYPES = [
   { type: 'CARPENTER',   label: 'Tømrer' },
   { type: 'MASON',       label: 'Murer' },
@@ -26,7 +26,7 @@ export default function SettingsPage() {
     <div>
       <h1 className="text-2xl font-display font-bold text-gray-900 mb-6">Indstillinger</h1>
       <div className="border-b border-[#e5e7eb] mb-6">
-        <nav className="flex gap-0">
+        <nav className="flex gap-0 flex-wrap">
           {TABS.map((t, i) => (
             <button key={t} onClick={() => setTab(i)}
               className={cn('px-4 py-2.5 text-sm font-display font-medium border-b-2 transition-colors',
@@ -36,10 +36,23 @@ export default function SettingsPage() {
         </nav>
       </div>
       {tab === 0 && <UsersTab />}
-      {tab === 1 && <NotificationsTab />}
-      {tab === 2 && <SkillsTab />}
-      {tab === 3 && <EntrepriseTypesTab />}
+      {tab === 1 && <InsurersTab />}
+      {tab === 2 && <ContractorsTab />}
+      {tab === 3 && <NotificationsTab />}
+      {tab === 4 && <SkillsTab />}
+      {tab === 5 && <EntrepriseTypesTab />}
     </div>
+  )
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
+function StatusBadge({ status }: { status: string }) {
+  const active = status === 'ACTIVE' || status === 'active'
+  return (
+    <Badge variant={active ? 'success' : 'danger'}>
+      {active ? 'Aktiv' : status}
+    </Badge>
   )
 }
 
@@ -235,9 +248,7 @@ function UsersTab() {
                       </Badge>
                     </td>
                     <td className="px-4 py-2.5">
-                      <Badge variant={u.status === 'ACTIVE' ? 'success' : 'danger'}>
-                        {u.status === 'ACTIVE' ? 'Aktiv' : u.status}
-                      </Badge>
+                      <StatusBadge status={u.status} />
                     </td>
                     <td className="px-4 py-2.5 text-xs text-gray-500">
                       {u.createdAt ? new Date(u.createdAt).toLocaleDateString('da-DK') : '—'}
@@ -247,6 +258,425 @@ function UsersTab() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Insurers tab ─────────────────────────────────────────────────────────────
+
+function InsurersTab() {
+  const { data: insurers, loading, refetch } = useApi<InsuranceCompany[]>('/insurers')
+  const { mutate: createInsurer, loading: creating, error: createError } = useMutation<unknown, InsuranceCompany>('post')
+  const { mutate: updateInsurer, loading: saving }                       = useMutation<unknown, InsuranceCompany>('patch')
+
+  // Create form
+  const [showForm, setShowForm]       = useState(false)
+  const [newName, setNewName]         = useState('')
+  const [newRef, setNewRef]           = useState('')
+  const [formError, setFormError]     = useState('')
+  const [formSuccess, setFormSuccess] = useState('')
+
+  // Inline edit state
+  const [editId, setEditId]         = useState<string | null>(null)
+  const [editName, setEditName]     = useState('')
+  const [editRef, setEditRef]       = useState('')
+  const [editStatus, setEditStatus] = useState('')
+  const [editError, setEditError]   = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+
+  const resetCreate = () => { setNewName(''); setNewRef(''); setFormError(''); setFormSuccess('') }
+
+  const handleCreate = async () => {
+    setFormError('')
+    if (!newName.trim()) { setFormError('Navn er påkrævet'); return }
+    const result = await createInsurer('/insurers', {
+      name: newName.trim(),
+      externalReference: newRef.trim() || undefined,
+    })
+    if (result) {
+      setFormSuccess(`Forsikringsselskab oprettet: ${newName.trim()}`)
+      resetCreate()
+      setShowForm(false)
+      refetch()
+    } else {
+      setFormError(createError ?? 'Oprettelse fejlede')
+    }
+  }
+
+  const startEdit = (ins: InsuranceCompany) => {
+    setEditId(ins.id)
+    setEditName(ins.name)
+    setEditRef(ins.externalReference ?? '')
+    setEditStatus(ins.status)
+    setEditError('')
+  }
+
+  const handleSave = async (id: string) => {
+    setEditError('')
+    setEditSaving(true)
+    const result = await updateInsurer(`/insurers/${id}`, {
+      name: editName.trim(),
+      externalReference: editRef.trim() || undefined,
+      status: editStatus,
+    })
+    setEditSaving(false)
+    if (result) {
+      setEditId(null)
+      refetch()
+    } else {
+      setEditError('Gem fejlede — prøv igen')
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-display font-semibold text-gray-900">Forsikringsselskaber</h2>
+        <Button size="sm" onClick={() => { resetCreate(); setShowForm((v) => !v) }}>
+          {showForm ? 'Luk' : '+ Opret selskab'}
+        </Button>
+      </div>
+
+      {formSuccess && (
+        <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+          {formSuccess}
+        </div>
+      )}
+
+      {showForm && (
+        <Card className="mb-4">
+          <CardContent className="p-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Selskabsnavn *</Label>
+                <Input className="mt-1" placeholder="fx Tryg Forsikring" value={newName}
+                  onChange={(e) => setNewName(e.target.value)} />
+              </div>
+              <div>
+                <Label>Ekstern reference</Label>
+                <Input className="mt-1" placeholder="fx TRYG eller ekstern API-ID" value={newRef}
+                  onChange={(e) => setNewRef(e.target.value)} />
+              </div>
+            </div>
+            {formError && <p className="text-sm text-red-600">{formError}</p>}
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleCreate} disabled={creating}>
+                {creating ? 'Opretter...' : 'Opret selskab'}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => { setShowForm(false); resetCreate() }}>
+                Annuller
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {loading ? (
+        <div className="space-y-2 animate-pulse">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-12 bg-gray-200 rounded" />)}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-[#e5e7eb] bg-white shadow-card overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[#e5e7eb] bg-gray-50">
+                {['Selskabsnavn', 'Ekstern reference', 'Status', ''].map((h) => (
+                  <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {(insurers ?? []).length === 0 ? (
+                <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-400">Ingen forsikringsselskaber endnu</td></tr>
+              ) : (
+                (insurers ?? []).map((ins) =>
+                  editId === ins.id ? (
+                    <tr key={ins.id} className="border-b border-[#e5e7eb] bg-primary-50">
+                      <td className="px-3 py-2">
+                        <Input className="h-8 text-sm" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <Input className="h-8 text-sm" value={editRef} onChange={(e) => setEditRef(e.target.value)} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <select className="input-field h-8 text-sm" value={editStatus}
+                          onChange={(e) => setEditStatus(e.target.value)}>
+                          <option value="active">Aktiv</option>
+                          <option value="inactive">Inaktiv</option>
+                        </select>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex gap-1.5 items-center">
+                          <Button size="sm" onClick={() => handleSave(ins.id)} disabled={editSaving || saving}>
+                            {(editSaving || saving) ? 'Gemmer...' : 'Gem'}
+                          </Button>
+                          <Button size="sm" variant="secondary" onClick={() => setEditId(null)}>Annuller</Button>
+                          {editError && <span className="text-xs text-red-600 ml-1">{editError}</span>}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={ins.id} className="border-b border-[#e5e7eb] hover:bg-gray-50">
+                      <td className="px-4 py-2.5 font-display font-medium text-gray-900">{ins.name}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500 font-mono">{ins.externalReference ?? '—'}</td>
+                      <td className="px-4 py-2.5"><StatusBadge status={ins.status} /></td>
+                      <td className="px-4 py-2.5">
+                        <Button size="sm" variant="secondary" onClick={() => startEdit(ins)}>Rediger</Button>
+                      </td>
+                    </tr>
+                  )
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Contractors tab ──────────────────────────────────────────────────────────
+
+interface ContractorListItem {
+  id: string
+  companyName: string
+  cvrNumber: string
+  contactName: string
+  contactEmail: string
+  contactPhone: string
+  maxParallelProjects: number
+  status: string
+  createdAt: string
+}
+
+function ContractorsTab() {
+  const { data: contractors, loading, refetch } = useApi<ContractorListItem[]>('/contractors?pageSize=200')
+  const { mutate: createContractor, loading: creating, error: createError } =
+    useMutation<unknown, { data: ContractorListItem }>('post')
+  const { mutate: updateContractor, loading: saving } =
+    useMutation<unknown, { data: ContractorListItem }>('patch')
+
+  // Create form
+  const [showForm, setShowForm]         = useState(false)
+  const [newName, setNewName]           = useState('')
+  const [newCvr, setNewCvr]             = useState('')
+  const [newContact, setNewContact]     = useState('')
+  const [newEmail, setNewEmail]         = useState('')
+  const [newPhone, setNewPhone]         = useState('')
+  const [newMax, setNewMax]             = useState('5')
+  const [formError, setFormError]       = useState('')
+  const [formSuccess, setFormSuccess]   = useState('')
+
+  // Inline edit state
+  const [editId, setEditId]           = useState<string | null>(null)
+  const [editName, setEditName]       = useState('')
+  const [editContact, setEditContact] = useState('')
+  const [editEmail, setEditEmail]     = useState('')
+  const [editPhone, setEditPhone]     = useState('')
+  const [editMax, setEditMax]         = useState('5')
+  const [editStatus, setEditStatus]   = useState('')
+  const [editError, setEditError]     = useState('')
+  const [editSaving, setEditSaving]   = useState(false)
+
+  const resetCreate = () => {
+    setNewName(''); setNewCvr(''); setNewContact(''); setNewEmail('')
+    setNewPhone(''); setNewMax('5'); setFormError(''); setFormSuccess('')
+  }
+
+  const handleCreate = async () => {
+    setFormError('')
+    if (!newName.trim() || !newCvr.trim() || !newContact.trim() || !newEmail.trim()) {
+      setFormError('Firmanavn, CVR, kontaktnavn og e-mail er påkrævet')
+      return
+    }
+    const result = await createContractor('/contractors', {
+      companyName: newName.trim(),
+      cvrNumber: newCvr.trim(),
+      contactName: newContact.trim(),
+      contactEmail: newEmail.trim(),
+      contactPhone: newPhone.trim(),
+      maxParallelProjects: parseInt(newMax) || 5,
+    })
+    if (result) {
+      setFormSuccess(`Håndværker oprettet: ${newName.trim()}`)
+      resetCreate()
+      setShowForm(false)
+      refetch()
+    } else {
+      setFormError(createError ?? 'Oprettelse fejlede')
+    }
+  }
+
+  const startEdit = (c: ContractorListItem) => {
+    setEditId(c.id)
+    setEditName(c.companyName)
+    setEditContact(c.contactName)
+    setEditEmail(c.contactEmail)
+    setEditPhone(c.contactPhone)
+    setEditMax(String(c.maxParallelProjects))
+    setEditStatus(c.status)
+    setEditError('')
+  }
+
+  const handleSave = async (id: string) => {
+    setEditError('')
+    setEditSaving(true)
+    const result = await updateContractor(`/contractors/${id}`, {
+      companyName: editName.trim(),
+      contactName: editContact.trim(),
+      contactEmail: editEmail.trim(),
+      contactPhone: editPhone.trim(),
+      maxParallelProjects: parseInt(editMax) || 5,
+      status: editStatus,
+    })
+    setEditSaving(false)
+    if (result) {
+      setEditId(null)
+      refetch()
+    } else {
+      setEditError('Gem fejlede — prøv igen')
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-display font-semibold text-gray-900">Håndværkere</h2>
+        <Button size="sm" onClick={() => { resetCreate(); setShowForm((v) => !v) }}>
+          {showForm ? 'Luk' : '+ Opret håndværker'}
+        </Button>
+      </div>
+
+      {formSuccess && (
+        <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+          {formSuccess}
+        </div>
+      )}
+
+      {showForm && (
+        <Card className="mb-4">
+          <CardContent className="p-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Firmanavn *</Label>
+                <Input className="mt-1" placeholder="fx Hansen Tømrer & Byg A/S" value={newName}
+                  onChange={(e) => setNewName(e.target.value)} />
+              </div>
+              <div>
+                <Label>CVR-nummer *</Label>
+                <Input className="mt-1" placeholder="8 cifre" value={newCvr}
+                  onChange={(e) => setNewCvr(e.target.value)} />
+              </div>
+              <div>
+                <Label>Kontaktperson *</Label>
+                <Input className="mt-1" placeholder="Fuldt navn" value={newContact}
+                  onChange={(e) => setNewContact(e.target.value)} />
+              </div>
+              <div>
+                <Label>Kontakt e-mail *</Label>
+                <Input className="mt-1" type="email" placeholder="kontakt@firma.dk" value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label>Telefon</Label>
+                <Input className="mt-1" placeholder="+45 xx xx xx xx" value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)} />
+              </div>
+              <div>
+                <Label>Max. parallelle sager</Label>
+                <Input className="mt-1" type="number" min="1" max="50" value={newMax}
+                  onChange={(e) => setNewMax(e.target.value)} />
+              </div>
+            </div>
+            {formError && <p className="text-sm text-red-600">{formError}</p>}
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleCreate} disabled={creating}>
+                {creating ? 'Opretter...' : 'Opret håndværker'}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => { setShowForm(false); resetCreate() }}>
+                Annuller
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {loading ? (
+        <div className="space-y-2 animate-pulse">
+          {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-200 rounded" />)}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-[#e5e7eb] bg-white shadow-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#e5e7eb] bg-gray-50">
+                  {['Firma', 'CVR', 'Kontakt', 'E-mail', 'Max sager', 'Status', ''].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(contractors ?? []).length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Ingen håndværkere endnu</td></tr>
+                ) : (
+                  (contractors ?? []).map((c) =>
+                    editId === c.id ? (
+                      <tr key={c.id} className="border-b border-[#e5e7eb] bg-primary-50">
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm min-w-[140px]" value={editName}
+                            onChange={(e) => setEditName(e.target.value)} />
+                        </td>
+                        <td className="px-3 py-1.5 text-xs text-gray-400 font-mono whitespace-nowrap">{c.cvrNumber}</td>
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm min-w-[120px]" value={editContact}
+                            onChange={(e) => setEditContact(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm min-w-[140px]" value={editEmail}
+                            onChange={(e) => setEditEmail(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm w-16" type="number" min="1" max="50"
+                            value={editMax} onChange={(e) => setEditMax(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select className="input-field h-8 text-sm" value={editStatus}
+                            onChange={(e) => setEditStatus(e.target.value)}>
+                            <option value="active">Aktiv</option>
+                            <option value="inactive">Inaktiv</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <div className="flex gap-1.5 items-center whitespace-nowrap">
+                            <Button size="sm" onClick={() => handleSave(c.id)} disabled={editSaving || saving}>
+                              {(editSaving || saving) ? '...' : 'Gem'}
+                            </Button>
+                            <Button size="sm" variant="secondary" onClick={() => setEditId(null)}>✕</Button>
+                            {editError && <span className="text-xs text-red-600">{editError}</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={c.id} className="border-b border-[#e5e7eb] hover:bg-gray-50">
+                        <td className="px-4 py-2.5 font-display font-medium text-gray-900 whitespace-nowrap">{c.companyName}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500 font-mono">{c.cvrNumber}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{c.contactName}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{c.contactEmail}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600 text-center">{c.maxParallelProjects}</td>
+                        <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
+                        <td className="px-4 py-2.5">
+                          <Button size="sm" variant="secondary" onClick={() => startEdit(c)}>Rediger</Button>
+                        </td>
+                      </tr>
+                    )
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
@@ -300,8 +730,10 @@ function SkillsTab() {
         <h2 className="text-base font-display font-semibold text-gray-900">Kompetencetaksonomi</h2>
       </div>
       <div className="flex items-center gap-2 mb-4">
-        <Input placeholder="Kompetencenavn" className="max-w-xs" value={newSkill} onChange={(e) => setNewSkill(e.target.value)} />
-        <Input placeholder="Kategori" className="max-w-xs" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
+        <Input placeholder="Kompetencenavn" className="max-w-xs" value={newSkill}
+          onChange={(e) => setNewSkill(e.target.value)} />
+        <Input placeholder="Kategori" className="max-w-xs" value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)} />
         <Button size="sm">Tilføj</Button>
       </div>
       <div className="flex flex-wrap gap-2">

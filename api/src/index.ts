@@ -62,6 +62,7 @@ import './functions/insurer/dashboard'
 // Users, Insurers & Skills
 import './functions/users/listUsers'
 import './functions/insurers/list'
+import './functions/insurers/manage'
 import './functions/skills/listSkills'
 
 // Notifications

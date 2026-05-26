@@ -54,6 +54,7 @@ require("./functions/insurer/dashboard");
 // Users, Insurers & Skills
 require("./functions/users/listUsers");
 require("./functions/insurers/list");
+require("./functions/insurers/manage");
 require("./functions/skills/listSkills");
 // Notifications
 require("./functions/notifications/preferences");
