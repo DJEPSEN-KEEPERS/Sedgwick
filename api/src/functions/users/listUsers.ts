@@ -15,10 +15,13 @@ async function listUsersHandler(req: HttpRequest, context: InvocationContext): P
         id: true,
         fullName: true,
         email: true,
+        phone: true,
         role: true,
         status: true,
         createdAt: true,
         lastLoginAt: true,
+        insurerUser:    { select: { insuranceCompanyId: true, insuranceCompany: { select: { name: true } } } },
+        contractorUser: { select: { contractorId: true,      contractor:       { select: { companyName: true } } } },
       },
       orderBy: { fullName: 'asc' },
     })

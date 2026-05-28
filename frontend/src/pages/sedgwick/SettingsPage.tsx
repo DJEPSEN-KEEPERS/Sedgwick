@@ -63,6 +63,12 @@ type UserRole = 'SEDGWICK_ADMIN' | 'INSURER_USER' | 'CONTRACTOR_USER'
 interface InsurerOption { id: string; name: string }
 interface ContractorOption { id: string; companyName: string }
 
+interface UserWithLinks extends User {
+  phone?: string
+  insurerUser?:    { insuranceCompanyId: string; insuranceCompany: { name: string } } | null
+  contractorUser?: { contractorId: string;       contractor:       { companyName: string } } | null
+}
+
 const ROLE_LABELS: Record<UserRole, string> = {
   SEDGWICK_ADMIN:   'Sedgwick intern',
   INSURER_USER:     'Forsikringsselskab',
@@ -70,69 +76,111 @@ const ROLE_LABELS: Record<UserRole, string> = {
 }
 
 function UsersTab() {
-  const { data: users, loading, refetch } = useApi<User[]>('/users')
+  const { data: users, loading, refetch } = useApi<UserWithLinks[]>('/users')
   const { data: insurers }    = useApi<InsurerOption[]>('/insurers')
   const { data: contractors } = useApi<ContractorOption[]>('/contractors?pageSize=200')
-  const { mutate: createUser, loading: creating, error: mutationError } = useMutation('post')
+  const { mutate: createUser,  loading: creating,  error: mutationError } = useMutation('post')
+  const { mutate: updateUser,  loading: saving }                          = useMutation('patch')
+  const { mutate: deleteUser,  loading: deleting }                        = useMutation('delete')
+  const { mutate: deactivate,  loading: deactivating }                    = useMutation('patch')
 
-  const [showForm, setShowForm]           = useState(false)
-  const [fullName, setFullName]           = useState('')
-  const [email, setEmail]                 = useState('')
-  const [role, setRole]                   = useState<UserRole>('SEDGWICK_ADMIN')
-  const [password, setPassword]           = useState('')
-  const [phone, setPhone]                 = useState('')
-  const [insurerId, setInsurerId]         = useState('')
-  const [contractorId, setContractorId]   = useState('')
-  const [formError, setFormError]         = useState('')
-  const [formSuccess, setFormSuccess]     = useState('')
+  // Create form
+  const [showForm, setShowForm]         = useState(false)
+  const [fullName, setFullName]         = useState('')
+  const [email, setEmail]               = useState('')
+  const [role, setRole]                 = useState<UserRole>('SEDGWICK_ADMIN')
+  const [password, setPassword]         = useState('')
+  const [phone, setPhone]               = useState('')
+  const [insurerId, setInsurerId]       = useState('')
+  const [contractorId, setContractorId] = useState('')
+  const [formError, setFormError]       = useState('')
+  const [formSuccess, setFormSuccess]   = useState('')
 
-  const resetForm = () => {
+  // Edit state
+  const [editId, setEditId]               = useState<string | null>(null)
+  const [editName, setEditName]           = useState('')
+  const [editEmail, setEditEmail]         = useState('')
+  const [editPhone, setEditPhone]         = useState('')
+  const [editStatus, setEditStatus]       = useState('')
+  const [editPassword, setEditPassword]   = useState('')
+  const [editError, setEditError]         = useState('')
+
+  // Delete confirmation state per row
+  const [confirmDeleteId, setConfirmDeleteId]           = useState<string | null>(null)
+  const [deleteError, setDeleteError]                   = useState<Record<string, string>>({})
+  const [canDeactivateId, setCanDeactivateId]           = useState<string | null>(null)
+
+  const resetCreate = () => {
     setFullName(''); setEmail(''); setRole('SEDGWICK_ADMIN')
     setPassword(''); setPhone(''); setInsurerId(''); setContractorId('')
     setFormError(''); setFormSuccess('')
   }
 
-  const handleSubmit = async () => {
-    setFormError('')
-    setFormSuccess('')
+  const handleCreate = async () => {
+    setFormError(''); setFormSuccess('')
     if (!fullName.trim() || !email.trim() || !password.trim()) {
-      setFormError('Navn, e-mail og adgangskode er påkrævet')
-      return
+      setFormError('Navn, e-mail og adgangskode er påkrævet'); return
     }
-    if (role === 'INSURER_USER' && !insurerId) {
-      setFormError('Vælg et forsikringsselskab')
-      return
-    }
-    if (role === 'CONTRACTOR_USER' && !contractorId) {
-      setFormError('Vælg en håndværker')
-      return
-    }
+    if (role === 'INSURER_USER' && !insurerId)   { setFormError('Vælg et forsikringsselskab'); return }
+    if (role === 'CONTRACTOR_USER' && !contractorId) { setFormError('Vælg en håndværker'); return }
 
     const result = await createUser('/users', {
-      fullName: fullName.trim(),
-      email: email.trim(),
-      role,
-      password,
+      fullName: fullName.trim(), email: email.trim(), role, password,
       phone: phone.trim() || undefined,
-      insuranceCompanyId: role === 'INSURER_USER' ? insurerId : undefined,
-      contractorId: role === 'CONTRACTOR_USER' ? contractorId : undefined,
+      insuranceCompanyId: role === 'INSURER_USER'    ? insurerId    : undefined,
+      contractorId:       role === 'CONTRACTOR_USER' ? contractorId : undefined,
     })
-
     if (result) {
       setFormSuccess(`Bruger oprettet: ${email.trim()}`)
-      resetForm()
-      setShowForm(false)
-      refetch()
+      resetCreate(); setShowForm(false); refetch()
     } else {
       setFormError(mutationError ?? 'Oprettelse fejlede')
     }
+  }
+
+  const startEdit = (u: UserWithLinks) => {
+    setEditId(u.id); setEditName(u.fullName); setEditEmail(u.email)
+    setEditPhone(u.phone ?? ''); setEditStatus(u.status)
+    setEditPassword(''); setEditError('')
+    setConfirmDeleteId(null); setCanDeactivateId(null)
+  }
+
+  const handleSave = async (id: string) => {
+    setEditError('')
+    const result = await updateUser(`/users/${id}`, {
+      fullName: editName.trim(),
+      email:    editEmail.trim(),
+      phone:    editPhone.trim() || undefined,
+      status:   editStatus,
+      ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
+    })
+    if (result) { setEditId(null); refetch() }
+    else         setEditError(saving ? '' : 'Gem fejlede — prøv igen')
+  }
+
+  const handleDelete = async (id: string) => {
+    setDeleteError((p) => ({ ...p, [id]: '' }))
+    setCanDeactivateId(null)
+    const result = await deleteUser(`/users/${id}`)
+    if (result && (result as { deleted?: boolean }).deleted) {
+      setConfirmDeleteId(null); refetch()
+    } else {
+      // 409 = has linked data; offer deactivation
+      setCanDeactivateId(id)
+      setDeleteError((p) => ({ ...p, [id]: 'Brugeren har tilknyttede data og kan ikke slettes permanent.' }))
+    }
+  }
+
+  const handleDeactivate = async (id: string) => {
+    const result = await deactivate(`/users/${id}`, { status: 'INACTIVE' })
+    if (result) { setConfirmDeleteId(null); setCanDeactivateId(null); refetch() }
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-display font-semibold text-gray-900">Systembrugere</h2>
-        <Button size="sm" onClick={() => { resetForm(); setShowForm((v) => !v) }}>
+        <Button size="sm" onClick={() => { resetCreate(); setShowForm((v) => !v) }}>
           {showForm ? 'Luk' : '+ Opret bruger'}
         </Button>
       </div>
@@ -176,43 +224,33 @@ function UsersTab() {
                   ))}
                 </select>
               </div>
-
               {role === 'INSURER_USER' && (
                 <div>
                   <Label>Forsikringsselskab *</Label>
                   <select className="input-field mt-1 w-full" value={insurerId}
                     onChange={(e) => setInsurerId(e.target.value)}>
                     <option value="">— Vælg selskab —</option>
-                    {(insurers ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
+                    {(insurers ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                 </div>
               )}
-
               {role === 'CONTRACTOR_USER' && (
                 <div>
                   <Label>Håndværkerfirma *</Label>
                   <select className="input-field mt-1 w-full" value={contractorId}
                     onChange={(e) => setContractorId(e.target.value)}>
                     <option value="">— Vælg firma —</option>
-                    {(contractors ?? []).map((c) => (
-                      <option key={c.id} value={c.id}>{c.companyName}</option>
-                    ))}
+                    {(contractors ?? []).map((c) => <option key={c.id} value={c.id}>{c.companyName}</option>)}
                   </select>
                 </div>
               )}
             </div>
-
-            {formError && (
-              <p className="text-sm text-red-600">{formError}</p>
-            )}
-
+            {formError && <p className="text-sm text-red-600">{formError}</p>}
             <div className="flex gap-2">
-              <Button size="sm" onClick={handleSubmit} disabled={creating}>
+              <Button size="sm" onClick={handleCreate} disabled={creating}>
                 {creating ? 'Opretter...' : 'Opret bruger'}
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => { setShowForm(false); resetForm() }}>
+              <Button size="sm" variant="secondary" onClick={() => { setShowForm(false); resetCreate() }}>
                 Annuller
               </Button>
             </div>
@@ -226,38 +264,137 @@ function UsersTab() {
         </div>
       ) : (
         <div className="rounded-lg border border-[#e5e7eb] bg-white shadow-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                {['Navn', 'E-mail', 'Rolle', 'Status', 'Oprettet'].map((h) => (
-                  <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(users ?? []).length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-gray-400">Ingen brugere</td></tr>
-              ) : (
-                (users ?? []).map((u) => (
-                  <tr key={u.id} className="border-b border-[#e5e7eb] hover:bg-gray-50">
-                    <td className="px-4 py-2.5 font-display font-medium text-gray-900">{u.fullName}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-600">{u.email}</td>
-                    <td className="px-4 py-2.5">
-                      <Badge variant={u.role === 'SEDGWICK_ADMIN' ? 'default' : u.role === 'INSURER_USER' ? 'info' : 'success'}>
-                        {ROLE_LABELS[u.role as UserRole] ?? u.role}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <StatusBadge status={u.status} />
-                    </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500">
-                      {u.createdAt ? new Date(u.createdAt).toLocaleDateString('da-DK') : '—'}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#e5e7eb] bg-gray-50">
+                  {['Navn', 'E-mail', 'Rolle', 'Tilknytning', 'Status', 'Oprettet', ''].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(users ?? []).length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Ingen brugere</td></tr>
+                ) : (
+                  (users ?? []).map((u) =>
+                    editId === u.id ? (
+                      // ── Edit row ──────────────────────────────────────────
+                      <tr key={u.id} className="border-b border-[#e5e7eb] bg-primary-50">
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm min-w-[130px]" value={editName}
+                            onChange={(e) => setEditName(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm min-w-[150px]" type="email" value={editEmail}
+                            onChange={(e) => setEditEmail(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5 text-xs text-gray-400">
+                          <Badge variant={u.role === 'SEDGWICK_ADMIN' ? 'default' : u.role === 'INSURER_USER' ? 'info' : 'success'}>
+                            {ROLE_LABELS[u.role as UserRole] ?? u.role}
+                          </Badge>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm w-28" placeholder="+45..." value={editPhone}
+                            onChange={(e) => setEditPhone(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <select className="input-field h-8 text-sm" value={editStatus}
+                            onChange={(e) => setEditStatus(e.target.value)}>
+                            <option value="ACTIVE">Aktiv</option>
+                            <option value="INACTIVE">Inaktiv</option>
+                            <option value="SUSPENDED">Suspenderet</option>
+                          </select>
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm w-32" type="text" placeholder="Ny adgangskode"
+                            value={editPassword} onChange={(e) => setEditPassword(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <div className="flex gap-1.5 items-center whitespace-nowrap">
+                            <Button size="sm" onClick={() => handleSave(u.id)} disabled={saving}>
+                              {saving ? '...' : 'Gem'}
+                            </Button>
+                            <Button size="sm" variant="secondary" onClick={() => setEditId(null)}>✕</Button>
+                            {editError && <span className="text-xs text-red-600">{editError}</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    ) : confirmDeleteId === u.id ? (
+                      // ── Delete confirmation row ───────────────────────────
+                      <tr key={u.id} className="border-b border-[#e5e7eb] bg-red-50">
+                        <td colSpan={6} className="px-4 py-2.5">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {canDeactivateId === u.id ? (
+                              <>
+                                <span className="text-xs text-red-700">{deleteError[u.id]}</span>
+                                <Button size="sm" variant="secondary"
+                                  onClick={() => handleDeactivate(u.id)} disabled={deactivating}>
+                                  {deactivating ? '...' : 'Deaktiver i stedet'}
+                                </Button>
+                                <Button size="sm" variant="secondary" onClick={() => { setConfirmDeleteId(null); setCanDeactivateId(null) }}>
+                                  Annuller
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-xs font-medium text-red-700">
+                                  Slet <strong>{u.fullName}</strong> permanent?
+                                </span>
+                                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                                  onClick={() => handleDelete(u.id)} disabled={deleting}>
+                                  {deleting ? 'Sletter...' : 'Ja, slet'}
+                                </Button>
+                                <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>
+                                  Annuller
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                        <td />
+                      </tr>
+                    ) : (
+                      // ── Normal row ────────────────────────────────────────
+                      <tr key={u.id} className="border-b border-[#e5e7eb] hover:bg-gray-50">
+                        <td className="px-4 py-2.5 font-display font-medium text-gray-900 whitespace-nowrap">{u.fullName}</td>
+                        <td className="px-4 py-2.5 text-xs text-gray-600">{u.email}</td>
+                        <td className="px-4 py-2.5">
+                          <Badge variant={u.role === 'SEDGWICK_ADMIN' ? 'default' : u.role === 'INSURER_USER' ? 'info' : 'success'}>
+                            {ROLE_LABELS[u.role as UserRole] ?? u.role}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500">
+                          {u.insurerUser?.insuranceCompany.name
+                            ?? u.contractorUser?.contractor.companyName
+                            ?? '—'}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <StatusBadge status={u.status} />
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">
+                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString('da-DK') : '—'}
+                        </td>
+                        <td className="px-4 py-2.5">
+                          <div className="flex gap-1.5 justify-end">
+                            <Button size="sm" variant="secondary"
+                              onClick={() => { startEdit(u); setConfirmDeleteId(null) }}>
+                              Rediger
+                            </Button>
+                            <Button size="sm" variant="secondary"
+                              className="text-red-600 hover:text-red-700 hover:border-red-300"
+                              onClick={() => { setConfirmDeleteId(u.id); setEditId(null); setCanDeactivateId(null); setDeleteError({}) }}>
+                              Slet
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  )
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -53,6 +53,7 @@ require("./functions/sedgwick/dashboard");
 require("./functions/insurer/dashboard");
 // Users, Insurers & Skills
 require("./functions/users/listUsers");
+require("./functions/users/manageUser");
 require("./functions/insurers/list");
 require("./functions/insurers/manage");
 require("./functions/skills/listSkills");
