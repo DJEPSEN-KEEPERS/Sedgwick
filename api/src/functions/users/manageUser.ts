@@ -11,6 +11,8 @@ interface UpdateUserBody {
   phone?: string
   status?: string
   password?: string
+  insuranceCompanyId?: string
+  contractorId?: string
 }
 
 async function updateUserHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -46,7 +48,7 @@ async function updateUserHandler(req: HttpRequest, context: InvocationContext): 
     if (body.status)           updateData.status   = body.status
     if (body.password?.trim()) updateData.passwordHash = await bcrypt.hash(body.password.trim(), 12)
 
-    const updated = await prisma.user.update({
+    await prisma.user.update({
       where: { id: userId },
       data: updateData,
       select: {
@@ -57,7 +59,34 @@ async function updateUserHandler(req: HttpRequest, context: InvocationContext): 
       },
     })
 
-    return { status: 200, jsonBody: updated }
+    // Update association if provided
+    if (existing.role === 'INSURER_USER' && body.insuranceCompanyId) {
+      await prisma.insuranceCompanyUser.upsert({
+        where:  { userId },
+        update: { insuranceCompanyId: body.insuranceCompanyId },
+        create: { userId, insuranceCompanyId: body.insuranceCompanyId },
+      })
+    }
+    if (existing.role === 'CONTRACTOR_USER' && body.contractorId) {
+      await prisma.contractorUser.upsert({
+        where:  { userId },
+        update: { contractorId: body.contractorId },
+        create: { userId, contractorId: body.contractorId },
+      })
+    }
+
+    // Re-fetch to return fresh association data
+    const fresh = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true, fullName: true, email: true, phone: true, role: true,
+        status: true, createdAt: true, lastLoginAt: true,
+        insurerUser:    { select: { insuranceCompanyId: true, insuranceCompany: { select: { name: true } } } },
+        contractorUser: { select: { contractorId: true,      contractor:       { select: { companyName: true } } } },
+      },
+    })
+
+    return { status: 200, jsonBody: fresh }
   } catch (err) {
     return errorResponse(err, context)
   }

@@ -97,13 +97,15 @@ function UsersTab() {
   const [formSuccess, setFormSuccess]   = useState('')
 
   // Edit state
-  const [editId, setEditId]               = useState<string | null>(null)
-  const [editName, setEditName]           = useState('')
-  const [editEmail, setEditEmail]         = useState('')
-  const [editPhone, setEditPhone]         = useState('')
-  const [editStatus, setEditStatus]       = useState('')
-  const [editPassword, setEditPassword]   = useState('')
-  const [editError, setEditError]         = useState('')
+  const [editId, setEditId]                   = useState<string | null>(null)
+  const [editName, setEditName]               = useState('')
+  const [editEmail, setEditEmail]             = useState('')
+  const [editPhone, setEditPhone]             = useState('')
+  const [editStatus, setEditStatus]           = useState('')
+  const [editPassword, setEditPassword]       = useState('')
+  const [editInsurerId, setEditInsurerId]     = useState('')
+  const [editContractorId, setEditContractorId] = useState('')
+  const [editError, setEditError]             = useState('')
 
   // Delete confirmation state per row
   const [confirmDeleteId, setConfirmDeleteId]           = useState<string | null>(null)
@@ -142,10 +144,12 @@ function UsersTab() {
     setEditId(u.id); setEditName(u.fullName); setEditEmail(u.email)
     setEditPhone(u.phone ?? ''); setEditStatus(u.status)
     setEditPassword(''); setEditError('')
+    setEditInsurerId(u.insurerUser?.insuranceCompanyId ?? '')
+    setEditContractorId(u.contractorUser?.contractorId ?? '')
     setConfirmDeleteId(null); setCanDeactivateId(null)
   }
 
-  const handleSave = async (id: string) => {
+  const handleSave = async (id: string, role: string) => {
     setEditError('')
     const result = await updateUser(`/users/${id}`, {
       fullName: editName.trim(),
@@ -153,6 +157,8 @@ function UsersTab() {
       phone:    editPhone.trim() || undefined,
       status:   editStatus,
       ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
+      ...(role === 'INSURER_USER'    && editInsurerId    ? { insuranceCompanyId: editInsurerId }    : {}),
+      ...(role === 'CONTRACTOR_USER' && editContractorId ? { contractorId: editContractorId }       : {}),
     })
     if (result) { setEditId(null); refetch() }
     else         setEditError(saving ? '' : 'Gem fejlede — prøv igen')
@@ -294,9 +300,22 @@ function UsersTab() {
                             {ROLE_LABELS[u.role as UserRole] ?? u.role}
                           </Badge>
                         </td>
-                        <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm w-28" placeholder="+45..." value={editPhone}
-                            onChange={(e) => setEditPhone(e.target.value)} />
+                        <td className="px-2 py-1.5 min-w-[160px]">
+                          {u.role === 'INSURER_USER' ? (
+                            <select className="input-field h-8 text-sm w-full" value={editInsurerId}
+                              onChange={(e) => setEditInsurerId(e.target.value)}>
+                              <option value="">— Vælg selskab —</option>
+                              {(insurers ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                          ) : u.role === 'CONTRACTOR_USER' ? (
+                            <select className="input-field h-8 text-sm w-full" value={editContractorId}
+                              onChange={(e) => setEditContractorId(e.target.value)}>
+                              <option value="">— Vælg firma —</option>
+                              {(contractors ?? []).map((c) => <option key={c.id} value={c.id}>{c.companyName}</option>)}
+                            </select>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">—</span>
+                          )}
                         </td>
                         <td className="px-2 py-1.5">
                           <select className="input-field h-8 text-sm" value={editStatus}
@@ -307,12 +326,16 @@ function UsersTab() {
                           </select>
                         </td>
                         <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm w-32" type="text" placeholder="Ny adgangskode"
-                            value={editPassword} onChange={(e) => setEditPassword(e.target.value)} />
+                          <div className="flex flex-col gap-1">
+                            <Input className="h-7 text-xs w-28" placeholder="+45..." value={editPhone}
+                              onChange={(e) => setEditPhone(e.target.value)} />
+                            <Input className="h-7 text-xs w-28" type="text" placeholder="Ny adgangskode"
+                              value={editPassword} onChange={(e) => setEditPassword(e.target.value)} />
+                          </div>
                         </td>
                         <td className="px-2 py-1.5">
                           <div className="flex gap-1.5 items-center whitespace-nowrap">
-                            <Button size="sm" onClick={() => handleSave(u.id)} disabled={saving}>
+                            <Button size="sm" onClick={() => handleSave(u.id, u.role)} disabled={saving}>
                               {saving ? '...' : 'Gem'}
                             </Button>
                             <Button size="sm" variant="secondary" onClick={() => setEditId(null)}>✕</Button>

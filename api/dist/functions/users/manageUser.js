@@ -39,7 +39,7 @@ async function updateUserHandler(req, context) {
             updateData.status = body.status;
         if (body.password?.trim())
             updateData.passwordHash = await bcryptjs_1.default.hash(body.password.trim(), 12);
-        const updated = await prisma_1.prisma.user.update({
+        await prisma_1.prisma.user.update({
             where: { id: userId },
             data: updateData,
             select: {
@@ -49,7 +49,32 @@ async function updateUserHandler(req, context) {
                 contractorUser: { select: { contractorId: true, contractor: { select: { companyName: true } } } },
             },
         });
-        return { status: 200, jsonBody: updated };
+        // Update association if provided
+        if (existing.role === 'INSURER_USER' && body.insuranceCompanyId) {
+            await prisma_1.prisma.insuranceCompanyUser.upsert({
+                where: { userId },
+                update: { insuranceCompanyId: body.insuranceCompanyId },
+                create: { userId, insuranceCompanyId: body.insuranceCompanyId },
+            });
+        }
+        if (existing.role === 'CONTRACTOR_USER' && body.contractorId) {
+            await prisma_1.prisma.contractorUser.upsert({
+                where: { userId },
+                update: { contractorId: body.contractorId },
+                create: { userId, contractorId: body.contractorId },
+            });
+        }
+        // Re-fetch to return fresh association data
+        const fresh = await prisma_1.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true, fullName: true, email: true, phone: true, role: true,
+                status: true, createdAt: true, lastLoginAt: true,
+                insurerUser: { select: { insuranceCompanyId: true, insuranceCompany: { select: { name: true } } } },
+                contractorUser: { select: { contractorId: true, contractor: { select: { companyName: true } } } },
+            },
+        });
+        return { status: 200, jsonBody: fresh };
     }
     catch (err) {
         return (0, authMiddleware_1.errorResponse)(err, context);
