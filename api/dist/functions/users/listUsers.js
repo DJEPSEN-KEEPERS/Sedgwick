@@ -7,6 +7,7 @@ const functions_1 = require("@azure/functions");
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
+const email_1 = require("../../lib/email");
 // ── GET /users ────────────────────────────────────────────────────────────────
 async function listUsersHandler(req, context) {
     try {
@@ -66,16 +67,35 @@ async function createUserHandler(req, context) {
                 status: 'ACTIVE',
             },
         });
+        let companyName;
         if (body.role === 'INSURER_USER' && body.insuranceCompanyId) {
             await prisma_1.prisma.insuranceCompanyUser.create({
                 data: { userId: user.id, insuranceCompanyId: body.insuranceCompanyId },
             });
+            const insurer = await prisma_1.prisma.insuranceCompany.findUnique({
+                where: { id: body.insuranceCompanyId },
+                select: { name: true },
+            });
+            companyName = insurer?.name;
         }
         else if (body.role === 'CONTRACTOR_USER' && body.contractorId) {
             await prisma_1.prisma.contractorUser.create({
                 data: { userId: user.id, contractorId: body.contractorId },
             });
+            const contractor = await prisma_1.prisma.contractor.findUnique({
+                where: { id: body.contractorId },
+                select: { companyName: true },
+            });
+            companyName = contractor?.companyName;
         }
+        // Send welcome e-mail (fire-and-forget — never blocks the response)
+        (0, email_1.sendWelcomeEmail)({
+            toEmail: user.email,
+            fullName: user.fullName,
+            role: user.role,
+            password: body.password,
+            companyName,
+        });
         return {
             status: 201,
             jsonBody: {

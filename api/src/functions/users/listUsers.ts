@@ -2,6 +2,7 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
 import bcrypt from 'bcryptjs'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
+import { sendWelcomeEmail } from '../../lib/email'
 
 // ── GET /users ────────────────────────────────────────────────────────────────
 
@@ -83,15 +84,36 @@ async function createUserHandler(req: HttpRequest, context: InvocationContext): 
       },
     })
 
+    let companyName: string | undefined
+
     if (body.role === 'INSURER_USER' && body.insuranceCompanyId) {
       await prisma.insuranceCompanyUser.create({
         data: { userId: user.id, insuranceCompanyId: body.insuranceCompanyId },
       })
+      const insurer = await prisma.insuranceCompany.findUnique({
+        where: { id: body.insuranceCompanyId },
+        select: { name: true },
+      })
+      companyName = insurer?.name
     } else if (body.role === 'CONTRACTOR_USER' && body.contractorId) {
       await prisma.contractorUser.create({
         data: { userId: user.id, contractorId: body.contractorId },
       })
+      const contractor = await prisma.contractor.findUnique({
+        where: { id: body.contractorId },
+        select: { companyName: true },
+      })
+      companyName = contractor?.companyName
     }
+
+    // Send welcome e-mail (fire-and-forget — never blocks the response)
+    sendWelcomeEmail({
+      toEmail:     user.email,
+      fullName:    user.fullName,
+      role:        user.role,
+      password:    body.password,
+      companyName,
+    })
 
     return {
       status: 201,
