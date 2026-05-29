@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
@@ -22,13 +23,23 @@ const navItems = [
 ]
 
 export default function SedgwickLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
   return (
     <div className="flex h-screen overflow-hidden bg-[#f4f6f9]">
-      <Sidebar navItems={navItems} portalName="Sedgwick" />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar portalName="Sedgwick Intern" />
+      <Sidebar
+        navItems={navItems}
+        portalName="Sedgwick"
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <TopBar
+          portalName="Sedgwick Intern"
+          onMenuClick={() => setSidebarOpen((v) => !v)}
+        />
         <main className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="mx-auto max-w-7xl px-6 py-6">
+          <div className="mx-auto max-w-7xl px-4 py-4 lg:px-6 lg:py-6">
             <Outlet />
           </div>
         </main>
