@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail, QrCode } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,6 +26,7 @@ type Step = 'credentials' | 'twofactor' | 'setup-totp'
 
 export function LoginForm({ portalLabel, className }: LoginFormProps) {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { login, verifyTwoFactor, error, isLoading, clearError } = useAuthStore()
 
   const [email, setEmail] = useState('')
@@ -122,7 +124,7 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
       {step === 'credentials' && (
         <form onSubmit={handleCredentials} className="space-y-4">
           <div>
-            <Label htmlFor="email">E-mail</Label>
+            <Label htmlFor="email">{t('auth.email')}</Label>
             <div className="relative mt-1">
               <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input id="email" type="email" autoComplete="email" required value={email}
@@ -131,9 +133,9 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Adgangskode</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <button type="button" className="text-xs text-primary-600 hover:underline" tabIndex={-1}>
-                Glemt adgangskode?
+                {t('auth.forgotPassword')}
               </button>
             </div>
             <div className="relative mt-1">
@@ -149,7 +151,7 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
           </div>
           {error && <p className="text-sm text-danger bg-red-50 rounded-md px-3 py-2 border border-red-100">{error}</p>}
           <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
-            {isLoading ? 'Logger ind...' : `Log ind — ${portalLabel}`}
+            {isLoading ? t('common.loading') : `${t('auth.login')} — ${portalLabel}`}
           </Button>
         </form>
       )}
@@ -161,7 +163,7 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-100 mx-auto mb-3">
               <Lock className="h-6 w-6 text-primary-600" />
             </div>
-            <h3 className="font-display font-semibold text-gray-900">To-faktor bekræftelse</h3>
+            <h3 className="font-display font-semibold text-gray-900">{t('auth.twoFactor')}</h3>
             <p className="text-sm text-gray-500 mt-1">Indtast koden fra din authenticator-app</p>
           </div>
           <div>
@@ -174,7 +176,7 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
           {error && <p className="text-sm text-danger bg-red-50 rounded-md px-3 py-2 border border-red-100">{error}</p>}
           {setupError && <p className="text-sm text-danger bg-red-50 rounded-md px-3 py-2 border border-red-100">{setupError}</p>}
           <Button type="submit" className="w-full" size="lg" disabled={isLoading || code.length < 6}>
-            {isLoading ? 'Bekræfter...' : 'Bekræft'}
+            {isLoading ? t('common.loading') : t('auth.verify')}
           </Button>
           <div className="border-t border-gray-100 pt-3 text-center">
             <p className="text-xs text-gray-400 mb-2">Første gang? Opsæt din authenticator-app</p>
@@ -185,7 +187,7 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
           </div>
           <button type="button" onClick={() => { setStep('credentials'); setCode(''); clearError() }}
             className="w-full text-sm text-gray-500 hover:text-gray-700 text-center">
-            ← Tilbage
+            ← {t('common.back')}
           </button>
         </form>
       )}

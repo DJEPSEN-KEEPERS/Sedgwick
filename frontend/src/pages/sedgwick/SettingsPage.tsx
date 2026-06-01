@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -8,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import type { User, InsuranceCompany } from '@/types'
 
-const TABS = ['Brugere', 'Forsikringsselskaber', 'Håndværkere', 'Notifikationer', 'Kompetencer', 'Entreprisetyper']
+
 const ENTREPRISE_TYPES = [
   { type: 'CARPENTER',   label: 'Tømrer' },
   { type: 'MASON',       label: 'Murer' },
@@ -21,17 +22,28 @@ const ENTREPRISE_TYPES = [
 ]
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState(0)
+
+  const TABS = [
+    t('settings.tabs.users'),
+    t('settings.tabs.insurers'),
+    t('settings.tabs.contractors'),
+    'Notifikationer',
+    'Kompetencer',
+    'Entreprisetyper',
+  ]
+
   return (
     <div>
-      <h1 className="text-2xl font-display font-bold text-gray-900 mb-6">Indstillinger</h1>
+      <h1 className="text-2xl font-display font-bold text-gray-900 mb-6">{t('settings.title')}</h1>
       <div className="border-b border-[#e5e7eb] mb-6">
         <nav className="flex gap-0 flex-wrap">
-          {TABS.map((t, i) => (
-            <button key={t} onClick={() => setTab(i)}
+          {TABS.map((label, i) => (
+            <button key={i} onClick={() => setTab(i)}
               className={cn('px-4 py-2.5 text-sm font-display font-medium border-b-2 transition-colors',
                 tab === i ? 'border-primary-600 text-primary-700' : 'border-transparent text-gray-500 hover:text-gray-700')}
-            >{t}</button>
+            >{label}</button>
           ))}
         </nav>
       </div>
@@ -48,10 +60,11 @@ export default function SettingsPage() {
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation()
   const active = status === 'ACTIVE' || status === 'active'
   return (
     <Badge variant={active ? 'success' : 'danger'}>
-      {active ? 'Aktiv' : status}
+      {active ? t('common.active') : t('common.inactive')}
     </Badge>
   )
 }
@@ -76,6 +89,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 }
 
 function UsersTab() {
+  const { t } = useTranslation()
   const { data: users, loading, refetch } = useApi<UserWithLinks[]>('/users')
   const { data: insurers }    = useApi<InsurerOption[]>('/insurers')
   const { data: contractors } = useApi<ContractorOption[]>('/contractors?pageSize=200')
@@ -185,9 +199,9 @@ function UsersTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-display font-semibold text-gray-900">Systembrugere</h2>
+        <h2 className="text-base font-display font-semibold text-gray-900">{t('settings.users')}</h2>
         <Button size="sm" onClick={() => { resetCreate(); setShowForm((v) => !v) }}>
-          {showForm ? 'Luk' : '+ Opret bruger'}
+          {showForm ? t('common.close') : `+ ${t('settings.newUser')}`}
         </Button>
       </div>
 
@@ -202,27 +216,27 @@ function UsersTab() {
           <CardContent className="p-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label>Fuldt navn *</Label>
-                <Input className="mt-1" placeholder="Fuldt navn" value={fullName}
+                <Label>{t('common.name')} *</Label>
+                <Input className="mt-1" placeholder={t('common.name')} value={fullName}
                   onChange={(e) => setFullName(e.target.value)} />
               </div>
               <div>
-                <Label>E-mail *</Label>
+                <Label>{t('common.email')} *</Label>
                 <Input className="mt-1" type="email" placeholder="navn@firma.dk" value={email}
                   onChange={(e) => setEmail(e.target.value)} />
               </div>
               <div>
-                <Label>Adgangskode *</Label>
-                <Input className="mt-1" type="text" placeholder="Midlertidig adgangskode" value={password}
+                <Label>{t('common.password')} *</Label>
+                <Input className="mt-1" type="text" placeholder={t('common.password')} value={password}
                   onChange={(e) => setPassword(e.target.value)} />
               </div>
               <div>
-                <Label>Telefon</Label>
+                <Label>{t('common.phone')}</Label>
                 <Input className="mt-1" placeholder="+45 xx xx xx xx" value={phone}
                   onChange={(e) => setPhone(e.target.value)} />
               </div>
               <div>
-                <Label>Rolle *</Label>
+                <Label>{t('common.role')} *</Label>
                 <select className="input-field mt-1 w-full" value={role}
                   onChange={(e) => { setRole(e.target.value as UserRole); setInsurerId(''); setContractorId('') }}>
                   {Object.entries(ROLE_LABELS).map(([v, l]) => (
@@ -254,10 +268,10 @@ function UsersTab() {
             {formError && <p className="text-sm text-red-600">{formError}</p>}
             <div className="flex gap-2">
               <Button size="sm" onClick={handleCreate} disabled={creating}>
-                {creating ? 'Opretter...' : 'Opret bruger'}
+                {creating ? t('common.loading') : t('settings.newUser')}
               </Button>
               <Button size="sm" variant="secondary" onClick={() => { setShowForm(false); resetCreate() }}>
-                Annuller
+                {t('common.cancel')}
               </Button>
             </div>
           </CardContent>
@@ -274,14 +288,14 @@ function UsersTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                  {['Navn', 'E-mail', 'Rolle', 'Tilknytning', 'Status', 'Oprettet', ''].map((h) => (
+                  {[t('settings.table.name'), t('settings.table.email'), t('settings.table.role'), t('settings.table.association'), t('settings.table.status'), t('common.date'), ''].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {(users ?? []).length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Ingen brugere</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">{t('common.noResults')}</td></tr>
                 ) : (
                   (users ?? []).map((u) =>
                     editId === u.id ? (
@@ -320,8 +334,8 @@ function UsersTab() {
                         <td className="px-2 py-1.5">
                           <select className="input-field h-8 text-sm" value={editStatus}
                             onChange={(e) => setEditStatus(e.target.value)}>
-                            <option value="ACTIVE">Aktiv</option>
-                            <option value="INACTIVE">Inaktiv</option>
+                            <option value="ACTIVE">{t('common.active')}</option>
+                            <option value="INACTIVE">{t('common.inactive')}</option>
                             <option value="SUSPENDED">Suspenderet</option>
                           </select>
                         </td>
@@ -329,14 +343,14 @@ function UsersTab() {
                           <div className="flex flex-col gap-1">
                             <Input className="h-7 text-xs w-28" placeholder="+45..." value={editPhone}
                               onChange={(e) => setEditPhone(e.target.value)} />
-                            <Input className="h-7 text-xs w-28" type="text" placeholder="Ny adgangskode"
+                            <Input className="h-7 text-xs w-28" type="text" placeholder={t('settings.table.password')}
                               value={editPassword} onChange={(e) => setEditPassword(e.target.value)} />
                           </div>
                         </td>
                         <td className="px-2 py-1.5">
                           <div className="flex gap-1.5 items-center whitespace-nowrap">
                             <Button size="sm" onClick={() => handleSave(u.id, u.role)} disabled={saving}>
-                              {saving ? '...' : 'Gem'}
+                              {saving ? '...' : t('common.save')}
                             </Button>
                             <Button size="sm" variant="secondary" onClick={() => setEditId(null)}>✕</Button>
                             {editError && <span className="text-xs text-red-600">{editError}</span>}
@@ -353,23 +367,23 @@ function UsersTab() {
                                 <span className="text-xs text-red-700">{deleteError[u.id]}</span>
                                 <Button size="sm" variant="secondary"
                                   onClick={() => handleDeactivate(u.id)} disabled={deactivating}>
-                                  {deactivating ? '...' : 'Deaktiver i stedet'}
+                                  {deactivating ? '...' : t('settings.deactivateInstead')}
                                 </Button>
                                 <Button size="sm" variant="secondary" onClick={() => { setConfirmDeleteId(null); setCanDeactivateId(null) }}>
-                                  Annuller
+                                  {t('common.cancel')}
                                 </Button>
                               </>
                             ) : (
                               <>
                                 <span className="text-xs font-medium text-red-700">
-                                  Slet <strong>{u.fullName}</strong> permanent?
+                                  {t('common.delete')} <strong>{u.fullName}</strong>?
                                 </span>
                                 <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white border-red-600"
                                   onClick={() => handleDelete(u.id)} disabled={deleting}>
-                                  {deleting ? 'Sletter...' : 'Ja, slet'}
+                                  {deleting ? '...' : t('settings.confirmDelete')}
                                 </Button>
                                 <Button size="sm" variant="secondary" onClick={() => setConfirmDeleteId(null)}>
-                                  Annuller
+                                  {t('common.cancel')}
                                 </Button>
                               </>
                             )}
@@ -402,12 +416,12 @@ function UsersTab() {
                           <div className="flex gap-1.5 justify-end">
                             <Button size="sm" variant="secondary"
                               onClick={() => { startEdit(u); setConfirmDeleteId(null) }}>
-                              Rediger
+                              {t('common.edit')}
                             </Button>
                             <Button size="sm" variant="secondary"
                               className="text-red-600 hover:text-red-700 hover:border-red-300"
                               onClick={() => { setConfirmDeleteId(u.id); setEditId(null); setCanDeactivateId(null); setDeleteError({}) }}>
-                              Slet
+                              {t('common.delete')}
                             </Button>
                           </div>
                         </td>

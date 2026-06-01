@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { LogOut, X } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { useAuthStore, useCurrentUser } from '@/stores/authStore'
 import { getInitials } from '@/lib/utils'
@@ -21,6 +22,7 @@ interface SidebarProps {
 
 export default function Sidebar({ navItems, portalName, isOpen = true, onClose }: SidebarProps) {
   const { logout } = useAuthStore()
+  const { t } = useTranslation()
   const user = useCurrentUser()
   const location = useLocation()
 
@@ -70,7 +72,7 @@ export default function Sidebar({ navItems, portalName, isOpen = true, onClose }
             <button
               onClick={onClose}
               className="lg:hidden flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              aria-label="Luk menu"
+              aria-label={t('common.closeMenu')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -106,7 +108,7 @@ export default function Sidebar({ navItems, portalName, isOpen = true, onClose }
             <button
               onClick={() => logout()}
               className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-              title="Log ud"
+              title={t('common.logOut')}
             >
               <LogOut className="h-4 w-4" />
             </button>

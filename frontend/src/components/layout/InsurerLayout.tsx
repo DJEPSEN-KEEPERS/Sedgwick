@@ -1,29 +1,31 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
 import { LayoutDashboard, FolderOpen, Bell } from 'lucide-react'
 
-const navItems = [
-  { to: '/insurer/dashboard',      label: 'Dashboard',      icon: LayoutDashboard },
-  { to: '/insurer/projects',       label: 'Sager',          icon: FolderOpen },
-  { to: '/insurer/notifications',  label: 'Notifikationer', icon: Bell },
-]
-
 export default function InsurerLayout() {
+  const { t } = useTranslation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  const navItems = [
+    { to: '/insurer/dashboard',     label: t('nav.dashboard'),     icon: LayoutDashboard },
+    { to: '/insurer/projects',      label: t('nav.projects'),      icon: FolderOpen },
+    { to: '/insurer/notifications', label: t('nav.notifications'), icon: Bell },
+  ]
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f4f6f9]">
       <Sidebar
         navItems={navItems}
-        portalName="Forsikringsportal"
+        portalName={t('portal.insurer')}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         <TopBar
-          portalName="Forsikringsportal"
+          portalName={t('portal.insurer')}
           onMenuClick={() => setSidebarOpen((v) => !v)}
         />
         <main className="flex-1 overflow-y-auto scrollbar-thin">

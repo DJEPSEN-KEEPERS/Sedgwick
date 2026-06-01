@@ -1,7 +1,9 @@
 import { Menu } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useCurrentUser } from '@/stores/authStore'
 import { getInitials } from '@/lib/utils'
 import { NotificationBell } from '@/components/ui/NotificationBell'
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 
 interface TopBarProps {
   portalName: string
@@ -9,6 +11,7 @@ interface TopBarProps {
 }
 
 export default function TopBar({ portalName, onMenuClick }: TopBarProps) {
+  const { t } = useTranslation()
   const user = useCurrentUser()
 
   return (
@@ -19,7 +22,7 @@ export default function TopBar({ portalName, onMenuClick }: TopBarProps) {
           <button
             onClick={onMenuClick}
             className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-            aria-label="Åbn menu"
+            aria-label={t('common.openMenu')}
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -27,8 +30,9 @@ export default function TopBar({ portalName, onMenuClick }: TopBarProps) {
         <span className="hidden text-sm text-gray-500 font-body lg:block">{portalName}</span>
       </div>
 
-      {/* Right: notifications + avatar */}
+      {/* Right: language switcher + notifications + avatar */}
       <div className="flex items-center gap-2">
+        <LanguageSwitcher />
         <NotificationBell />
         <div
           className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-display font-semibold text-white select-none"
