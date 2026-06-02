@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
-import { LayoutDashboard, FolderOpen, Bell } from 'lucide-react'
+import { LayoutDashboard, FolderOpen, Bell, User } from 'lucide-react'
 
 export default function InsurerLayout() {
   const { t } = useTranslation()
@@ -13,6 +13,7 @@ export default function InsurerLayout() {
     { to: '/insurer/dashboard',     label: t('nav.dashboard'),     icon: LayoutDashboard },
     { to: '/insurer/projects',      label: t('nav.projects'),      icon: FolderOpen },
     { to: '/insurer/notifications', label: t('nav.notifications'), icon: Bell },
+    { to: '/insurer/account',       label: 'Min konto',            icon: User },
   ]
 
   return (

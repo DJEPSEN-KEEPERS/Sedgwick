@@ -34,11 +34,16 @@ async function resetPasswordHandler(req: HttpRequest, context: InvocationContext
 
     const passwordHash = await bcrypt.hash(password, 12)
 
-    // Update password + mark token used in a transaction
+    // Update password, clear TOTP secret (forces fresh setup on next login),
+    // and mark token used — all in one transaction
     await prisma.$transaction([
       prisma.user.update({
         where: { id: record.userId },
-        data: { passwordHash },
+        data: {
+          passwordHash,
+          twoFactorSecret: null,   // cleared → fresh TOTP setup on next login
+          twoFactorEnabled: true,  // keep enforcement on
+        },
       }),
       prisma.passwordResetToken.update({
         where: { id: record.id },

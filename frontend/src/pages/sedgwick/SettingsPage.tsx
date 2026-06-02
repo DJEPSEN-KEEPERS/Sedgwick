@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
+import { TwoFactorSection } from '@/components/auth/TwoFactorSection'
 import { cn } from '@/lib/utils'
 import type { User, InsuranceCompany } from '@/types'
 
@@ -32,6 +33,7 @@ export default function SettingsPage() {
     'Notifikationer',
     'Kompetencer',
     'Entreprisetyper',
+    'Sikkerhed',
   ]
 
   return (
@@ -53,6 +55,7 @@ export default function SettingsPage() {
       {tab === 3 && <NotificationsTab />}
       {tab === 4 && <SkillsTab />}
       {tab === 5 && <EntrepriseTypesTab />}
+      {tab === 6 && <SecurityTab />}
     </div>
   )
 }
@@ -417,6 +420,18 @@ function UsersTab() {
                             <Button size="sm" variant="secondary"
                               onClick={() => { startEdit(u); setConfirmDeleteId(null) }}>
                               {t('common.edit')}
+                            </Button>
+                            <Button size="sm" variant="secondary"
+                              title="Nulstil 2FA — brugeren sætter ny authenticator-app op ved næste login"
+                              onClick={async () => {
+                                if (confirm(`Nulstil 2FA for ${u.fullName}?`)) {
+                                  await fetch(`/api/auth/2fa/reset/${u.id}`, {
+                                    method: 'POST',
+                                    headers: { 'X-Auth-Token': localStorage.getItem('accessToken') ?? '' },
+                                  })
+                                }
+                              }}>
+                              2FA ↺
                             </Button>
                             <Button size="sm" variant="secondary"
                               className="text-red-600 hover:text-red-700 hover:border-red-300"
@@ -952,6 +967,21 @@ function EntrepriseTypesTab() {
         </table>
       </div>
       <Button size="sm" className="mt-4">Gem labels</Button>
+    </div>
+  )
+}
+
+// ─── Security tab ─────────────────────────────────────────────────────────────
+
+function SecurityTab() {
+  return (
+    <div className="max-w-lg space-y-4">
+      <h2 className="text-base font-display font-semibold text-gray-900">Sikkerhed — Min konto</h2>
+      <p className="text-sm text-gray-500">
+        Administrer to-faktor godkendelse for din egen konto.
+        Individuelle brugeres 2FA nulstilles via Brugere-fanen.
+      </p>
+      <TwoFactorSection />
     </div>
   )
 }

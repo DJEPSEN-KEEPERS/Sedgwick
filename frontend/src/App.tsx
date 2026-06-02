@@ -29,6 +29,7 @@ const SedgwickSettingsPage    = lazy(() => import('@/pages/sedgwick/SettingsPage
 // ─── Insurer pages ─────────────────────────────────────────────────────────────
 const InsurerDashboard      = lazy(() => import('@/pages/insurer/DashboardPage'))
 const InsurerProjectsPage   = lazy(() => import('@/pages/insurer/ProjectsPage'))
+const InsurerAccountPage    = lazy(() => import('@/pages/insurer/AccountPage'))
 const InsurerProjectDetail  = lazy(() => import('@/pages/insurer/ProjectDetailPage'))
 
 // ─── Contractor pages ──────────────────────────────────────────────────────────
@@ -105,6 +106,7 @@ export default function App() {
           <Route path="dashboard"           element={<InsurerDashboard />} />
           <Route path="projects"            element={<InsurerProjectsPage />} />
           <Route path="projects/:projectId" element={<InsurerProjectDetail />} />
+          <Route path="account"             element={<InsurerAccountPage />} />
         </Route>
 
         {/* Contractor portal */}

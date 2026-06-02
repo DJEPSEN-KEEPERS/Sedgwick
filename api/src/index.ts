@@ -11,6 +11,7 @@ import './functions/auth/setupTotp'
 import './functions/auth/debugToken'
 import './functions/auth/forgotPassword'
 import './functions/auth/resetPassword'
+import './functions/auth/manage2fa'
 
 // Projects
 import './functions/projects/list'

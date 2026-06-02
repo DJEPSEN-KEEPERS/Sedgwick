@@ -70,9 +70,10 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
         setTempToken(res.tempToken)
         setStep('twofactor')
       } else {
-        // Direct login — check if TOTP needs to be configured
+        // Direct login succeeded — check if TOTP setup is still needed
+        // (twoFactorEnabled=true but no secret yet → force setup before dashboard)
         const user = useAuthStore.getState().user
-        if (user && !user.twoFactorEnabled) {
+        if (user?.twoFactorEnabled) {
           setStep('setup-totp')
           handleSetupTotp()
         } else {
