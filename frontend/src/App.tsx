@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SedgwickLoginPage from '@/pages/auth/SedgwickLoginPage'
 import InsurerLoginPage from '@/pages/auth/InsurerLoginPage'
 import ContractorLoginPage from '@/pages/auth/ContractorLoginPage'
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 
 import RoleGuard from '@/components/auth/RoleGuard'
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="/login/sedgwick"   element={<SedgwickLoginPage />} />
         <Route path="/login/insurer"    element={<InsurerLoginPage />} />
         <Route path="/login/contractor" element={<ContractorLoginPage />} />
+        <Route path="/reset-password"   element={<ResetPasswordPage />} />
         <Route path="/unauthorized"     element={<UnauthorizedPage />} />
 
         {/* Sedgwick portal */}

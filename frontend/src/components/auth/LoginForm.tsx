@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Lock, Mail, QrCode } from 'lucide-react'
+import { Eye, EyeOff, Lock, Mail, QrCode, ArrowLeft, CheckCircle } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuthStore } from '@/stores/authStore'
+import { api } from '@/lib/api'
 import type { UserRole } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +23,7 @@ interface LoginFormProps {
   className?: string
 }
 
-type Step = 'credentials' | 'twofactor' | 'setup-totp'
+type Step = 'credentials' | 'twofactor' | 'setup-totp' | 'forgot-password'
 
 export function LoginForm({ portalLabel, className }: LoginFormProps) {
   const navigate = useNavigate()
@@ -39,6 +40,26 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
   const [manualKey, setManualKey] = useState('')
   const [setupLoading, setSetupLoading] = useState(false)
   const [setupError, setSetupError] = useState('')
+
+  // Forgot password state
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotError, setForgotError] = useState('')
+
+  const handleForgotPassword = async (e: FormEvent) => {
+    e.preventDefault()
+    setForgotLoading(true)
+    setForgotError('')
+    try {
+      await api.post('/auth/forgot-password', { email: forgotEmail.trim() })
+      setForgotSent(true)
+    } catch (err) {
+      setForgotError(err instanceof Error ? err.message : 'Noget gik galt — prøv igen')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
 
   const handleCredentials = async (e: FormEvent) => {
     e.preventDefault()
@@ -134,7 +155,12 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
           <div>
             <div className="flex items-center justify-between">
               <Label htmlFor="password">{t('auth.password')}</Label>
-              <button type="button" className="text-xs text-primary-600 hover:underline" tabIndex={-1}>
+              <button
+                type="button"
+                className="text-xs text-primary-600 hover:underline"
+                tabIndex={-1}
+                onClick={() => { setForgotEmail(email); setForgotSent(false); setForgotError(''); setStep('forgot-password') }}
+              >
                 {t('auth.forgotPassword')}
               </button>
             </div>
@@ -190,6 +216,72 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
             ← {t('common.back')}
           </button>
         </form>
+      )}
+
+      {/* ── Step: Forgot password ── */}
+      {step === 'forgot-password' && (
+        <div className="space-y-4">
+          {forgotSent ? (
+            <div className="text-center space-y-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mx-auto">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="font-display font-semibold text-gray-900">E-mail afsendt</h3>
+              <p className="text-sm text-gray-500">
+                Hvis e-mailen er registreret, modtager du om lidt et link til at nulstille din adgangskode.
+                Linket er gyldigt i 1 time.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setStep('credentials'); setForgotSent(false) }}
+                className="text-sm text-primary-600 hover:underline"
+              >
+                ← Tilbage til login
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div className="text-center mb-2">
+                <h3 className="font-display font-semibold text-gray-900">Glemt adgangskode?</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Indtast din e-mail — vi sender dig et link til at vælge en ny adgangskode.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="forgot-email">{t('auth.email')}</Label>
+                <div className="relative mt-1">
+                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    id="forgot-email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="pl-9"
+                    placeholder="navn@virksomhed.dk"
+                    autoFocus
+                  />
+                </div>
+              </div>
+              {forgotError && (
+                <p className="text-sm text-danger bg-red-50 rounded-md px-3 py-2 border border-red-100">
+                  {forgotError}
+                </p>
+              )}
+              <Button type="submit" className="w-full" size="lg" disabled={forgotLoading}>
+                {forgotLoading ? 'Sender...' : 'Send nulstillingslink'}
+              </Button>
+              <button
+                type="button"
+                onClick={() => setStep('credentials')}
+                className="w-full text-sm text-gray-500 hover:text-gray-700 text-center"
+              >
+                ← {t('common.back')}
+              </button>
+            </form>
+          )}
+        </div>
       )}
 
       {/* ── Step 3: TOTP setup (QR scan) ── */}

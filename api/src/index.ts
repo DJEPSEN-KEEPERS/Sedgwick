@@ -9,6 +9,8 @@ import './functions/auth/me'
 import './functions/auth/logout'
 import './functions/auth/setupTotp'
 import './functions/auth/debugToken'
+import './functions/auth/forgotPassword'
+import './functions/auth/resetPassword'
 
 // Projects
 import './functions/projects/list'

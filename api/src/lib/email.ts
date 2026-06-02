@@ -23,6 +23,26 @@ const ROLE_LABEL: Record<string, string> = {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+export interface PasswordResetEmailParams {
+  toEmail:  string
+  fullName: string
+  resetUrl: string   // full URL with token, e.g. https://app.../reset-password?token=xxx
+}
+
+/**
+ * Send a password-reset e-mail.
+ * Fire-and-forget — never throws.
+ */
+export function sendPasswordResetEmail(params: PasswordResetEmailParams): void {
+  if (!CONNECTION_STRING || !SENDER) {
+    console.warn('[email] ACS not configured — password reset e-mail skipped')
+    return
+  }
+  _sendReset(params).catch((err) =>
+    console.error('[email] Failed to send password reset e-mail:', err),
+  )
+}
+
 export interface WelcomeEmailParams {
   toEmail:   string
   fullName:  string
@@ -175,7 +195,118 @@ function buildHtml(p: WelcomeEmailParams): string {
 </html>`
 }
 
+// ── Password reset ────────────────────────────────────────────────────────────
+
+async function _sendReset(params: PasswordResetEmailParams): Promise<void> {
+  const client  = new EmailClient(CONNECTION_STRING)
+  const subject = 'Nulstil din adgangskode — Sedgwick Claims Management'
+
+  const message = {
+    senderAddress: SENDER,
+    recipients:    { to: [{ address: params.toEmail, displayName: params.fullName }] },
+    content: {
+      subject,
+      html:      buildResetHtml(params),
+      plainText: buildResetPlainText(params),
+    },
+  }
+
+  const poller = await client.beginSend(message)
+  await poller.pollUntilDone()
+}
+
+function buildResetHtml(p: PasswordResetEmailParams): string {
+  return /* html */ `<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0"
+               style="background:#ffffff;border-radius:8px;overflow:hidden;
+                      box-shadow:0 1px 4px rgba(0,0,0,.08);">
+          <!-- Header -->
+          <tr>
+            <td style="background:#1d3557;padding:28px 36px;">
+              <p style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-.3px;">
+                Sedgwick Claims Management</p>
+              <p style="margin:4px 0 0;color:#a8c4e0;font-size:13px;">Nulstilling af adgangskode</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 36px;">
+              <p style="margin:0 0 16px;font-size:16px;color:#111827;">
+                Hej <strong>${p.fullName}</strong>,
+              </p>
+              <p style="margin:0 0 24px;font-size:14px;color:#374151;line-height:1.6;">
+                Vi har modtaget en anmodning om at nulstille adgangskoden til din konto.<br/>
+                Klik på knappen herunder for at vælge en ny adgangskode.
+              </p>
+              <!-- CTA -->
+              <table cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="background:#1d3557;border-radius:6px;">
+                    <a href="${p.resetUrl}"
+                       style="display:inline-block;padding:14px 32px;color:#ffffff;
+                              font-size:15px;font-weight:600;text-decoration:none;">
+                      Nulstil adgangskode →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 8px;font-size:13px;color:#6b7280;line-height:1.6;">
+                Linket er gyldigt i <strong>1 time</strong>.<br/>
+                Hvis du ikke har anmodet om nulstilling, kan du se bort fra denne e-mail —
+                din adgangskode forbliver uændret.
+              </p>
+              <!-- Fallback URL -->
+              <p style="margin:16px 0 0;font-size:11px;color:#9ca3af;">
+                Virker knappen ikke? Kopier dette link:<br/>
+                <span style="word-break:break-all;">${p.resetUrl}</span>
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:16px 36px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#9ca3af;">
+                Denne e-mail er automatisk genereret. Besvar venligst ikke denne besked.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`
+}
+
 // ── Plain-text fallback ───────────────────────────────────────────────────────
+
+function buildResetPlainText(p: PasswordResetEmailParams): string {
+  return [
+    'Sedgwick Claims Management — Nulstil adgangskode',
+    '='.repeat(48),
+    '',
+    `Hej ${p.fullName},`,
+    '',
+    'Vi har modtaget en anmodning om at nulstille adgangskoden til din konto.',
+    '',
+    'Klik på linket herunder for at vælge en ny adgangskode (gyldigt i 1 time):',
+    '',
+    p.resetUrl,
+    '',
+    'Hvis du ikke har anmodet om dette, kan du se bort fra denne e-mail.',
+    '',
+    'Denne e-mail er automatisk genereret. Besvar venligst ikke denne besked.',
+  ].join('\n')
+}
 
 function buildPlainText(p: WelcomeEmailParams): string {
   const roleLabel = ROLE_LABEL[p.role] ?? p.role
