@@ -13,7 +13,9 @@ import './functions/auth/debugToken'
 // Projects
 import './functions/projects/list'
 import './functions/projects/get'
+import './functions/projects/createProject'
 import './functions/projects/updateProject'
+import './functions/projects/deleteProject'
 import './functions/projects/getRecommendations'
 import './functions/projects/auditLog'
 

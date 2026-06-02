@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, SlidersHorizontal, LayoutGrid, List, X } from 'lucide-react'
-import { useApi } from '@/hooks/useApi'
+import { Search, SlidersHorizontal, LayoutGrid, List, X, Plus } from 'lucide-react'
+import { useApi, useMutation } from '@/hooks/useApi'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
@@ -11,6 +12,198 @@ import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
 import { formatDate, formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Project, ProjectStatus, PriorityLevel, ProjectMilestone } from '@/types'
+
+// ─── Create project modal ─────────────────────────────────────────────────────
+
+interface InsuranceCompany { id: string; name: string }
+
+const DAMAGE_TYPES = ['Vandskade', 'Brandskade', 'Stormskade', 'Indbrudsskade', 'Rørskade', 'Frostskade', 'Naturskade', 'Anden skade']
+const BUILDING_TYPES = ['Enfamiliehus', 'Rækkehus', 'Etageejendom', 'Erhvervsejendom', 'Sommerhus', 'Andet']
+const REGIONS = ['Hovedstaden', 'Sjælland', 'Syddanmark', 'Midtjylland', 'Nordjylland', 'Bornholm']
+
+function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+  const { data: insurers } = useApi<InsuranceCompany[]>('/insurers')
+  const { mutate: createProject, loading, error } = useMutation('post')
+
+  const [form, setForm] = useState({
+    insuranceCompanyId: '', claimId: '',
+    insurerCaseId: '', insurancePolicyNumber: '',
+    damageType: 'Vandskade', damageDescription: '',
+    buildingType: 'Enfamiliehus',
+    address: '', postalCode: '', city: '', region: 'Hovedstaden',
+    contactName: '', contactPhone: '', contactEmail: '',
+    priorityLevel: 'NORMAL', requestedDeadline: '',
+    maxApprovedPrice: '',
+  })
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }))
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const payload: Record<string, unknown> = {
+      insuranceCompanyId: form.insuranceCompanyId,
+      damageType: form.damageType, damageDescription: form.damageDescription,
+      buildingType: form.buildingType,
+      address: form.address, postalCode: form.postalCode, city: form.city, region: form.region,
+      contactName: form.contactName, contactPhone: form.contactPhone, contactEmail: form.contactEmail,
+      priorityLevel: form.priorityLevel,
+    }
+    if (form.claimId.trim())              payload.claimId = form.claimId.trim()
+    if (form.insurerCaseId.trim())        payload.insurerCaseId = form.insurerCaseId.trim()
+    if (form.insurancePolicyNumber.trim()) payload.insurancePolicyNumber = form.insurancePolicyNumber.trim()
+    if (form.requestedDeadline)           payload.requestedDeadline = form.requestedDeadline
+    if (form.maxApprovedPrice)            payload.maxApprovedPrice = parseFloat(form.maxApprovedPrice)
+
+    const result = await createProject('/projects', payload)
+    if (result) { onCreated(); onClose() }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-elevated w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b border-[#e5e7eb] px-6 py-4 flex items-center justify-between rounded-t-xl">
+          <h2 className="text-lg font-display font-bold text-gray-900">Opret ny sag</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* Forsikring */}
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-display font-semibold text-gray-500 uppercase tracking-wide">Forsikring</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Forsikringsselskab *</Label>
+                <select className="input-field mt-1 w-full" value={form.insuranceCompanyId}
+                  onChange={set('insuranceCompanyId')} required>
+                  <option value="">— Vælg selskab —</option>
+                  {(insurers ?? []).map((i) => <option key={i.id} value={i.id}>{i.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label>Sag-ID <span className="text-gray-400 font-normal">(auto hvis tomt)</span></Label>
+                <Input className="mt-1" placeholder="SED-2026-XXXXXX" value={form.claimId} onChange={set('claimId')} />
+              </div>
+              <div>
+                <Label>Forsikringsselskabets sagsnr.</Label>
+                <Input className="mt-1" placeholder="Eksternt sagsnummer" value={form.insurerCaseId} onChange={set('insurerCaseId')} />
+              </div>
+              <div>
+                <Label>Policenummer</Label>
+                <Input className="mt-1" placeholder="Policenummer" value={form.insurancePolicyNumber} onChange={set('insurancePolicyNumber')} />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Skade */}
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-display font-semibold text-gray-500 uppercase tracking-wide">Skade</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>Skadetype *</Label>
+                <select className="input-field mt-1 w-full" value={form.damageType} onChange={set('damageType')} required>
+                  {DAMAGE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div>
+                <Label>Bygningstype *</Label>
+                <select className="input-field mt-1 w-full" value={form.buildingType} onChange={set('buildingType')} required>
+                  {BUILDING_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="sm:col-span-2">
+                <Label>Beskrivelse *</Label>
+                <textarea className="input-field mt-1 w-full min-h-[72px] resize-y"
+                  placeholder="Beskriv skaden..." value={form.damageDescription}
+                  onChange={set('damageDescription')} required />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Lokation */}
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-display font-semibold text-gray-500 uppercase tracking-wide">Adresse</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-3">
+                <Label>Adresse *</Label>
+                <Input className="mt-1" placeholder="Vejnavn og husnummer" value={form.address} onChange={set('address')} required />
+              </div>
+              <div>
+                <Label>Postnr. *</Label>
+                <Input className="mt-1" placeholder="2000" value={form.postalCode} onChange={set('postalCode')} required />
+              </div>
+              <div>
+                <Label>By *</Label>
+                <Input className="mt-1" placeholder="By" value={form.city} onChange={set('city')} required />
+              </div>
+              <div>
+                <Label>Region *</Label>
+                <select className="input-field mt-1 w-full" value={form.region} onChange={set('region')} required>
+                  {REGIONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Kontakt */}
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-display font-semibold text-gray-500 uppercase tracking-wide">Kontaktperson</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <Label>Navn *</Label>
+                <Input className="mt-1" placeholder="Fuldt navn" value={form.contactName} onChange={set('contactName')} required />
+              </div>
+              <div>
+                <Label>Telefon *</Label>
+                <Input className="mt-1" type="tel" placeholder="+45 12 34 56 78" value={form.contactPhone} onChange={set('contactPhone')} required />
+              </div>
+              <div>
+                <Label>E-mail *</Label>
+                <Input className="mt-1" type="email" placeholder="kontakt@mail.dk" value={form.contactEmail} onChange={set('contactEmail')} required />
+              </div>
+            </div>
+          </fieldset>
+
+          {/* Prioritet + deadline */}
+          <fieldset className="space-y-3">
+            <legend className="text-xs font-display font-semibold text-gray-500 uppercase tracking-wide">Prioritet & tidsplan</legend>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <Label>Prioritet</Label>
+                <select className="input-field mt-1 w-full" value={form.priorityLevel} onChange={set('priorityLevel')}>
+                  <option value="LOW">Lav</option>
+                  <option value="NORMAL">Normal</option>
+                  <option value="HIGH">Høj</option>
+                  <option value="URGENT">Akut</option>
+                </select>
+              </div>
+              <div>
+                <Label>Frist (SLA-deadline)</Label>
+                <Input className="mt-1" type="date" value={form.requestedDeadline} onChange={set('requestedDeadline')} />
+              </div>
+              <div>
+                <Label>Maks. godkendt beløb (kr.)</Label>
+                <Input className="mt-1" type="number" placeholder="0" value={form.maxApprovedPrice} onChange={set('maxApprovedPrice')} />
+              </div>
+            </div>
+          </fieldset>
+
+          {error && <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2 border border-red-100">{error}</p>}
+
+          <div className="flex gap-2 justify-end pt-2">
+            <Button type="button" variant="secondary" onClick={onClose}>Annuller</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Opretter...' : 'Opret sag'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 const MILESTONES: { value: ProjectMilestone; label: string }[] = [
   { value: 'CASE_RECEIVED', label: 'Sag modtaget' },
@@ -46,6 +239,7 @@ export default function ProjectsPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [sortField, setSortField] = useState<keyof Project>('updatedAt')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [showCreate, setShowCreate] = useState(false)
 
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -56,7 +250,7 @@ export default function ProjectsPage() {
     sla: (searchParams.get('sla') as Filters['sla']) ?? 'all',
   })
 
-  const { data: projects, loading } = useApi<Project[]>('/projects?pageSize=200')
+  const { data: projects, loading, refetch } = useApi<Project[]>('/projects?pageSize=200')
 
   const filtered = useMemo(() => {
     if (!projects) return []
@@ -112,10 +306,20 @@ export default function ProjectsPage() {
 
   return (
     <div>
+      {showCreate && (
+        <CreateProjectModal
+          onClose={() => setShowCreate(false)}
+          onCreated={() => { refetch(); setShowCreate(false) }}
+        />
+      )}
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-display font-bold text-gray-900">Sager</h1>
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">{filtered.length} sager</span>
+          <Button size="sm" onClick={() => setShowCreate(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Opret sag
+          </Button>
         </div>
       </div>
 
@@ -228,7 +432,7 @@ export default function ProjectsPage() {
       ) : filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
           <p className="font-display font-medium text-gray-500">Ingen sager matcher dine filtre</p>
-          <p className="text-sm text-gray-400 mt-1">Sager oprettes via forsikringsselskabernes API</p>
+          <p className="text-sm text-gray-400 mt-1">Klik "Opret sag" for at tilføje en sag manuelt</p>
         </div>
       ) : view === 'table' ? (
         <ProjectsTable projects={filtered} onRowClick={(id) => navigate(`/sedgwick/projects/${id}`)} sortField={sortField} setSort={setSort} SortIcon={SortIcon} />
