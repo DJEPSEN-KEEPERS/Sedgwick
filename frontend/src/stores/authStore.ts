@@ -48,11 +48,24 @@ export const useAuthStore = create<AuthState>()(
             user?: AuthUser
             message?: string
           }>('/auth/login', { email, password })
-          if (!res.requiresTwoFactor && res.accessToken && res.refreshToken && res.user) {
+
+          // Only call setTokens (isAuthenticated=true) when 2FA is NOT required
+          // AND the user either has 2FA disabled or already has a secret configured.
+          // When twoFactorEnabled=true but no secret yet, the caller (LoginForm) must
+          // first guide the user through TOTP setup before authenticating.
+          const needsTotpSetup = !res.requiresTwoFactor && res.user?.twoFactorEnabled
+          if (!res.requiresTwoFactor && !needsTotpSetup && res.accessToken && res.refreshToken && res.user) {
             get().setTokens(res.accessToken, res.refreshToken, res.user)
           }
           set({ isLoading: false })
-          return { requiresTwoFactor: res.requiresTwoFactor, tempToken: res.tempToken }
+          return {
+            requiresTwoFactor: res.requiresTwoFactor,
+            tempToken: res.tempToken,
+            // Return raw tokens so LoginForm can call setTokens after TOTP setup
+            accessToken: res.accessToken,
+            refreshToken: res.refreshToken,
+            user: res.user,
+          }
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Login fejlede'
           set({ isLoading: false, error: message })

@@ -28,7 +28,7 @@ type Step = 'credentials' | 'twofactor' | 'setup-totp' | 'forgot-password'
 export function LoginForm({ portalLabel, className }: LoginFormProps) {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { login, verifyTwoFactor, error, isLoading, clearError } = useAuthStore()
+  const { login, verifyTwoFactor, setTokens, error, isLoading, clearError } = useAuthStore()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -40,6 +40,11 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
   const [manualKey, setManualKey] = useState('')
   const [setupLoading, setSetupLoading] = useState(false)
   const [setupError, setSetupError] = useState('')
+
+  // Tokens held temporarily during TOTP setup (before isAuthenticated=true)
+  const [pendingAt, setPendingAt]   = useState('')
+  const [pendingRt, setPendingRt]   = useState('')
+  const [pendingUser, setPendingUser] = useState<AuthUser | null>(null)
 
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState('')
@@ -69,16 +74,19 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
       if (res.requiresTwoFactor && res.tempToken) {
         setTempToken(res.tempToken)
         setStep('twofactor')
+      } else if (res.user?.twoFactorEnabled && res.accessToken) {
+        // 2FA is enabled but no secret yet — must set up TOTP before authenticating.
+        // Store tokens in component state WITHOUT setting isAuthenticated=true,
+        // so the login page doesn't redirect away before the QR screen is shown.
+        setPendingAt(res.accessToken)
+        setPendingRt(res.refreshToken ?? '')
+        setPendingUser(res.user)
+        setStep('setup-totp')
+        handleSetupTotp(res.accessToken)
       } else {
-        // Direct login succeeded — check if TOTP setup is still needed
-        // (twoFactorEnabled=true but no secret yet → force setup before dashboard)
-        const user = useAuthStore.getState().user
-        if (user?.twoFactorEnabled) {
-          setStep('setup-totp')
-          handleSetupTotp()
-        } else {
-          navigate(user?.role ? ROLE_REDIRECT[user.role as UserRole] : '/')
-        }
+        // 2FA not needed — navigate directly
+        const user = res.user ?? useAuthStore.getState().user
+        navigate(user?.role ? ROLE_REDIRECT[user.role as UserRole] : '/')
       }
     } catch {
       // error already in store
@@ -97,17 +105,20 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
     }
   }
 
-  const handleSetupTotp = async () => {
+  // explicitToken: passed directly from handleCredentials (before isAuthenticated=true)
+  //               so we don't rely on the store having the token yet.
+  const handleSetupTotp = async (explicitToken?: string) => {
     setSetupLoading(true)
     setSetupError('')
+    setQrCode('')
+    setManualKey('')
     try {
-      // Use access token if logged in, otherwise tempToken for first-time setup
-      const accessToken = useAuthStore.getState().accessToken
+      // Prefer explicit token (from direct login flow), then store token, then tempToken
+      const accessToken = explicitToken ?? useAuthStore.getState().accessToken
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       const body: Record<string, string> = {}
       if (accessToken) {
-        // Use X-Auth-Token — consistent with the rest of the API and
-        // avoids Azure SWA potentially stripping the Authorization header
+        // X-Auth-Token — consistent with rest of API; avoids Azure SWA stripping Authorization
         headers['X-Auth-Token'] = accessToken
       } else {
         body['tempToken'] = tempToken
@@ -121,7 +132,6 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
       if (!res.ok) throw new Error(data.error ?? 'Opsætning fejlede')
       setQrCode(data.qrCode)
       setManualKey(data.manualKey)
-      setStep('setup-totp')
     } catch (err) {
       setSetupError(err instanceof Error ? err.message : 'Opsætning fejlede')
     } finally {
@@ -133,10 +143,27 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
     e.preventDefault()
     clearError()
     try {
-      await verifyTwoFactor(tempToken, code)
-      const role = useAuthStore.getState().user?.role
-      navigate(role ? ROLE_REDIRECT[role as UserRole] : '/')
-    } catch {
+      if (pendingAt && pendingUser) {
+        // Direct login TOTP setup flow — verify code, then authenticate
+        const res = await fetch(`${BASE_URL}/auth/confirm-totp-setup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Auth-Token': pendingAt },
+          body: JSON.stringify({ code }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.error ?? 'Forkert kode')
+        // TOTP confirmed — now authenticate the user
+        setTokens(pendingAt, pendingRt, pendingUser)
+        navigate(ROLE_REDIRECT[pendingUser.role as UserRole] ?? '/')
+      } else {
+        // Came from 2FA step (tempToken flow) — standard verify
+        await verifyTwoFactor(tempToken, code)
+        const role = useAuthStore.getState().user?.role
+        navigate(role ? ROLE_REDIRECT[role as UserRole] : '/')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Forkert kode'
+      useAuthStore.setState({ error: msg })
       setCode('')
     }
   }
