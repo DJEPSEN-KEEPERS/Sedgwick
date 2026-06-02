@@ -106,7 +106,9 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       const body: Record<string, string> = {}
       if (accessToken) {
-        headers['Authorization'] = `Bearer ${accessToken}`
+        // Use X-Auth-Token — consistent with the rest of the API and
+        // avoids Azure SWA potentially stripping the Authorization header
+        headers['X-Auth-Token'] = accessToken
       } else {
         body['tempToken'] = tempToken
       }
@@ -295,6 +297,25 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
             <h3 className="font-display font-semibold text-gray-900">Opsæt authenticator</h3>
             <p className="text-sm text-gray-500 mt-1">Scan QR-koden med Google Authenticator, Microsoft Authenticator eller lignende</p>
           </div>
+
+          {/* Loading state while QR is being fetched */}
+          {setupLoading && !qrCode && (
+            <div className="flex justify-center py-4">
+              <div className="h-12 w-12 rounded-lg bg-gray-100 animate-pulse" />
+            </div>
+          )}
+
+          {/* Setup error — shown if API call failed */}
+          {setupError && (
+            <div className="rounded-md bg-red-50 border border-red-100 px-3 py-2 text-sm text-red-600 text-center">
+              {setupError}
+              <button type="button" onClick={handleSetupTotp}
+                className="ml-2 underline hover:no-underline font-medium">
+                Prøv igen
+              </button>
+            </div>
+          )}
+
           {qrCode && (
             <div className="flex justify-center">
               <img src={qrCode} alt="TOTP QR-kode" className="w-48 h-48 rounded-lg border border-gray-200" />
@@ -311,15 +332,15 @@ export function LoginForm({ portalLabel, className }: LoginFormProps) {
             <Input id="setup-code" type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required
               value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
               className="mt-1 text-center text-2xl tracking-[0.5em] font-mono" placeholder="000000"
-              autoComplete="one-time-code" autoFocus />
+              autoComplete="one-time-code" />
           </div>
           {error && <p className="text-sm text-danger bg-red-50 rounded-md px-3 py-2 border border-red-100">{error}</p>}
-          <Button type="submit" className="w-full" size="lg" disabled={isLoading || code.length < 6}>
+          <Button type="submit" className="w-full" size="lg" disabled={isLoading || code.length < 6 || !qrCode}>
             {isLoading ? 'Bekræfter...' : 'Bekræft og log ind'}
           </Button>
-          <button type="button" onClick={() => { setStep('twofactor'); setCode(''); clearError() }}
+          <button type="button" onClick={() => { setStep('credentials'); setCode(''); setQrCode(''); setManualKey(''); clearError() }}
             className="w-full text-sm text-gray-500 hover:text-gray-700 text-center">
-            ← Tilbage
+            ← Tilbage til login
           </button>
         </form>
       )}
