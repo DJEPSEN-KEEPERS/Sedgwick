@@ -12,12 +12,6 @@ export default function SedgwickLoginPage() {
     return <Navigate to="/sedgwick/dashboard" replace />
   }
 
-  const stats = [
-    { label: t('loginPage.sedgwick.stats.activeProjects'), value: '~100' },
-    { label: t('loginPage.sedgwick.stats.contractors'), value: '50+' },
-    { label: t('loginPage.sedgwick.stats.insurers'), value: '12' },
-  ]
-
   return (
     <div className="min-h-screen flex">
       {/* Left branding panel */}
@@ -37,16 +31,7 @@ export default function SedgwickLoginPage() {
           </p>
         </div>
 
-        <div className="space-y-4">
-          {stats.map(({ label, value }) => (
-            <div key={label} className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-display font-bold">
-                {value}
-              </div>
-              <span className="text-sm text-white/70">{label}</span>
-            </div>
-          ))}
-        </div>
+        <div />
       </div>
 
       {/* Right login panel */}
