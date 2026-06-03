@@ -28,7 +28,16 @@ export function FilesTab({ projectId }: { projectId: string }) {
 
   if (loading) return <Skeleton />
 
-  const files = data ?? { projectDocuments: [], bidAttachments: [], statusUpdatePhotos: {}, finalReportFiles: {}, chatAttachments: [] }
+  // Normalise: API may return { files: [...] } flat list (old shape) or the
+  // categorised object. Either way we produce a safe ProjectFiles structure.
+  const raw = data as (ProjectFiles & { files?: unknown }) | null
+  const files: ProjectFiles = {
+    projectDocuments:   raw?.projectDocuments   ?? (Array.isArray(raw?.files) ? (raw.files as FileRecord[]) : []),
+    bidAttachments:     raw?.bidAttachments      ?? [],
+    statusUpdatePhotos: raw?.statusUpdatePhotos  ?? {},
+    finalReportFiles:   raw?.finalReportFiles    ?? {},
+    chatAttachments:    raw?.chatAttachments     ?? [],
+  }
 
   return (
     <div className="space-y-6">
