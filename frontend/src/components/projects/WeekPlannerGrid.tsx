@@ -1,6 +1,5 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
-import { useApi } from '@/hooks/useApi'
-import { useAuthStore } from '@/stores/authStore'
+import { useApi, useMutation } from '@/hooks/useApi'
 import { getWeekRange, formatWeekDate } from '@/lib/isoWeek'
 import { getEntrepriseTypeLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -32,10 +31,10 @@ const TYPE_ICON: Record<string, string> = {
 }
 
 export function WeekPlannerGrid({ projectId, entreprises, canEdit }: Props) {
-  const { token } = useAuthStore()
   const weeks = useMemo(() => getWeekRange(4, 12), [])
 
   const { data, loading } = useApi<WeekPlanResponse>(`/projects/${projectId}/week-plan`)
+  const { mutate: toggle } = useMutation<unknown, { active: boolean }>('post')
 
   // Local set of checked keys for optimistic updates
   const [checked, setChecked] = useState<Set<string>>(new Set())
@@ -62,36 +61,21 @@ export function WeekPlannerGrid({ projectId, entreprises, canEdit }: Props) {
       })
       setToggling((prev) => new Set(prev).add(key))
 
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/entreprises/${entrepriseId}/week-plan`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Auth-Token': token ?? '' },
-            body: JSON.stringify({ isoYear, isoWeek }),
-          },
-        )
-        if (!res.ok) {
-          // Revert on error
-          setChecked((prev) => {
-            const next = new Set(prev)
-            if (next.has(key)) next.delete(key)
-            else next.add(key)
-            return next
-          })
-        }
-      } catch {
+      const result = await toggle(`/entreprises/${entrepriseId}/week-plan`, { isoYear, isoWeek })
+
+      if (!result) {
+        // Revert on error
         setChecked((prev) => {
           const next = new Set(prev)
           if (next.has(key)) next.delete(key)
           else next.add(key)
           return next
         })
-      } finally {
-        setToggling((prev) => { const n = new Set(prev); n.delete(key); return n })
       }
+
+      setToggling((prev) => { const n = new Set(prev); n.delete(key); return n })
     },
-    [canEdit, token],
+    [canEdit, toggle],
   )
 
   if (loading) {
