@@ -18,6 +18,7 @@ const MILESTONE_LABELS: Record<string, string> = {
   WORK_STARTED: 'Arbejde startet',
   WORK_COMPLETED: 'Arbejde færdigt',
   FINAL_REPORT_SUBMITTED: 'Slutrapport indsendt',
+  CASE_INVOICED: 'Sag faktureret',
   CASE_CLOSED: 'Sag lukket',
 }
 

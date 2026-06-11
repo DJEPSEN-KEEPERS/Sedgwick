@@ -156,7 +156,7 @@ export default function ProjectDetailPage() {
       {activeTab === 'overview'    && <OverviewTab project={project} onProjectUpdate={handleProjectUpdate} />}
       {activeTab === 'entreprises' && <EntreprisesTab projectId={project.id} />}
       {activeTab === 'bidding'     && <BiddingTab projectId={project.id} />}
-      {activeTab === 'progress'    && <ProgressTab project={project} />}
+      {activeTab === 'progress'    && <ProgressTab project={project} onProjectUpdate={handleProjectUpdate} />}
       {activeTab === 'messages'    && <MessagesTab projectId={project.id} />}
       {activeTab === 'files'       && <FilesTab projectId={project.id} />}
       {activeTab === 'audit'       && <AuditTab projectId={project.id} />}

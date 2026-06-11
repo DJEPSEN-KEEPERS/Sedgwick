@@ -38,6 +38,11 @@ async function updateProjectHandler(req: HttpRequest, context: InvocationContext
       return { status: 404, jsonBody: { error: 'Projekt ikke fundet' } }
     }
 
+    // Gate: CASE_CLOSED requires the project to first be CASE_INVOICED
+    if (body.currentMilestone === 'CASE_CLOSED' && existing.currentMilestone !== 'CASE_INVOICED') {
+      return { status: 409, jsonBody: { error: 'Sagen skal faktureres før den kan lukkes' } }
+    }
+
     const updateData: Record<string, unknown> = {}
     const allowedFields: (keyof UpdateProjectBody)[] = [
       'damageType', 'damageDescription', 'buildingType', 'priorityLevel',

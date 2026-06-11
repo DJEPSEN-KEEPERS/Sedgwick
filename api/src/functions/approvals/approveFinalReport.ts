@@ -30,7 +30,7 @@ async function approveFinalReportHandler(req: HttpRequest, context: InvocationCo
       })
       await tx.project.update({
         where: { id: projectId },
-        data: { currentMilestone: 'CASE_CLOSED', status: 'COMPLETED', finalCompletionDate: new Date(), progressPercent: 100 },
+        data: { currentMilestone: 'CASE_INVOICED', progressPercent: 100 },
       })
       return result
     })

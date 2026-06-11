@@ -211,6 +211,7 @@ const MILESTONES: { value: ProjectMilestone; label: string }[] = [
   { value: 'WORK_STARTED', label: 'Arbejde startet' },
   { value: 'WORK_COMPLETED', label: 'Arbejde afsluttet' },
   { value: 'FINAL_REPORT_SUBMITTED', label: 'Slutrapport indsendt' },
+  { value: 'CASE_INVOICED', label: 'Sag faktureret' },
   { value: 'CASE_CLOSED', label: 'Sag lukket' },
 ]
 

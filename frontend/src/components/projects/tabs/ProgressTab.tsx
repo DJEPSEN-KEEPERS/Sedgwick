@@ -1,18 +1,37 @@
+import { useState } from 'react'
+import { Receipt } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
 import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { getEntrepriseTypeLabel, formatDateTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Project, Entreprise, EntrepriseStatusUpdate } from '@/types'
 
-export function ProgressTab({ project }: { project: Project }) {
+export function ProgressTab({ project, onProjectUpdate }: { project: Project; onProjectUpdate?: () => void }) {
   const { data: entreprises, loading, refetch } = useApi<Entreprise[]>(
     `/projects/${project.id}/entreprises`,
   )
   const { mutate: approve } = useMutation('post')
   const { mutate: reject } = useMutation('post')
+  const { mutate: updateProject, loading: invoicing } = useMutation('patch')
+  const [invoiceError, setInvoiceError] = useState('')
+
+  const handleMarkInvoiced = async () => {
+    setInvoiceError('')
+    const result = await updateProject(`/projects/${project.id}`, {
+      currentMilestone: 'CASE_CLOSED',
+      status: 'COMPLETED',
+      finalCompletionDate: new Date().toISOString(),
+    })
+    if (result) {
+      onProjectUpdate?.()
+    } else {
+      setInvoiceError('Kunne ikke opdatere sagen — prøv igen')
+    }
+  }
 
   const relevant = entreprises?.filter((e) => e.isRelevant) ?? []
   const pendingCount = relevant.reduce(
@@ -55,6 +74,31 @@ export function ProgressTab({ project }: { project: Project }) {
         <ProjectProgressBar currentMilestone={project.currentMilestone} className="mb-4" />
         <Progress value={overallProgress} className="h-2" />
       </div>
+
+      {/* Invoice gate — shown when final report is approved and case awaits invoicing */}
+      {project.currentMilestone === 'CASE_INVOICED' && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-4 flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3">
+            <Receipt className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-sm font-display font-semibold text-blue-900">Klar til fakturering</p>
+              <p className="text-xs text-blue-700 mt-0.5">
+                Slutrapporten er godkendt. Marker sagen som faktureret for at lukke den.
+              </p>
+              {invoiceError && <p className="text-xs text-red-600 mt-1">{invoiceError}</p>}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={handleMarkInvoiced}
+            disabled={invoicing}
+            className="shrink-0"
+          >
+            <Receipt className="h-4 w-4 mr-1.5" />
+            {invoicing ? 'Gemmer...' : 'Marker som faktureret og luk sag'}
+          </Button>
+        </div>
+      )}
 
       {/* Entreprise accordions */}
       {loading ? (
