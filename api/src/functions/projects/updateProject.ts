@@ -3,13 +3,19 @@ import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
 interface UpdateProjectBody {
+  damageType?: string
   damageDescription?: string
+  buildingType?: string
   priorityLevel?: string
   maxApprovedPrice?: number
   estimatedScope?: string
   requestedStartDate?: string
   requestedDeadline?: string
   slaCategory?: string
+  address?: string
+  postalCode?: string
+  city?: string
+  region?: string
   contactName?: string
   contactPhone?: string
   contactEmail?: string
@@ -34,8 +40,10 @@ async function updateProjectHandler(req: HttpRequest, context: InvocationContext
 
     const updateData: Record<string, unknown> = {}
     const allowedFields: (keyof UpdateProjectBody)[] = [
-      'damageDescription', 'priorityLevel', 'maxApprovedPrice', 'estimatedScope',
-      'slaCategory', 'contactName', 'contactPhone', 'contactEmail',
+      'damageType', 'damageDescription', 'buildingType', 'priorityLevel',
+      'maxApprovedPrice', 'estimatedScope', 'slaCategory',
+      'address', 'postalCode', 'city', 'region',
+      'contactName', 'contactPhone', 'contactEmail',
       'currentMilestone', 'status',
     ]
 

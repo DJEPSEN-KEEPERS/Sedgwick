@@ -11,6 +11,8 @@ import { ProgressTab } from '@/components/projects/tabs/ProgressTab'
 import { MessagesTab } from '@/components/projects/tabs/MessagesTab'
 import { FilesTab } from '@/components/projects/tabs/FilesTab'
 import { AuditTab } from '@/components/projects/tabs/AuditTab'
+import { EditProjectPanel } from '@/components/projects/EditProjectPanel'
+import { exportProjectPdf } from '@/lib/exportProjectPdf'
 import { cn } from '@/lib/utils'
 import type { Project } from '@/types'
 
@@ -30,12 +32,18 @@ export default function ProjectDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'overview')
   const [confirmClose, setConfirmClose] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   const { data: project, loading, refetch } = useApi<Project>(`/projects/${projectId}`)
   const { mutate: closeProject, loading: closing } = useMutation('delete')
 
   // Allow child tabs to trigger a refetch after inline updates
   const handleProjectUpdate = () => refetch()
+
+  const handleProjectSaved = (updated: Project) => {
+    refetch()
+    setEditOpen(false)
+  }
 
   const handleClose = async () => {
     const result = await closeProject(`/projects/${projectId}`)
@@ -103,10 +111,10 @@ export default function ProjectDetailPage() {
               </div>
             ) : (
               <>
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
                   <Edit2 className="h-4 w-4 mr-1" /> Rediger
                 </Button>
-                <Button variant="secondary" size="sm">
+                <Button variant="secondary" size="sm" onClick={() => exportProjectPdf(project)}>
                   <FileDown className="h-4 w-4 mr-1" /> Eksporter
                 </Button>
                 {project.status !== 'CLOSED' && (
@@ -152,6 +160,13 @@ export default function ProjectDetailPage() {
       {activeTab === 'messages'    && <MessagesTab projectId={project.id} />}
       {activeTab === 'files'       && <FilesTab projectId={project.id} />}
       {activeTab === 'audit'       && <AuditTab projectId={project.id} />}
+
+      <EditProjectPanel
+        project={project}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={handleProjectSaved}
+      />
     </div>
   )
 }
