@@ -4,13 +4,13 @@ import { useApi } from '@/hooks/useApi'
 import { ArrowLeft, Camera, FileText, CheckCircle, Clock, MapPin, Phone, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { MilestoneBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { formatDate, formatRelativeTime, getEntrepriseTypeLabel, getEntrepriseMilestoneLabel } from '@/lib/utils'
 import type { Project, EntrepriseType, EntrepriseMilestone } from '@/types'
 
-type Tab = 'overview' | 'updates' | 'report'
+type Tab = 'overview' | 'planning' | 'updates' | 'report'
 
 export default function JobDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -58,6 +58,7 @@ export default function JobDetailPage() {
       <div className="flex border-b border-[#e5e7eb] bg-white sticky top-[84px] z-10">
         {([
           { key: 'overview', label: 'Overblik' },
+          { key: 'planning', label: 'Planlægning' },
           { key: 'updates', label: 'Statusopdateringer' },
           { key: 'report', label: 'Slutrapport' },
         ] as { key: Tab; label: string }[]).map(({ key, label }) => (
@@ -76,9 +77,16 @@ export default function JobDetailPage() {
       </div>
 
       <div className="p-4">
-        {tab === 'overview' && <OverviewTab project={project} />}
-        {tab === 'updates' && <UpdatesTab entreprises={myEntreprises} navigate={navigate} />}
-        {tab === 'report' && <ReportTab entreprises={myEntreprises} navigate={navigate} />}
+        {tab === 'overview'  && <OverviewTab project={project} />}
+        {tab === 'planning'  && (
+          <WeekPlannerGrid
+            projectId={project.id}
+            entreprises={myEntreprises.filter((e) => e.isRelevant !== false)}
+            canEdit
+          />
+        )}
+        {tab === 'updates'   && <UpdatesTab entreprises={myEntreprises} navigate={navigate} />}
+        {tab === 'report'    && <ReportTab entreprises={myEntreprises} navigate={navigate} />}
       </div>
     </div>
   )
@@ -113,11 +121,7 @@ function OverviewTab({ project }: { project: Project }) {
         </div>
 
         <div className="pt-2 border-t border-gray-100">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-gray-500">Samlet fremgang</span>
-            <span className="text-xs font-semibold text-gray-900">{project.progressPercent}%</span>
-          </div>
-          <Progress value={project.progressPercent} className="h-2" />
+          <MilestoneBadge milestone={project.currentMilestone} />
         </div>
       </div>
 
@@ -132,10 +136,6 @@ function OverviewTab({ project }: { project: Project }) {
                   {getEntrepriseTypeLabel(e.type)}
                 </span>
                 <Badge variant="info">{getEntrepriseMilestoneLabel(e.currentMilestone as EntrepriseMilestone)}</Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <Progress value={e.progressPercent} className="h-1.5 flex-1" />
-                <span className="text-xs text-gray-500">{e.progressPercent}%</span>
               </div>
               {e.scheduledStart && (
                 <p className="text-xs text-gray-500">Start: {formatDate(e.scheduledStart)}</p>

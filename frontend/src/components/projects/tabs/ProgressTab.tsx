@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { Receipt } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
-import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
 import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { getEntrepriseTypeLabel, formatDateTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Project, Entreprise, EntrepriseStatusUpdate } from '@/types'
@@ -48,9 +47,7 @@ export function ProgressTab({ project, onProjectUpdate }: { project: Project; on
     refetch()
   }
 
-  const overallProgress = relevant.length
-    ? Math.round(relevant.reduce((s, e) => s + e.progressPercent, 0) / relevant.length)
-    : 0
+  const showWeekPlanner = project.currentMilestone === 'WORK_SCHEDULED' || project.currentMilestone === 'WORK_STARTED'
 
   return (
     <div className="space-y-6">
@@ -65,15 +62,14 @@ export function ProgressTab({ project, onProjectUpdate }: { project: Project; on
         </div>
       )}
 
-      {/* Overall milestone stepper */}
-      <div className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-display font-semibold text-gray-900">Samlet fremgang</h3>
-          <span className="text-sm font-display font-bold text-primary-700">{overallProgress}%</span>
-        </div>
-        <ProjectProgressBar currentMilestone={project.currentMilestone} className="mb-4" />
-        <Progress value={overallProgress} className="h-2" />
-      </div>
+      {/* Week planner — only when work is scheduled or in progress */}
+      {showWeekPlanner && (
+        <WeekPlannerGrid
+          projectId={project.id}
+          entreprises={relevant}
+          canEdit={false}
+        />
+      )}
 
       {/* Invoice gate — shown when final report is approved and case awaits invoicing */}
       {project.currentMilestone === 'CASE_INVOICED' && (

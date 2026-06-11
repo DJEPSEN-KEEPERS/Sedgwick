@@ -3,13 +3,12 @@ import { useState, useEffect } from 'react'
 import { ArrowLeft, Phone, Mail, MapPin } from 'lucide-react'
 import { useApi } from '@/hooks/useApi'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
-import { Progress } from '@/components/ui/progress'
 import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { ImageGallery } from '@/components/files/ImageGallery'
+import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { formatDate, formatDateTime, getEntrepriseTypeLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Project, Entreprise } from '@/types'
@@ -48,10 +47,6 @@ export default function InsurerProjectDetailPage() {
             </div>
             <p className="text-base font-display font-semibold text-gray-700">{project.damageType}</p>
             <p className="text-sm text-gray-500">{project.address}, {project.postalCode} {project.city}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">Samlet fremgang</p>
-            <p className="text-2xl font-display font-bold text-primary-700">{project.progressPercent}%</p>
           </div>
         </div>
       </div>
@@ -135,14 +130,23 @@ function InsurerOverviewTab({ project }: { project: Project }) {
 
 function InsurerProgressTab({ project, entreprises }: { project: Project; entreprises: Entreprise[] }) {
   const relevant = entreprises.filter((e) => e.isRelevant)
+  const showWeekPlanner = project.currentMilestone === 'WORK_SCHEDULED' || project.currentMilestone === 'WORK_STARTED'
+
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4">
-        <h3 className="text-sm font-display font-semibold text-gray-900 mb-3">Milepæle</h3>
-        <ProjectProgressBar currentMilestone={project.currentMilestone} className="mb-3" />
-        <Progress value={project.progressPercent} className="h-2" />
-        <p className="text-xs text-gray-500 mt-1 text-right">{project.progressPercent}% samlet</p>
-      </div>
+      {showWeekPlanner && (
+        <WeekPlannerGrid
+          projectId={project.id}
+          entreprises={relevant}
+          canEdit={false}
+        />
+      )}
+
+      {!showWeekPlanner && relevant.length === 0 && (
+        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
+          Ugeplanlægning er tilgængelig når arbejdet er planlagt
+        </div>
+      )}
 
       {relevant.length > 0 && (
         <div className="space-y-3">
@@ -153,16 +157,11 @@ function InsurerProgressTab({ project, entreprises }: { project: Project; entrep
                   <span className="font-display font-medium text-sm text-gray-900">{getEntrepriseTypeLabel(e.type)}</span>
                   <EntrepriseBadge milestone={e.currentMilestone} />
                 </div>
-                <span className="text-sm font-display font-bold text-gray-700">{e.progressPercent}%</span>
               </div>
-              <Progress value={e.progressPercent} className="h-1.5 mb-3" />
-
-              {/* Only show approved updates */}
               {e.statusUpdates?.filter((u) => u.approvalStatus === 'APPROVED').map((u) => (
                 <div key={u.id} className="flex items-center gap-2 text-xs text-gray-600 py-1 border-t border-gray-100 first:border-0">
                   <span className="text-gray-400">{formatDateTime(u.createdAt)}</span>
                   <EntrepriseBadge milestone={u.milestone} />
-                  <span>{u.progressPercent}%</span>
                   {u.comments && <span className="text-gray-500 truncate">{u.comments}</span>}
                 </div>
               ))}
