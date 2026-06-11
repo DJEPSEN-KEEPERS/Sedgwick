@@ -38,15 +38,13 @@ export function EntrepriseBadge({ milestone }: { milestone: EntrepriseMilestone 
 }
 
 export function PriorityBadge({ level }: { level: PriorityLevel }) {
-  const variantMap: Record<PriorityLevel, 'gray' | 'info' | 'warning' | 'danger'> = {
-    LOW: 'gray',
-    NORMAL: 'info',
-    HIGH: 'warning',
-    URGENT: 'danger',
+  const variantMap: Record<PriorityLevel, 'gray' | 'warning'> = {
+    NORMAL: 'gray',
+    FASTTRACK: 'warning',
   }
 
   return (
-    <Badge variant={variantMap[level]} className={cn(level === 'URGENT' && 'animate-pulse')}>
+    <Badge variant={variantMap[level] ?? 'gray'}>
       {getPriorityLabel(level)}
     </Badge>
   )

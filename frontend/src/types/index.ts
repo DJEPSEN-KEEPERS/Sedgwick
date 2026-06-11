@@ -4,7 +4,7 @@ export type UserRole = 'SEDGWICK_ADMIN' | 'INSURER_USER' | 'CONTRACTOR_USER'
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
 export type TwoFactorMethod = 'TOTP' | 'SMS'
 
-export type PriorityLevel = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
+export type PriorityLevel = 'NORMAL' | 'FASTTRACK'
 export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'CANCELLED'
 export type ProjectMilestone =
   | 'CASE_RECEIVED'

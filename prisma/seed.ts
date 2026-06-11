@@ -133,7 +133,7 @@ async function main() {
       insuranceCompanyId: insurer.id,
       damageType: 'Vandskade',
       damageDescription: 'Rørbrud i køkken med omfattende vandskade',
-      priorityLevel: 'HIGH',
+      priorityLevel: 'NORMAL',
       buildingType: 'Enfamiliehus',
       address: 'Eksempelvej 12',
       postalCode: '2100',

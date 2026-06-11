@@ -51,6 +51,11 @@ jobs:
           npm install
           npx prisma db push --schema=prisma/schema.prisma --accept-data-loss --skip-generate
 
+      - name: Migrate priority levels to NORMAL/FASTTRACK
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npx tsx prisma/migrate-priority.ts
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:

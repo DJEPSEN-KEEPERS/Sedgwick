@@ -12,10 +12,8 @@ interface Props {
 }
 
 const PRIORITY_OPTIONS: { value: PriorityLevel; label: string }[] = [
-  { value: 'LOW', label: 'Lav' },
   { value: 'NORMAL', label: 'Normal' },
-  { value: 'HIGH', label: 'Høj' },
-  { value: 'URGENT', label: 'Kritisk' },
+  { value: 'FASTTRACK', label: 'Fasttrack' },
 ]
 
 const DAMAGE_TYPES = [

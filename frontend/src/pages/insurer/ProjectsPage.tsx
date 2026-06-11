@@ -106,9 +106,8 @@ export default function InsurerProjectsPage() {
         <select className="input-field w-36 text-sm" value={priorityFilter}
           onChange={(e) => setPriorityFilter(e.target.value)}>
           <option value="">Alle prioriteter</option>
-          <option value="URGENT">Akut</option>
-          <option value="HIGH">Høj</option>
           <option value="NORMAL">Normal</option>
+          <option value="FASTTRACK">Fasttrack</option>
         </select>
       </div>
 

@@ -22,7 +22,7 @@ const MILESTONE_LABELS: Record<string, string> = {
 }
 
 const PRIORITY_LABELS: Record<string, string> = {
-  LOW: 'Lav', NORMAL: 'Normal', HIGH: 'Høj', URGENT: 'Kritisk',
+  NORMAL: 'Normal', FASTTRACK: 'Fasttrack',
 }
 
 export function exportProjectPdf(project: Project): void {
@@ -41,10 +41,8 @@ export function exportProjectPdf(project: Project): void {
     header h1 { font-size: 18pt; font-weight: 700; color: #003366; letter-spacing: -0.3px; }
     header .meta { text-align: right; font-size: 9pt; color: #555; line-height: 1.6; }
     .badge { display: inline-block; font-size: 8pt; font-weight: 600; padding: 2px 8px; border-radius: 99px; margin-left: 6px; }
-    .badge-urgent { background: #fef2f2; color: #b91c1c; }
-    .badge-high { background: #fff7ed; color: #c2410c; }
-    .badge-normal { background: #f0fdf4; color: #166534; }
-    .badge-low { background: #f9fafb; color: #6b7280; }
+    .badge-normal { background: #f3f4f6; color: #374151; }
+    .badge-fasttrack { background: #fff7ed; color: #c2410c; font-weight: 700; }
 
     .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
     .card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 14px; page-break-inside: avoid; }

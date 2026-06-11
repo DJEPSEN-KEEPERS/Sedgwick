@@ -89,12 +89,10 @@ export function getEntrepriseMilestoneLabel(milestone: EntrepriseMilestone): str
 
 export function getPriorityLabel(level: PriorityLevel): string {
   const labels: Record<PriorityLevel, string> = {
-    LOW: 'Lav',
     NORMAL: 'Normal',
-    HIGH: 'Høj',
-    URGENT: 'Akut',
+    FASTTRACK: 'Fasttrack',
   }
-  return labels[level]
+  return labels[level] ?? level
 }
 
 export function projectMilestoneToStep(milestone: ProjectMilestone): number {

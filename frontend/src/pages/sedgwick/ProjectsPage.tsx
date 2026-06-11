@@ -174,10 +174,8 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
               <div>
                 <Label>Prioritet</Label>
                 <select className="input-field mt-1 w-full" value={form.priorityLevel} onChange={set('priorityLevel')}>
-                  <option value="LOW">Lav</option>
                   <option value="NORMAL">Normal</option>
-                  <option value="HIGH">Høj</option>
-                  <option value="URGENT">Akut</option>
+                  <option value="FASTTRACK">Fasttrack</option>
                 </select>
               </div>
               <div>
@@ -217,10 +215,8 @@ const MILESTONES: { value: ProjectMilestone; label: string }[] = [
 ]
 
 const PRIORITIES: { value: PriorityLevel; label: string }[] = [
-  { value: 'LOW', label: 'Lav' },
   { value: 'NORMAL', label: 'Normal' },
-  { value: 'HIGH', label: 'Høj' },
-  { value: 'URGENT', label: 'Akut' },
+  { value: 'FASTTRACK', label: 'Fasttrack' },
 ]
 
 interface Filters {

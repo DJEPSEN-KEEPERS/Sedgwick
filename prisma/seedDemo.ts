@@ -1,6 +1,6 @@
-/**
+﻿/**
  * seedDemo.ts
- * Creates 3 contractors with user accounts and 2–3 projects each.
+ * Creates 3 contractors with user accounts and 2â€“3 projects each.
  * Safe to re-run (uses upsert on unique fields).
  *
  * Run: npx ts-node prisma/seedDemo.ts
@@ -11,7 +11,7 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function daysAgo(n: number): Date {
   return new Date(Date.now() - n * 86400000)
@@ -21,15 +21,15 @@ function daysFromNow(n: number): Date {
   return new Date(Date.now() + n * 86400000)
 }
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 async function main() {
-  console.log('🌱  Running demo seed...\n')
+  console.log('ðŸŒ±  Running demo seed...\n')
 
-  // Shared password for all demo contractor accounts — change after demo!
+  // Shared password for all demo contractor accounts â€” change after demo!
   const sharedHash = await bcrypt.hash('Sedgwick2024!', 12)
 
-  // ── 1. Ensure InsuranceCompany exists ────────────────────────────────────────
+  // â”€â”€ 1. Ensure InsuranceCompany exists â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const insurer = await prisma.insuranceCompany.upsert({
     where: { apiKey: 'tryg-api-key-dev' },
     update: {},
@@ -40,9 +40,9 @@ async function main() {
       status: 'active',
     },
   })
-  console.log(`✔  InsuranceCompany: ${insurer.name}`)
+  console.log(`âœ”  InsuranceCompany: ${insurer.name}`)
 
-  // ── 2. Find Sedgwick admin (needed as invitedByUserId for BidInvitations) ────
+  // â”€â”€ 2. Find Sedgwick admin (needed as invitedByUserId for BidInvitations) â”€â”€â”€â”€
   let admin = await prisma.user.findFirst({ where: { role: 'SEDGWICK_ADMIN' } })
   if (!admin) {
     admin = await prisma.user.create({
@@ -55,20 +55,20 @@ async function main() {
       },
     })
   }
-  console.log(`✔  Admin user: ${admin.email}`)
+  console.log(`âœ”  Admin user: ${admin.email}`)
 
-  // ── 3. Contractors ────────────────────────────────────────────────────────────
+  // â”€â”€ 3. Contractors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const contractorDefs = [
     {
       cvr: '12345678',
-      companyName: 'Hansen Tømrer & Byg A/S',
+      companyName: 'Hansen TÃ¸mrer & Byg A/S',
       contactName: 'Peter Hansen',
       contactEmail: 'peter@hansenbyg.dk',
       contactPhone: '+45 40 12 34 56',
-      description: 'Specialiseret i vandskader og genopbygning af træstrukturer',
+      description: 'Specialiseret i vandskader og genopbygning af trÃ¦strukturer',
       rating: 4.7,
-      region: 'Sjælland',
+      region: 'SjÃ¦lland',
       userEmail: 'peter@hansenbyg.dk',
       userFullName: 'Peter Hansen',
       userPassword: sharedHash,
@@ -92,7 +92,7 @@ async function main() {
       contactName: 'Susanne Madsen',
       contactEmail: 'susanne@madsenel.dk',
       contactPhone: '+45 51 98 76 54',
-      description: 'El- og VVS-entrepriser, vandskader og rørbrud',
+      description: 'El- og VVS-entrepriser, vandskader og rÃ¸rbrud',
       rating: 4.9,
       region: 'Nordjylland',
       userEmail: 'susanne@madsenel.dk',
@@ -145,14 +145,14 @@ async function main() {
     })
 
     contractors.push({ id: c.id, companyName: c.companyName, userId: u.id })
-    console.log(`✔  Contractor: ${c.companyName}  /  user: ${u.email}`)
+    console.log(`âœ”  Contractor: ${c.companyName}  /  user: ${u.email}`)
   }
 
-  // ── 4. Projects ───────────────────────────────────────────────────────────────
+  // â”€â”€ 4. Projects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Layout:
-  //   Hansen   → 3 projects (1 with past deadline = SLA breach, 1 bidding)
-  //   Nielsen  → 3 projects (1 with past deadline = SLA breach, 1 bidding)
-  //   Madsen   → 2 projects (1 with past deadline = SLA breach)
+  //   Hansen   â†’ 3 projects (1 with past deadline = SLA breach, 1 bidding)
+  //   Nielsen  â†’ 3 projects (1 with past deadline = SLA breach, 1 bidding)
+  //   Madsen   â†’ 2 projects (1 with past deadline = SLA breach)
   //
   // Total: 8 ACTIVE, 3 SLA-breached, 4 BidInvitations (PENDING)
 
@@ -184,19 +184,19 @@ async function main() {
   }
 
   const projectDefs: ProjectDef[] = [
-    // ── Hansen (3 projects) ────────────────────────────────────────────────
+    // â”€â”€ Hansen (3 projects) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
       claimId: 'CLM-2025-001',
       insurerCaseId: 'TRYG-2025-10001',
       insurancePolicyNumber: 'POL-100001',
       damageType: 'Vandskade',
-      damageDescription: 'Rørbrud i køkken — gulv og vægge skadet',
-      priorityLevel: 'HIGH',
+      damageDescription: 'RÃ¸rbrud i kÃ¸kken â€” gulv og vÃ¦gge skadet',
+      priorityLevel: 'FASTTRACK',
       buildingType: 'Enfamiliehus',
-      address: 'Rosenørns Allé 22',
+      address: 'RosenÃ¸rns AllÃ© 22',
       postalCode: '1970',
       city: 'Frederiksberg C',
-      region: 'Sjælland',
+      region: 'SjÃ¦lland',
       contactName: 'Karen Holm',
       contactPhone: '+45 31 22 33 44',
       contactEmail: 'karen.holm@example.dk',
@@ -212,13 +212,13 @@ async function main() {
       insurerCaseId: 'TRYG-2025-10002',
       insurancePolicyNumber: 'POL-100002',
       damageType: 'Stormskade',
-      damageDescription: 'Tagskade efter kraftig storm — tagudhæng og isolering',
+      damageDescription: 'Tagskade efter kraftig storm â€” tagudhÃ¦ng og isolering',
       priorityLevel: 'NORMAL',
-      buildingType: 'Rækkehus',
+      buildingType: 'RÃ¦kkehus',
       address: 'Skovvej 7',
       postalCode: '4600',
-      city: 'Køge',
-      region: 'Sjælland',
+      city: 'KÃ¸ge',
+      region: 'SjÃ¦lland',
       contactName: 'Thomas Bjerg',
       contactPhone: '+45 42 11 55 66',
       contactEmail: 'thomas.bjerg@example.dk',
@@ -236,13 +236,13 @@ async function main() {
       insurerCaseId: 'TRYG-2025-10003',
       insurancePolicyNumber: 'POL-100003',
       damageType: 'Brandskade',
-      damageDescription: 'Lettere brandskade i bryggers — sod og røg',
-      priorityLevel: 'URGENT',
+      damageDescription: 'Lettere brandskade i bryggers â€” sod og rÃ¸g',
+      priorityLevel: 'FASTTRACK',
       buildingType: 'Enfamiliehus',
-      address: 'Æblevej 4',
+      address: 'Ã†blevej 4',
       postalCode: '2860',
-      city: 'Søborg',
-      region: 'Sjælland',
+      city: 'SÃ¸borg',
+      region: 'SjÃ¦lland',
       contactName: 'Ida Christensen',
       contactPhone: '+45 60 77 88 99',
       contactEmail: 'ida.c@example.dk',
@@ -255,14 +255,14 @@ async function main() {
       entrepriseTypes: ['PAINTER', 'CARPENTER'],
     },
 
-    // ── Nielsen (3 projects) ───────────────────────────────────────────────
+    // â”€â”€ Nielsen (3 projects) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
       claimId: 'CLM-2025-004',
       insurerCaseId: 'TRYG-2025-10004',
       insurancePolicyNumber: 'POL-100004',
       damageType: 'Fugtskade',
-      damageDescription: 'Krybekælder med fugtskader og skimmelsvamp',
-      priorityLevel: 'HIGH',
+      damageDescription: 'KrybekÃ¦lder med fugtskader og skimmelsvamp',
+      priorityLevel: 'FASTTRACK',
       buildingType: 'Enfamiliehus',
       address: 'Jernbanegade 18',
       postalCode: '8000',
@@ -283,13 +283,13 @@ async function main() {
       insurerCaseId: 'TRYG-2025-10005',
       insurancePolicyNumber: 'POL-100005',
       damageType: 'Indbrudsskade',
-      damageDescription: 'Indbrud — knust terrassedør og beskadiget vindue',
+      damageDescription: 'Indbrud â€” knust terrassedÃ¸r og beskadiget vindue',
       priorityLevel: 'NORMAL',
       buildingType: 'Lejlighed',
       address: 'Vesterbrogade 101',
       postalCode: '1620',
-      city: 'København V',
-      region: 'Sjælland',
+      city: 'KÃ¸benhavn V',
+      region: 'SjÃ¦lland',
       contactName: 'Astrid Lund',
       contactPhone: '+45 53 12 98 76',
       contactEmail: 'astrid.lund@example.dk',
@@ -307,13 +307,13 @@ async function main() {
       insurerCaseId: 'TRYG-2025-10006',
       insurancePolicyNumber: 'POL-100006',
       damageType: 'Vandskade',
-      damageDescription: 'Vaskemaskine lækket — parkettegulv og underplade skadet',
-      priorityLevel: 'HIGH',
+      damageDescription: 'Vaskemaskine lÃ¦kket â€” parkettegulv og underplade skadet',
+      priorityLevel: 'FASTTRACK',
       buildingType: 'Etageejendom',
-      address: 'Nørrebrogade 55',
+      address: 'NÃ¸rrebrogade 55',
       postalCode: '2200',
-      city: 'København N',
-      region: 'Sjælland',
+      city: 'KÃ¸benhavn N',
+      region: 'SjÃ¦lland',
       contactName: 'Rasmus Kirkeby',
       contactPhone: '+45 71 44 55 66',
       contactEmail: 'rasmus.k@example.dk',
@@ -326,20 +326,20 @@ async function main() {
       entrepriseTypes: ['CARPENTER', 'PAINTER'],
     },
 
-    // ── Madsen (2 projects) ────────────────────────────────────────────────
+    // â”€â”€ Madsen (2 projects) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     {
       claimId: 'CLM-2025-007',
       insurerCaseId: 'TRYG-2025-10007',
       insurancePolicyNumber: 'POL-100007',
       damageType: 'Elskade',
-      damageDescription: 'Kortslutning i elskab — beskadiget installation og væg',
-      priorityLevel: 'URGENT',
+      damageDescription: 'Kortslutning i elskab â€” beskadiget installation og vÃ¦g',
+      priorityLevel: 'FASTTRACK',
       buildingType: 'Enfamiliehus',
       address: 'Danmarksvej 9',
       postalCode: '9000',
       city: 'Aalborg',
       region: 'Nordjylland',
-      contactName: 'Birgit Sørensen',
+      contactName: 'Birgit SÃ¸rensen',
       contactPhone: '+45 40 88 77 66',
       contactEmail: 'birgit.sorensen@example.dk',
       currentMilestone: 'WORK_IN_PROGRESS',
@@ -355,12 +355,12 @@ async function main() {
       insurerCaseId: 'TRYG-2025-10008',
       insurancePolicyNumber: 'POL-100008',
       damageType: 'VVS-skade',
-      damageDescription: 'Brud på varmerør i kælder — vand i kælder og korrosion',
-      priorityLevel: 'HIGH',
+      damageDescription: 'Brud pÃ¥ varmerÃ¸r i kÃ¦lder â€” vand i kÃ¦lder og korrosion',
+      priorityLevel: 'FASTTRACK',
       buildingType: 'Villa',
       address: 'Strandvejen 200',
       postalCode: '9400',
-      city: 'Nørresundby',
+      city: 'NÃ¸rresundby',
       region: 'Nordjylland',
       contactName: 'Lars-Erik Dahl',
       contactPhone: '+45 22 11 33 44',
@@ -448,24 +448,24 @@ async function main() {
       }
     }
 
-    const sla = p.requestedDeadline && p.requestedDeadline < new Date() ? ' ⚠️  SLA-brud' : ''
-    const bid = p.createBidInvitation ? ' 📨  bid invitation' : ''
-    console.log(`  ✔  ${p.claimId} — ${p.damageType} — ${p.city}${sla}${bid}`)
+    const sla = p.requestedDeadline && p.requestedDeadline < new Date() ? ' âš ï¸  SLA-brud' : ''
+    const bid = p.createBidInvitation ? ' ðŸ“¨  bid invitation' : ''
+    console.log(`  âœ”  ${p.claimId} â€” ${p.damageType} â€” ${p.city}${sla}${bid}`)
   }
 
-  // ── 5. Summary ────────────────────────────────────────────────────────────────
+  // â”€â”€ 5. Summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [totalActive, totalSla, totalBids] = await Promise.all([
     prisma.project.count({ where: { status: 'ACTIVE' } }),
     prisma.project.count({ where: { status: 'ACTIVE', requestedDeadline: { lt: new Date() } } }),
     prisma.bidInvitation.count({ where: { status: 'PENDING' } }),
   ])
 
-  console.log('\n✅  Demo seed complete!\n')
-  console.log('─── Dashboard will show ─────────────────────────────────')
+  console.log('\nâœ…  Demo seed complete!\n')
+  console.log('â”€â”€â”€ Dashboard will show â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€')
   console.log(`  Aktive sager:     ${totalActive}`)
   console.log(`  SLA-brud:         ${totalSla}`)
   console.log(`  Afventer tilbud:  ${totalBids}`)
-  console.log('\n─── Contractor logins (adgangskode: Sedgwick2024!) ──────')
+  console.log('\nâ”€â”€â”€ Contractor logins (adgangskode: Sedgwick2024!) â”€â”€â”€â”€â”€â”€')
   for (const def of contractorDefs) {
     console.log(`  ${def.userEmail}`)
   }
