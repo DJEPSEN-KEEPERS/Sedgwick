@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
-import { FolderOpen, CheckCircle, Clock, RefreshCw } from 'lucide-react'
+import { FolderOpen, CheckCircle, Clock, RefreshCw, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
 import { Progress } from '@/components/ui/progress'
 import { StatCard } from '@/components/ui/StatCard'
-import { formatDate, formatRelativeTime } from '@/lib/utils'
+import { formatDate, formatRelativeTime, getInitials } from '@/lib/utils'
 import type { Project } from '@/types'
 
 interface InsurerDashboardData {
@@ -13,12 +13,27 @@ interface InsurerDashboardData {
   recentProjects: Project[]
 }
 
+interface InboxItem {
+  projectId: string
+  claimId: string
+  address: string
+  city: string
+  currentMilestone: string
+  latestMessage: { messageBody: string; senderName: string; createdAt: string } | null
+}
+
+interface InboxData {
+  items: InboxItem[]
+}
+
 export default function InsurerDashboard() {
   const navigate = useNavigate()
   const { data, loading } = useApi<InsurerDashboardData>('/insurer/dashboard')
+  const { data: inboxData } = useApi<InboxData>('/messages/inbox')
 
   const stats = data?.stats ?? { active: 0, completed: 0, delayed: 0, recentlyUpdated: 0 }
   const recentProjects = data?.recentProjects ?? []
+  const inboxItems = inboxData?.items?.filter((i) => i.latestMessage) ?? []
 
   return (
     <div>
@@ -34,6 +49,43 @@ export default function InsurerDashboard() {
         <StatCard label="Forsinkede" value={stats.delayed} icon={Clock} accent />
         <StatCard label="Opdateret for nylig" value={stats.recentlyUpdated} icon={RefreshCw} />
       </div>
+
+      {/* Messages inbox */}
+      {inboxItems.length > 0 && (
+        <Card className="mb-8">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-gray-400" />
+                <CardTitle className="text-sm">Seneste beskeder</CardTitle>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-[#e5e7eb]">
+              {inboxItems.slice(0, 5).map((item) => (
+                <div
+                  key={item.projectId}
+                  className="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50"
+                  onClick={() => navigate(`/insurer/projects/${item.projectId}?tab=2`)}
+                >
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-xs font-display font-semibold">
+                    {getInitials(item.latestMessage!.senderName)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <span className="text-xs font-display font-semibold text-gray-900">#{item.claimId}</span>
+                      <span className="text-xs text-gray-500 truncate">{item.address}, {item.city}</span>
+                    </div>
+                    <p className="text-xs text-gray-600 truncate">{item.latestMessage!.messageBody}</p>
+                  </div>
+                  <span className="text-xs text-gray-400 shrink-0">{formatRelativeTime(item.latestMessage!.createdAt)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Recent projects */}
       <Card>

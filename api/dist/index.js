@@ -10,10 +10,15 @@ require("./functions/auth/me");
 require("./functions/auth/logout");
 require("./functions/auth/setupTotp");
 require("./functions/auth/debugToken");
+require("./functions/auth/forgotPassword");
+require("./functions/auth/resetPassword");
+require("./functions/auth/manage2fa");
 // Projects
 require("./functions/projects/list");
 require("./functions/projects/get");
+require("./functions/projects/createProject");
 require("./functions/projects/updateProject");
+require("./functions/projects/deleteProject");
 require("./functions/projects/getRecommendations");
 require("./functions/projects/auditLog");
 // Entreprises
@@ -44,6 +49,12 @@ require("./functions/chat/listProjectChannels");
 require("./functions/chat/createChannel");
 require("./functions/chat/getMessages");
 require("./functions/chat/sendMessage");
+require("./functions/chat/getProjectThread");
+// Messages
+require("./functions/messages/inbox");
+// Week planner
+require("./functions/weekplan/getWeekPlan");
+require("./functions/weekplan/toggleWeekPlan");
 // Files
 require("./functions/files/listFiles");
 require("./functions/files/uploadFile");

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions_1 = require("@azure/functions");
 const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
+const projectChannel_1 = require("../../lib/projectChannel");
 // Public REST API for insurance company systems to create cases
 async function ingestHandler(req, context) {
     try {
@@ -53,6 +54,14 @@ async function ingestHandler(req, context) {
                 createdViaApi: true,
             },
         });
+        // Seed project thread with insurer users so they can see the thread on login
+        const insurerUsers = await prisma_1.prisma.user.findMany({
+            where: { insurerUser: { insuranceCompanyId: insurer.id } },
+            select: { id: true },
+        });
+        if (insurerUsers.length > 0) {
+            await (0, projectChannel_1.ensureProjectChannel)(project.id, insurerUsers.map((u) => u.id));
+        }
         return { status: 201, jsonBody: { id: project.id, claimId: project.claimId } };
     }
     catch (err) {

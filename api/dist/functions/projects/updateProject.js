@@ -14,10 +14,16 @@ async function updateProjectHandler(req, context) {
         if (!existing) {
             return { status: 404, jsonBody: { error: 'Projekt ikke fundet' } };
         }
+        // Gate: CASE_CLOSED requires the project to first be CASE_INVOICED
+        if (body.currentMilestone === 'CASE_CLOSED' && existing.currentMilestone !== 'CASE_INVOICED') {
+            return { status: 409, jsonBody: { error: 'Sagen skal faktureres før den kan lukkes' } };
+        }
         const updateData = {};
         const allowedFields = [
-            'damageDescription', 'priorityLevel', 'maxApprovedPrice', 'estimatedScope',
-            'slaCategory', 'contactName', 'contactPhone', 'contactEmail',
+            'damageType', 'damageDescription', 'buildingType', 'priorityLevel',
+            'maxApprovedPrice', 'estimatedScope', 'slaCategory',
+            'address', 'postalCode', 'city', 'region',
+            'contactName', 'contactPhone', 'contactEmail',
             'currentMilestone', 'status',
         ];
         // responsibleUserId may be set to null (unassign) or a string (assign)

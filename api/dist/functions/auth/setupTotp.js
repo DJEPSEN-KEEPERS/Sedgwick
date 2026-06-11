@@ -11,10 +11,15 @@ const jwt_1 = require("../../lib/jwt");
 const totp_1 = require("../../lib/totp");
 async function setupTotpHandler(req, context) {
     try {
-        // Accept either Authorization header (full access token) or tempToken in body (first-time setup)
+        // Accept three token forms:
+        //   1. X-Auth-Token: <access_token>          (standard API header)
+        //   2. Authorization: Bearer <access_token>   (legacy / TwoFactorSection)
+        //   3. tempToken in body                      (first-time setup from login flow)
         let userId;
+        const xAuthToken = req.headers.get('X-Auth-Token') ?? req.headers.get('x-auth-token') ?? '';
         const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
-        const headerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+        const headerToken = xAuthToken || bearerToken;
         if (headerToken) {
             // Logged-in user resetting TOTP
             try {

@@ -36,7 +36,7 @@ export type EntrepriseMilestone =
 
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type InvitationStatus = 'PENDING' | 'INTERESTED' | 'NOT_INTERESTED'
-export type ChannelType = 'SEDGWICK_CONTRACTOR' | 'SEDGWICK_INSURER' | 'SEDGWICK_BIDDER'
+export type ChannelType = 'SEDGWICK_CONTRACTOR' | 'SEDGWICK_INSURER' | 'SEDGWICK_BIDDER' | 'PROJECT'
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 

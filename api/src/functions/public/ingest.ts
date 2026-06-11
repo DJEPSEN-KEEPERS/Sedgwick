@@ -1,6 +1,7 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
 import { prisma } from '../../lib/prisma'
 import { errorResponse } from '../../middleware/authMiddleware'
+import { ensureProjectChannel } from '../../lib/projectChannel'
 
 // Public REST API for insurance company systems to create cases
 async function ingestHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -58,6 +59,15 @@ async function ingestHandler(req: HttpRequest, context: InvocationContext): Prom
         createdViaApi: true,
       },
     })
+
+    // Seed project thread with insurer users so they can see the thread on login
+    const insurerUsers = await prisma.user.findMany({
+      where: { insurerUser: { insuranceCompanyId: insurer.id } },
+      select: { id: true },
+    })
+    if (insurerUsers.length > 0) {
+      await ensureProjectChannel(project.id, insurerUsers.map((u) => u.id))
+    }
 
     return { status: 201, jsonBody: { id: project.id, claimId: project.claimId } }
   } catch (err) {

@@ -4,6 +4,7 @@ import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
 import { notifyContractorBidSelected } from '../../lib/notificationService'
+import { ensureProjectChannel } from '../../lib/projectChannel'
 
 async function selectBidHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -41,6 +42,15 @@ async function selectBidHandler(req: HttpRequest, context: InvocationContext): P
 
     const project = await prisma.project.findUnique({ where: { id: bid.projectId }, select: { claimId: true } })
     if (project) await notifyContractorBidSelected(bid.contractorId, project.claimId)
+
+    // Add the contractor's users to the project message thread
+    const contractorUsers = await prisma.user.findMany({
+      where: { contractorUser: { contractorId: bid.contractorId } },
+      select: { id: true },
+    })
+    if (contractorUsers.length > 0) {
+      await ensureProjectChannel(bid.projectId, contractorUsers.map((u) => u.id))
+    }
 
     return { status: 200, jsonBody: { data: updated } }
   } catch (err) {

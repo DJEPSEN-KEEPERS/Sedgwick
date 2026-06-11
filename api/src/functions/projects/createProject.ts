@@ -2,6 +2,7 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
+import { ensureProjectChannel } from '../../lib/projectChannel'
 
 interface CreateProjectBody {
   // Core identifiers
@@ -132,6 +133,13 @@ async function createProjectHandler(req: HttpRequest, context: InvocationContext
       action:     'CREATE',
       newValue:   project,
     })
+
+    // Seed project message thread with the creating admin + all insurer users
+    const insurerUsers = await prisma.user.findMany({
+      where: { insurerUser: { insuranceCompanyId: body.insuranceCompanyId } },
+      select: { id: true },
+    })
+    await ensureProjectChannel(project.id, [jwtUser.sub, ...insurerUsers.map((u) => u.id)])
 
     return { status: 201, jsonBody: project }
   } catch (err) {

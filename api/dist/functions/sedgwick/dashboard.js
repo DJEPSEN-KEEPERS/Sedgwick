@@ -66,6 +66,7 @@ async function sedgwickDashboardHandler(req, context) {
                 take: 10,
             }),
             prisma_1.prisma.chatMessage.findMany({
+                where: { channel: { channelType: 'PROJECT' } },
                 orderBy: { createdAt: 'desc' },
                 take: 5,
                 include: {

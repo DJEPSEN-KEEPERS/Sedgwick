@@ -5,6 +5,7 @@ const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
 const auditLog_1 = require("../../lib/auditLog");
 const notificationService_1 = require("../../lib/notificationService");
+const projectChannel_1 = require("../../lib/projectChannel");
 async function selectBidHandler(req, context) {
     try {
         const jwtUser = (0, authMiddleware_1.authenticate)(req);
@@ -38,6 +39,14 @@ async function selectBidHandler(req, context) {
         const project = await prisma_1.prisma.project.findUnique({ where: { id: bid.projectId }, select: { claimId: true } });
         if (project)
             await (0, notificationService_1.notifyContractorBidSelected)(bid.contractorId, project.claimId);
+        // Add the contractor's users to the project message thread
+        const contractorUsers = await prisma_1.prisma.user.findMany({
+            where: { contractorUser: { contractorId: bid.contractorId } },
+            select: { id: true },
+        });
+        if (contractorUsers.length > 0) {
+            await (0, projectChannel_1.ensureProjectChannel)(bid.projectId, contractorUsers.map((u) => u.id));
+        }
         return { status: 200, jsonBody: { data: updated } };
     }
     catch (err) {

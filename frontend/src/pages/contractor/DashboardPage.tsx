@@ -4,7 +4,19 @@ import { Briefcase, Mail, MessageSquare, User, ChevronRight, Clock } from 'lucid
 import { useTranslation } from 'react-i18next'
 import { useCurrentUser } from '@/stores/authStore'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatRelativeTime } from '@/lib/utils'
+
+interface InboxItem {
+  projectId: string
+  claimId: string
+  address: string
+  city: string
+  latestMessage: { messageBody: string; senderName: string; createdAt: string } | null
+}
+
+interface InboxData {
+  items: InboxItem[]
+}
 
 interface ContractorDashboardData {
   stats: { activeJobs: number; pendingInvitations: number; unreadMessages: number }
@@ -34,9 +46,11 @@ export default function ContractorDashboard() {
   const { t } = useTranslation()
   const user = useCurrentUser()
   const { data, loading } = useApi<ContractorDashboardData>('/contractor/dashboard')
+  const { data: inboxData } = useApi<InboxData>('/messages/inbox')
 
   const stats = data?.stats ?? { activeJobs: 0, pendingInvitations: 0, unreadMessages: 0 }
   const recentJobs = data?.recentJobs ?? []
+  const inboxItems = inboxData?.items?.filter((i) => i.latestMessage) ?? []
 
   const actions: ActionCard[] = [
     {
@@ -105,6 +119,36 @@ export default function ContractorDashboard() {
           </button>
         ))}
       </div>
+
+      {/* Messages inbox */}
+      {inboxItems.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-4 w-4 text-gray-400" />
+            <h2 className="font-display font-semibold text-sm text-gray-900">Seneste beskeder</h2>
+          </div>
+          <div className="space-y-2">
+            {inboxItems.slice(0, 3).map((item) => (
+              <button
+                key={item.projectId}
+                onClick={() => navigate(`/contractor/jobs/${item.projectId}`)}
+                className="w-full flex items-start gap-3 rounded-xl border border-[#e5e7eb] bg-white p-3 text-left hover:border-primary-300 transition-colors"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-xs font-display font-semibold">
+                  <MessageSquare className="h-4 w-4 text-primary-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="font-mono text-xs font-semibold text-primary-700">{item.claimId}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 truncate">{item.latestMessage!.messageBody}</p>
+                </div>
+                <span className="text-xs text-gray-400 shrink-0">{formatRelativeTime(item.latestMessage!.createdAt)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent jobs */}
       <div>

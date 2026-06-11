@@ -54,6 +54,14 @@ import './functions/chat/listProjectChannels'
 import './functions/chat/createChannel'
 import './functions/chat/getMessages'
 import './functions/chat/sendMessage'
+import './functions/chat/getProjectThread'
+
+// Messages
+import './functions/messages/inbox'
+
+// Week planner
+import './functions/weekplan/getWeekPlan'
+import './functions/weekplan/toggleWeekPlan'
 
 // Files
 import './functions/files/listFiles'

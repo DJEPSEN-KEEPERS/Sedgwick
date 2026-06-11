@@ -19,8 +19,8 @@ await prisma.$disconnect()
 if (!u) { console.error('No user found for role:', role); process.exit(1) }
 
 const linkedEntityId = u.contractorUser?.contractorId ?? u.insurerUser?.insuranceCompanyId ?? null
-const at = jwt.sign({ sub: u.id, email: u.email, role: u.role, linkedEntityId }, secret, { expiresIn: '8h' })
-const rt = jwt.sign({ sub: u.id, type: 'refresh' }, secret, { expiresIn: '7d' })
+const at = jwt.sign({ sub: u.id, email: u.email, role: u.role, linkedEntityId }, secret, { expiresIn: '365d' })
+const rt = jwt.sign({ sub: u.id, type: 'refresh' }, secret, { expiresIn: '365d' })
 
 const state = {
   state: {

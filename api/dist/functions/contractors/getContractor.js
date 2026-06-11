@@ -20,16 +20,50 @@ async function getContractorHandler(req, context) {
                         user: { select: { id: true, fullName: true, email: true, role: true, status: true } },
                     },
                 },
-                sedgwickReviews: {
-                    orderBy: { createdAt: 'desc' },
-                    take: 20,
-                },
+                sedgwickReviews: { orderBy: { createdAt: 'desc' }, take: 20 },
                 clientReviews: { orderBy: { createdAt: 'desc' }, take: 20 },
+                // Project history via bid invitations
+                bidInvitations: {
+                    include: {
+                        project: { select: { id: true, claimId: true } },
+                        bid: { select: { isSelected: true, bidAmount: true } },
+                    },
+                    orderBy: { invitedAt: 'desc' },
+                    take: 100,
+                },
             },
         });
         if (!contractor)
             return { status: 404, jsonBody: { error: 'Håndværker ikke fundet' } };
-        return { status: 200, jsonBody: { data: contractor } };
+        // ── Flatten / transform for frontend consumption ──────────────────────────
+        // regions: ContractorRegion[] → string[]
+        const regions = contractor.regions.map((r) => r.regionName);
+        // skills: ContractorSkill[] (with nested skill) → { id, name }[]
+        const skills = contractor.skills.map((cs) => ({
+            id: cs.skill.id,
+            name: cs.skill.name,
+        }));
+        // projectHistory: BidInvitation[] → ProjectHistory[]
+        const projectHistory = contractor.bidInvitations.map((inv) => ({
+            projectId: inv.project.id,
+            claimId: inv.project.claimId,
+            role: inv.bid?.isSelected ? 'selected' : 'invited',
+            bidStatus: inv.bid
+                ? (inv.bid.isSelected ? 'VALGT' : 'INDSENDT')
+                : (inv.status === 'INTERESTED' ? 'INTERESSERET' : inv.status === 'NOT_INTERESTED' ? 'IKKE INTERESSERET' : 'AFVENTER'),
+            outcome: inv.bid?.isSelected ? 'Valgt som håndværker' : undefined,
+            date: inv.invitedAt.toISOString(),
+        }));
+        // Return bare object (no { data: ... } wrapper) so frontend can use directly
+        return {
+            status: 200,
+            jsonBody: {
+                ...contractor,
+                regions,
+                skills,
+                projectHistory,
+            },
+        };
     }
     catch (err) {
         return (0, authMiddleware_1.errorResponse)(err, context);
