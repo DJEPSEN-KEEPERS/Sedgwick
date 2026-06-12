@@ -60,7 +60,6 @@ export function EntreprisesTab({ projectId, allTypes = false }: { projectId: str
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500 w-8" />
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Fag</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Relevant</th>
-              <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Håndværker</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Status</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500 w-32">Fremgang</th>
             </tr>
@@ -147,9 +146,6 @@ function EntrepriseRow({
             )}
           </button>
         </td>
-        <td className="px-4 py-3 text-xs text-gray-600">
-          {entreprise?.contractor?.companyName ?? '—'}
-        </td>
         <td className="px-4 py-3">
           {isRelevant && entreprise ? (
             <EntrepriseBadge milestone={entreprise.currentMilestone} />
@@ -171,7 +167,7 @@ function EntrepriseRow({
 
       {isExpanded && entreprise && (
         <tr>
-          <td colSpan={6} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
+          <td colSpan={5} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
             <EntrepriseDetail
               entreprise={entreprise}
               onApprove={onApprove}
