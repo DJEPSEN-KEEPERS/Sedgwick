@@ -12,9 +12,15 @@ async function listProjectsHandler(req, context) {
         const search = url.searchParams.get('search') ?? undefined;
         const priority = url.searchParams.get('priority') ?? undefined;
         // ── Scope by role ─────────────────────────────────────────────────────────
-        const scopeWhere = jwtUser.role === 'INSURER_USER' && jwtUser.linkedEntityId
+        if (jwtUser.role === 'INSURER_USER' && !jwtUser.linkedEntityId) {
+            return { status: 200, jsonBody: [] };
+        }
+        if (jwtUser.role === 'CONTRACTOR_USER' && !jwtUser.linkedEntityId) {
+            return { status: 200, jsonBody: [] };
+        }
+        const scopeWhere = jwtUser.role === 'INSURER_USER'
             ? { insuranceCompanyId: jwtUser.linkedEntityId }
-            : jwtUser.role === 'CONTRACTOR_USER' && jwtUser.linkedEntityId
+            : jwtUser.role === 'CONTRACTOR_USER'
                 ? { selectedContractorId: jwtUser.linkedEntityId }
                 : {};
         // ── Build combined where ──────────────────────────────────────────────────

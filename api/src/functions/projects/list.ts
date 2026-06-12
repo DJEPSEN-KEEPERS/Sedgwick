@@ -13,11 +13,18 @@ async function listProjectsHandler(req: HttpRequest, context: InvocationContext)
     const priority = url.searchParams.get('priority') ?? undefined
 
     // ── Scope by role ─────────────────────────────────────────────────────────
+    if (jwtUser.role === 'INSURER_USER' && !jwtUser.linkedEntityId) {
+      return { status: 200, jsonBody: [] }
+    }
+    if (jwtUser.role === 'CONTRACTOR_USER' && !jwtUser.linkedEntityId) {
+      return { status: 200, jsonBody: [] }
+    }
+
     const scopeWhere =
-      jwtUser.role === 'INSURER_USER' && jwtUser.linkedEntityId
-        ? { insuranceCompanyId: jwtUser.linkedEntityId }
-        : jwtUser.role === 'CONTRACTOR_USER' && jwtUser.linkedEntityId
-          ? { selectedContractorId: jwtUser.linkedEntityId }
+      jwtUser.role === 'INSURER_USER'
+        ? { insuranceCompanyId: jwtUser.linkedEntityId! }
+        : jwtUser.role === 'CONTRACTOR_USER'
+          ? { selectedContractorId: jwtUser.linkedEntityId! }
           : {}
 
     // ── Build combined where ──────────────────────────────────────────────────
