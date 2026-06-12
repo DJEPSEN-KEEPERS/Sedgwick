@@ -9,11 +9,12 @@ import { Badge } from '@/components/ui/badge'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { ImageGallery } from '@/components/files/ImageGallery'
 import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
+import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
 import { formatDate, formatDateTime, getEntrepriseTypeLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Project, Entreprise } from '@/types'
 
-const TABS = ['Oversigt', 'Fremgang', 'Beskeder', 'Filer']
+const TABS = ['Oversigt', 'Entrepriser', 'Fremgang', 'Beskeder', 'Filer']
 
 export default function InsurerProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -22,7 +23,7 @@ export default function InsurerProjectDetailPage() {
   const [tab, setTab] = useState(parseInt(searchParams.get('tab') ?? '0'))
 
   const { data: project, loading } = useApi<Project>(`/projects/${projectId}`)
-  const { data: entreprises } = useApi<Entreprise[]>(`/projects/${projectId}/entreprises`, { enabled: tab === 1 })
+  const { data: entreprises } = useApi<Entreprise[]>(`/projects/${projectId}/entreprises`, { enabled: tab === 2 })
 
   useEffect(() => {
     setSearchParams(tab > 0 ? { tab: String(tab) } : {}, { replace: true })
@@ -64,9 +65,10 @@ export default function InsurerProjectDetailPage() {
       </div>
 
       {tab === 0 && <InsurerOverviewTab project={project} />}
-      {tab === 1 && <InsurerProgressTab project={project} entreprises={entreprises ?? []} />}
-      {tab === 2 && <InsurerMessagesTab projectId={project.id} />}
-      {tab === 3 && <InsurerFilesTab projectId={project.id} />}
+      {tab === 1 && <EntreprisesTab projectId={project.id} />}
+      {tab === 2 && <InsurerProgressTab project={project} entreprises={entreprises ?? []} />}
+      {tab === 3 && <InsurerMessagesTab projectId={project.id} />}
+      {tab === 4 && <InsurerFilesTab projectId={project.id} />}
     </div>
   )
 }

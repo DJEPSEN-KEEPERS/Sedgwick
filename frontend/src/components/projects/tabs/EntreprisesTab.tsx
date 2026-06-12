@@ -26,9 +26,11 @@ const MILESTONE_OPTIONS: { value: EntrepriseMilestone; label: string }[] = [
   { value: 'SIGNED_OFF', label: 'Godkendt' },
 ]
 
-export function EntreprisesTab({ projectId }: { projectId: string }) {
-  const { data: entreprises, loading, refetch } = useApi<Entreprise[]>(`/projects/${projectId}/entreprises`)
-  const { mutate: updateRelevance } = useMutation('patch')
+export function EntreprisesTab({ projectId, allTypes = false }: { projectId: string; allTypes?: boolean }) {
+  const { data: entreprises, loading, refetch } = useApi<Entreprise[]>(
+    `/projects/${projectId}/entreprises${allTypes ? '?all=true' : ''}`,
+  )
+  const { mutate: toggleRelevanceMutation } = useMutation('patch')
   const { mutate: approveMutation } = useMutation('post')
   const { mutate: rejectMutation } = useMutation('post')
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -37,8 +39,8 @@ export function EntreprisesTab({ projectId }: { projectId: string }) {
 
   const entrepriseMap = new Map(entreprises?.map((e) => [e.type, e]) ?? [])
 
-  const toggleRelevance = async (e: Entreprise) => {
-    await updateRelevance(`/entreprises/${e.id}/relevance`, { isRelevant: !e.isRelevant })
+  const toggleRelevance = async (type: EntrepriseType, currentValue: boolean) => {
+    await toggleRelevanceMutation(`/projects/${projectId}/entreprises/${type}/relevance`, { isRelevant: !currentValue })
     refetch()
   }
 
@@ -74,7 +76,7 @@ export function EntreprisesTab({ projectId }: { projectId: string }) {
                   entreprise={e}
                   isExpanded={isExpanded}
                   onToggleExpand={() => setExpanded(isExpanded ? null : type)}
-                  onToggleRelevance={() => e && toggleRelevance(e)}
+                  onToggleRelevance={() => toggleRelevance(type, e?.isRelevant ?? false)}
                   onApprove={async (updateId) => { await approveMutation(`/status-updates/${updateId}/approve`); refetch() }}
                   onReject={async (updateId) => { await rejectMutation(`/status-updates/${updateId}/reject`); refetch() }}
                 />

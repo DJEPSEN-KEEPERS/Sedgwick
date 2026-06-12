@@ -14,7 +14,9 @@ async function listEntreprisesHandler(req, context) {
         if (jwtUser.role === 'INSURER_USER' && project.insuranceCompanyId !== jwtUser.linkedEntityId) {
             return { status: 403, jsonBody: { error: 'Ingen adgang' } };
         }
-        const where = jwtUser.role === 'CONTRACTOR_USER' && jwtUser.linkedEntityId
+        // ?all=true lets any role see all entreprise types (used by EntreprisesTab toggle view)
+        const allParam = req.query.get('all') === 'true';
+        const where = jwtUser.role === 'CONTRACTOR_USER' && jwtUser.linkedEntityId && !allParam
             ? { projectId, contractorId: jwtUser.linkedEntityId }
             : { projectId };
         const entreprises = await prisma_1.prisma.entreprise.findMany({

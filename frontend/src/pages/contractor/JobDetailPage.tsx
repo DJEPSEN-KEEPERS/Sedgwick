@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge'
 import { MilestoneBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
+import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
 import { formatDate, formatRelativeTime, getEntrepriseTypeLabel, getEntrepriseMilestoneLabel } from '@/lib/utils'
 import type { Project, EntrepriseType, EntrepriseMilestone } from '@/types'
 
-type Tab = 'overview' | 'planning' | 'updates' | 'report'
+type Tab = 'overview' | 'entreprises' | 'planning' | 'updates' | 'report'
 
 export default function JobDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -58,6 +59,7 @@ export default function JobDetailPage() {
       <div className="flex border-b border-[#e5e7eb] bg-white sticky top-[84px] z-10">
         {([
           { key: 'overview', label: 'Overblik' },
+          { key: 'entreprises', label: 'Entrepriser' },
           { key: 'planning', label: 'Planlægning' },
           { key: 'updates', label: 'Statusopdateringer' },
           { key: 'report', label: 'Slutrapport' },
@@ -77,7 +79,8 @@ export default function JobDetailPage() {
       </div>
 
       <div className="p-4">
-        {tab === 'overview'  && <OverviewTab project={project} />}
+        {tab === 'overview'    && <OverviewTab project={project} />}
+        {tab === 'entreprises' && <EntreprisesTab projectId={project.id} allTypes />}
         {tab === 'planning'  && (
           <WeekPlannerGrid
             projectId={project.id}

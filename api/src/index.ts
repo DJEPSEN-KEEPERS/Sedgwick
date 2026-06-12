@@ -26,6 +26,7 @@ import './functions/projects/auditLog'
 import './functions/entreprises/listEntreprises'
 import './functions/entreprises/updateEntrepriseRelevance'
 import './functions/entreprises/updateEntrepriseStatus'
+import './functions/entreprises/toggleEntrepriseRelevance'
 
 // Bids
 import './functions/bids/listBids'

@@ -25,6 +25,7 @@ require("./functions/projects/auditLog");
 require("./functions/entreprises/listEntreprises");
 require("./functions/entreprises/updateEntrepriseRelevance");
 require("./functions/entreprises/updateEntrepriseStatus");
+require("./functions/entreprises/toggleEntrepriseRelevance");
 // Bids
 require("./functions/bids/listBids");
 require("./functions/bids/listInvitations");
