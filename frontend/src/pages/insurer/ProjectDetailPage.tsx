@@ -179,14 +179,38 @@ function InsurerMessagesTab({ projectId }: { projectId: string }) {
   return <ChatPanel projectId={projectId} singleChannel className="h-[560px]" />
 }
 
+interface ProjectFile {
+  id: string
+  fileName: string
+  fileType: string
+  blobUrl: string
+  fileSizeMb: number
+  attachmentCategory: string
+}
+
+interface FilesData {
+  projectDocuments: ProjectFile[]
+  bidAttachments: ProjectFile[]
+  statusUpdatePhotos: Record<string, ProjectFile[]>
+  finalReportFiles: Record<string, ProjectFile[]>
+  chatAttachments: ProjectFile[]
+}
+
 function InsurerFilesTab({ projectId }: { projectId: string }) {
-  const { data, loading } = useApi<{ files: { id: string; fileName: string; fileType: string; blobUrl: string; fileSizeMb: number }[] }>(
-    `/projects/${projectId}/files?clientVisible=true`,
-  )
-  const images = data?.files.filter(f => f.fileType.startsWith('image/')) ?? []
-  const others = data?.files.filter(f => !f.fileType.startsWith('image/')) ?? []
+  const { data, loading } = useApi<FilesData>(`/projects/${projectId}/files?clientVisible=true`)
 
   if (loading) return <div className="h-32 bg-gray-200 animate-pulse rounded-lg" />
+
+  const allFlat: ProjectFile[] = [
+    ...(data?.projectDocuments ?? []),
+    ...(data?.bidAttachments ?? []),
+    ...Object.values(data?.statusUpdatePhotos ?? {}).flat(),
+    ...Object.values(data?.finalReportFiles ?? {}).flat(),
+    ...(data?.chatAttachments ?? []),
+  ]
+
+  const images = allFlat.filter(f => f.fileType?.startsWith('image/'))
+  const others = allFlat.filter(f => !f.fileType?.startsWith('image/'))
 
   return (
     <div className="space-y-4">
