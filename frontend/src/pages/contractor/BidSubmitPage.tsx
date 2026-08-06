@@ -65,7 +65,7 @@ export default function BidSubmitPage() {
     const result = await submit('/contractor/bids', {
       projectId,
       bidAmount: parseFloat(bidAmount),
-      comments: comments || undefined,
+      comments,
       entrepriseRelevance: relevanceWithDefaults,
     }) as any
 
@@ -151,7 +151,7 @@ export default function BidSubmitPage() {
     },
     {
       label: 'Bud',
-      isValid: parseFloat(bidAmount) > 0,
+      isValid: parseFloat(bidAmount) > 0 && comments.trim().length > 0,
       content: (
         <div className="space-y-4">
           {project && (
@@ -186,7 +186,7 @@ export default function BidSubmitPage() {
 
           <div>
             <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
-              Kommentar (valgfrit)
+              Kommentar <span className="text-red-500">*</span>
             </label>
             <textarea
               value={comments}
