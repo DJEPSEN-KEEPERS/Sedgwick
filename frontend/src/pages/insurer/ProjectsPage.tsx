@@ -4,7 +4,6 @@ import { Search } from 'lucide-react'
 import { useApi } from '@/hooks/useApi'
 import { Input } from '@/components/ui/input'
 import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
-import { Progress } from '@/components/ui/progress'
 import { formatDate } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Project } from '@/types'
@@ -121,7 +120,7 @@ export default function InsurerProjectsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                  {['Sag ID', 'Adresse', 'Skadetype', 'Prioritet', 'Status', 'Fremgang', 'Håndværker', 'Deadline'].map((h) => (
+                  {['Sag ID', 'Adresse', 'Skadetype', 'Prioritet', 'Status', 'Håndværker', 'Deadline'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
                   ))}
                 </tr>
@@ -129,7 +128,7 @@ export default function InsurerProjectsPage() {
               <tbody>
                 {filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400">
+                    <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">
                       Ingen sager matcher filteret
                     </td>
                   </tr>
@@ -148,12 +147,6 @@ export default function InsurerProjectsPage() {
                       <td className="px-4 py-2.5 text-xs text-gray-600">{p.damageType}</td>
                       <td className="px-4 py-2.5"><PriorityBadge level={p.priorityLevel} /></td>
                       <td className="px-4 py-2.5"><MilestoneBadge milestone={p.currentMilestone} /></td>
-                      <td className="px-4 py-2.5 w-28">
-                        <div className="flex items-center gap-1.5">
-                          <Progress value={p.progressPercent} className="h-1.5 flex-1" />
-                          <span className="text-xs text-gray-500 w-8">{p.progressPercent}%</span>
-                        </div>
-                      </td>
                       <td className="px-4 py-2.5 text-xs text-gray-600">
                         {p.selectedContractor?.companyName ?? '—'}
                       </td>
