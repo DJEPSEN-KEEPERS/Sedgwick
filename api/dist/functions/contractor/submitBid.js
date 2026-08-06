@@ -11,9 +11,10 @@ async function submitBidHandler(req, context) {
         if (!contractorId)
             return { status: 400, jsonBody: { error: 'Bruger er ikke tilknyttet en håndværkervirksomhed' } };
         const body = await req.json();
-        if (!body.projectId || !body.bidAmount) {
-            return { status: 400, jsonBody: { error: 'projectId og bidAmount er påkrævet' } };
+        if (!body.projectId || !body.materialsCost || !body.laborCost) {
+            return { status: 400, jsonBody: { error: 'projectId, materialsCost og laborCost er påkrævet' } };
         }
+        const bidAmount = body.materialsCost + body.laborCost;
         const invitation = await prisma_1.prisma.bidInvitation.findFirst({
             where: { projectId: body.projectId, contractorId, status: 'INTERESTED' },
         });
@@ -29,7 +30,9 @@ async function submitBidHandler(req, context) {
                 projectId: body.projectId,
                 contractorId,
                 bidInvitationId: invitation.id,
-                bidAmount: body.bidAmount,
+                bidAmount,
+                materialsCost: body.materialsCost,
+                laborCost: body.laborCost,
                 currency: 'DKK',
                 comments: body.comments,
             },

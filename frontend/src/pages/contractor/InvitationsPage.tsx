@@ -151,9 +151,21 @@ function InvitationCard({
           </div>
         )}
 
-        {project?.maxApprovedPrice && (
+        {project?.insuranceCompany?.name && (
           <div className="text-xs text-gray-500">
-            Maks. godkendt beløb: <span className="font-semibold text-gray-900">{formatCurrency(project.maxApprovedPrice)}</span>
+            Forsikringsselskab: <span className="font-semibold text-gray-900">{project.insuranceCompany.name}</span>
+          </div>
+        )}
+
+        {project?.buildingType && (
+          <div className="text-xs text-gray-500">
+            Bygningstype: <span className="font-semibold text-gray-900">{project.buildingType}</span>
+          </div>
+        )}
+
+        {project?.estimatedScope && (
+          <div className="text-xs text-gray-500">
+            Skadesomfang: <span className="font-semibold text-gray-900">{project.estimatedScope}</span>
           </div>
         )}
 

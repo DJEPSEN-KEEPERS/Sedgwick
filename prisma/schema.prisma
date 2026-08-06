@@ -303,6 +303,8 @@ model Bid {
   contractorId     String
   bidInvitationId  String    @unique
   bidAmount        Float
+  materialsCost    Float?
+  laborCost        Float?
   currency         String    @default("DKK")
   comments         String?
   submittedAt      DateTime  @default(now())

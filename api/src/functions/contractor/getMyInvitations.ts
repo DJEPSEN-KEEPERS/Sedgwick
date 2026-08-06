@@ -23,9 +23,10 @@ async function getMyInvitationsHandler(req: HttpRequest, context: InvocationCont
             damageType: true,
             priorityLevel: true,
             requestedDeadline: true,
-            maxApprovedPrice: true,
+            buildingType: true,
             estimatedScope: true,
             entreprises: { select: { id: true, type: true, isRelevant: true } },
+            insuranceCompany: { select: { name: true } },
             attachments: {
               where: { isClientVisible: true },
               select: { id: true, fileName: true, fileType: true, blobUrl: true },

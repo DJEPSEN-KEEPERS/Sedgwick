@@ -40,7 +40,8 @@ export default function BidSubmitPage() {
   const [relevance, setRelevance] = useState<Record<string, boolean>>({})
 
   // Step 2: Bid details + files
-  const [bidAmount, setBidAmount] = useState('')
+  const [materialsCost, setMaterialsCost] = useState('')
+  const [laborCost, setLaborCost] = useState('')
   const [comments, setComments] = useState('')
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [isDragging, setIsDragging] = useState(false)
@@ -60,11 +61,16 @@ export default function BidSubmitPage() {
 
   const removeFile = (idx: number) => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))
 
+  const matVal = parseFloat(materialsCost) || 0
+  const labVal = parseFloat(laborCost) || 0
+  const totalBid = matVal + labVal
+
   const handleSubmit = async () => {
     setUploadError('')
     const result = await submit('/contractor/bids', {
       projectId,
-      bidAmount: parseFloat(bidAmount),
+      materialsCost: matVal,
+      laborCost: labVal,
       comments,
       entrepriseRelevance: relevanceWithDefaults,
     }) as any
@@ -151,38 +157,60 @@ export default function BidSubmitPage() {
     },
     {
       label: 'Bud',
-      isValid: parseFloat(bidAmount) > 0 && comments.trim().length > 0,
+      isValid: matVal > 0 && labVal > 0 && comments.trim().length > 0,
       content: (
         <div className="space-y-4">
           {project && (
             <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 space-y-1">
               <p><span className="font-semibold">Sag:</span> {project.claimId}</p>
               <p><span className="font-semibold">Adresse:</span> {project.address}, {project.city}</p>
-              {project.maxApprovedPrice && (
-                <p><span className="font-semibold">Maks. godkendt:</span> {formatCurrency(project.maxApprovedPrice)}</p>
-              )}
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
-              Budbeløb (DKK) <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                inputMode="numeric"
-                value={bidAmount}
-                onChange={(e) => setBidAmount(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-lg border border-gray-300 pl-3 pr-12 py-3 text-lg font-display font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-semibold">DKK</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
+                Materialer (DKK) <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={materialsCost}
+                  onChange={(e) => setMaterialsCost(e.target.value)}
+                  placeholder="0"
+                  className="w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2.5 text-base font-display font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold">DKK</span>
+              </div>
+              {matVal > 0 && <p className="mt-0.5 text-xs text-gray-500">{formatCurrency(matVal)}</p>}
             </div>
-            {bidAmount && parseFloat(bidAmount) > 0 && (
-              <p className="mt-1 text-sm text-primary-700 font-semibold">{formatCurrency(parseFloat(bidAmount))}</p>
-            )}
+
+            <div>
+              <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
+                Håndværkertimer (DKK) <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={laborCost}
+                  onChange={(e) => setLaborCost(e.target.value)}
+                  placeholder="0"
+                  className="w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2.5 text-base font-display font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold">DKK</span>
+              </div>
+              {labVal > 0 && <p className="mt-0.5 text-xs text-gray-500">{formatCurrency(labVal)}</p>}
+            </div>
           </div>
+
+          {(matVal > 0 || labVal > 0) && (
+            <div className="rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 flex items-center justify-between">
+              <span className="text-sm font-display font-semibold text-primary-800">Samlet Budbeløb</span>
+              <span className="text-lg font-display font-bold text-primary-700">{formatCurrency(totalBid)}</span>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
@@ -250,7 +278,7 @@ export default function BidSubmitPage() {
     },
     {
       label: 'Gennemse',
-      isValid: parseFloat(bidAmount) > 0,
+      isValid: matVal > 0 && labVal > 0,
       content: (
         <div className="space-y-4">
           <div className="rounded-xl border border-[#e5e7eb] bg-gray-50 p-4 space-y-3">
@@ -260,10 +288,16 @@ export default function BidSubmitPage() {
                 <span className="font-semibold text-gray-900">{project?.claimId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Budbeløb</span>
-                <span className="font-semibold text-primary-700 text-base">
-                  {bidAmount ? formatCurrency(parseFloat(bidAmount)) : '—'}
-                </span>
+                <span className="text-gray-500">Materialer</span>
+                <span className="font-semibold text-gray-900">{matVal > 0 ? formatCurrency(matVal) : '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Håndværkertimer</span>
+                <span className="font-semibold text-gray-900">{labVal > 0 ? formatCurrency(labVal) : '—'}</span>
+              </div>
+              <div className="flex justify-between border-t border-gray-200 pt-2">
+                <span className="text-gray-700 font-semibold">Samlet Budbeløb</span>
+                <span className="font-bold text-primary-700 text-base">{formatCurrency(totalBid)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Entrepriser (relevant)</span>
