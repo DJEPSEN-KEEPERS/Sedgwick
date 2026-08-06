@@ -17,7 +17,13 @@ async function uploadFileHandler(req, context) {
             return { status: 404, jsonBody: { error: 'Projekt ikke fundet' } };
         const contentType = req.headers.get('content-type') ?? 'application/octet-stream';
         const fileName = req.headers.get('x-file-name') ?? `upload-${Date.now()}`;
-        const fileBuffer = Buffer.from(await req.arrayBuffer());
+        if (!req.body)
+            return { status: 400, jsonBody: { error: 'Ingen fil modtaget' } };
+        const chunks = [];
+        for await (const chunk of req.body) {
+            chunks.push(Buffer.from(chunk));
+        }
+        const fileBuffer = Buffer.concat(chunks);
         const fileSizeMb = fileBuffer.length / (1024 * 1024);
         if (fileSizeMb > 50) {
             return { status: 413, jsonBody: { error: 'Filen overstiger maksimal størrelse på 50 MB' } };

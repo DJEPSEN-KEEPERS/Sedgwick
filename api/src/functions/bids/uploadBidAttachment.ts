@@ -20,7 +20,12 @@ async function uploadBidAttachmentHandler(req: HttpRequest, context: InvocationC
     const contentType = req.headers.get('content-type') ?? 'application/octet-stream'
     const rawName = req.headers.get('x-file-name') ?? `upload-${Date.now()}`
     const fileName = decodeURIComponent(rawName)
-    const fileBuffer = Buffer.from(await req.arrayBuffer())
+    if (!req.body) return { status: 400, jsonBody: { error: 'Ingen fil modtaget' } }
+    const chunks: Buffer[] = []
+    for await (const chunk of req.body as unknown as AsyncIterable<Uint8Array>) {
+      chunks.push(Buffer.from(chunk))
+    }
+    const fileBuffer = Buffer.concat(chunks)
     const fileSizeMb = fileBuffer.length / (1024 * 1024)
 
     if (fileSizeMb > 50) {
