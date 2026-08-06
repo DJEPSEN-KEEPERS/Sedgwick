@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { ChevronDown, ChevronRight, CheckCircle2, XCircle } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getEntrepriseTypeLabel, formatDate, formatDateTime } from '@/lib/utils'
@@ -61,7 +60,6 @@ export function EntreprisesTab({ projectId, allTypes = false }: { projectId: str
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Fag</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Relevant</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Status</th>
-              <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500 w-32">Fremgang</th>
             </tr>
           </thead>
           <tbody>
@@ -153,21 +151,11 @@ function EntrepriseRow({
             <span className="text-xs text-gray-400">—</span>
           )}
         </td>
-        <td className="px-4 py-3">
-          {isRelevant && entreprise ? (
-            <div className="flex items-center gap-2">
-              <Progress value={entreprise.progressPercent} className="h-1.5 w-20" />
-              <span className="text-xs text-gray-500 w-8">{entreprise.progressPercent}%</span>
-            </div>
-          ) : (
-            <span className="text-xs text-gray-400">—</span>
-          )}
-        </td>
       </tr>
 
       {isExpanded && entreprise && (
         <tr>
-          <td colSpan={5} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
+          <td colSpan={4} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
             <EntrepriseDetail
               entreprise={entreprise}
               onApprove={onApprove}

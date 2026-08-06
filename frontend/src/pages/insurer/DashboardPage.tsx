@@ -3,7 +3,6 @@ import { useApi } from '@/hooks/useApi'
 import { FolderOpen, CheckCircle, Clock, RefreshCw, MessageSquare } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { Progress } from '@/components/ui/progress'
 import { StatCard } from '@/components/ui/StatCard'
 import { formatDate, formatRelativeTime, getInitials } from '@/lib/utils'
 import type { Project } from '@/types'
@@ -112,7 +111,7 @@ export default function InsurerDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                    {['Sag ID', 'Adresse', 'Skadetype', 'Status', 'Fremgang', 'Forventet afslutning'].map((h) => (
+                    {['Sag ID', 'Adresse', 'Skadetype', 'Status', 'Forventet afslutning'].map((h) => (
                       <th key={h} className="px-4 py-2 text-left text-xs font-display font-medium text-gray-500">{h}</th>
                     ))}
                   </tr>
@@ -128,12 +127,6 @@ export default function InsurerDashboard() {
                       <td className="px-4 py-2.5 text-xs text-gray-600">{p.address}, {p.city}</td>
                       <td className="px-4 py-2.5 text-xs text-gray-600">{p.damageType}</td>
                       <td className="px-4 py-2.5"><MilestoneBadge milestone={p.currentMilestone} /></td>
-                      <td className="px-4 py-2.5 w-28">
-                        <div className="flex items-center gap-1.5">
-                          <Progress value={p.progressPercent} className="h-1.5 flex-1" />
-                          <span className="text-xs text-gray-500 w-8">{p.progressPercent}%</span>
-                        </div>
-                      </td>
                       <td className="px-4 py-2.5 text-xs text-gray-500">
                         {p.requestedDeadline ? formatDate(p.requestedDeadline) : '—'}
                       </td>

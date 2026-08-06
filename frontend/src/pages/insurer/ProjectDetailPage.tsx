@@ -2,18 +2,16 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ArrowLeft, Phone, Mail, Upload, X, Loader2, CheckCircle2 } from 'lucide-react'
 import { useApi } from '@/hooks/useApi'
-import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
+import { MilestoneBadge, EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { ImageGallery } from '@/components/files/ImageGallery'
-import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
-import { formatDate, formatDateTime, getEntrepriseTypeLabel } from '@/lib/utils'
+import { formatDate, formatDateTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import type { Project, Entreprise } from '@/types'
+import type { Project } from '@/types'
 
 const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL ?? '/api'
 const ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip'
@@ -39,7 +37,7 @@ async function uploadRaw(projectId: string, file: File): Promise<void> {
   }
 }
 
-const TABS = ['Oversigt', 'Entrepriser', 'Fremgang', 'Beskeder', 'Filer']
+const TABS = ['Oversigt', 'Entrepriser', 'Beskeder', 'Filer']
 
 export default function InsurerProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -48,7 +46,6 @@ export default function InsurerProjectDetailPage() {
   const [tab, setTab] = useState(parseInt(searchParams.get('tab') ?? '0'))
 
   const { data: project, loading } = useApi<Project>(`/projects/${projectId}`)
-  const { data: entreprises } = useApi<Entreprise[]>(`/projects/${projectId}/entreprises`, { enabled: tab === 2 })
 
   useEffect(() => {
     setSearchParams(tab > 0 ? { tab: String(tab) } : {}, { replace: true })
@@ -91,9 +88,8 @@ export default function InsurerProjectDetailPage() {
 
       {tab === 0 && <InsurerOverviewTab project={project} />}
       {tab === 1 && <EntreprisesTab projectId={project.id} />}
-      {tab === 2 && <InsurerProgressTab project={project} entreprises={entreprises ?? []} />}
-      {tab === 3 && <InsurerMessagesTab projectId={project.id} />}
-      {tab === 4 && <InsurerFilesTab projectId={project.id} />}
+      {tab === 2 && <InsurerMessagesTab projectId={project.id} />}
+      {tab === 3 && <InsurerFilesTab projectId={project.id} />}
     </div>
   )
 }
@@ -150,51 +146,6 @@ function InsurerOverviewTab({ project }: { project: Project }) {
             <p className="font-display font-semibold text-gray-900">{project.selectedContractor.companyName}</p>
           </CardContent>
         </Card>
-      )}
-    </div>
-  )
-}
-
-function InsurerProgressTab({ project, entreprises }: { project: Project; entreprises: Entreprise[] }) {
-  const relevant = entreprises.filter((e) => e.isRelevant)
-  const showWeekPlanner = project.currentMilestone === 'WORK_SCHEDULED' || project.currentMilestone === 'WORK_STARTED'
-
-  return (
-    <div className="space-y-6">
-      {showWeekPlanner && (
-        <WeekPlannerGrid
-          projectId={project.id}
-          entreprises={relevant}
-          canEdit={false}
-        />
-      )}
-
-      {!showWeekPlanner && relevant.length === 0 && (
-        <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
-          Ugeplanlægning er tilgængelig når arbejdet er planlagt
-        </div>
-      )}
-
-      {relevant.length > 0 && (
-        <div className="space-y-3">
-          {relevant.map((e) => (
-            <div key={e.id} className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-display font-medium text-sm text-gray-900">{getEntrepriseTypeLabel(e.type)}</span>
-                  <EntrepriseBadge milestone={e.currentMilestone} />
-                </div>
-              </div>
-              {e.statusUpdates?.filter((u) => u.approvalStatus === 'APPROVED').map((u) => (
-                <div key={u.id} className="flex items-center gap-2 text-xs text-gray-600 py-1 border-t border-gray-100 first:border-0">
-                  <span className="text-gray-400">{formatDateTime(u.createdAt)}</span>
-                  <EntrepriseBadge milestone={u.milestone} />
-                  {u.comments && <span className="text-gray-500 truncate">{u.comments}</span>}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
       )}
     </div>
   )

@@ -3,7 +3,6 @@ import { Receipt } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { getEntrepriseTypeLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import type { Project, Entreprise } from '@/types'
@@ -172,9 +171,6 @@ export function ProgressTab({ project, onProjectUpdate }: { project: Project; on
   const { mutate: updateProject, loading: invoicing } = useMutation('patch')
 
   const relevant = entreprises?.filter((e) => e.isRelevant) ?? []
-  const overallProgress = relevant.length
-    ? Math.round(relevant.reduce((s, e) => s + e.progressPercent, 0) / relevant.length)
-    : 0
 
   const handleMarkInvoiced = async () => {
     const result = await updateProject(`/projects/${project.id}`, {
@@ -189,12 +185,8 @@ export function ProgressTab({ project, onProjectUpdate }: { project: Project; on
     <div className="space-y-6">
       {/* 9-step milestone timeline */}
       <div className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-display font-semibold text-gray-900">Samlet fremgang</h3>
-          <span className="text-sm font-display font-bold text-primary-700">{overallProgress}%</span>
-        </div>
-        <ProjectProgressBar currentMilestone={project.currentMilestone} className="mb-4" />
-        <Progress value={overallProgress} className="h-2 mt-2" />
+        <h3 className="text-sm font-display font-semibold text-gray-900 mb-4">Samlet fremgang</h3>
+        <ProjectProgressBar currentMilestone={project.currentMilestone} />
       </div>
 
       {/* Entreprise week Gantt — only shown when entreprises have scheduled dates */}
