@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApi, useMutation } from '@/hooks/useApi'
-import { Mail, ChevronRight, MapPin, Calendar, CheckCircle, XCircle } from 'lucide-react'
+import { Mail, ChevronRight, MapPin, Calendar, CheckCircle, XCircle, Paperclip } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -164,6 +164,29 @@ function InvitationCard({
                 {ENTREPRISE_TYPE_DK[e.type] ?? e.type}
               </span>
             ))}
+          </div>
+        )}
+
+        {project?.attachments?.length > 0 && (
+          <div className="pt-1">
+            <p className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+              <Paperclip className="h-3.5 w-3.5" />
+              Filer fra Sedgwick ({project.attachments.length})
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {project.attachments.map((f: any) => (
+                <a
+                  key={f.id}
+                  href={f.blobUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block rounded border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs text-primary-700 hover:bg-primary-100 truncate max-w-[180px]"
+                  title={f.fileName}
+                >
+                  {f.fileName}
+                </a>
+              ))}
+            </div>
           </div>
         )}
 

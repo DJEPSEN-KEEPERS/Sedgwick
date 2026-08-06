@@ -26,6 +26,11 @@ async function getMyInvitationsHandler(req, context) {
                         maxApprovedPrice: true,
                         estimatedScope: true,
                         entreprises: { select: { id: true, type: true, isRelevant: true } },
+                        attachments: {
+                            where: { isClientVisible: true },
+                            select: { id: true, fileName: true, fileType: true, blobUrl: true },
+                            orderBy: { createdAt: 'desc' },
+                        },
                     },
                 },
                 bid: { select: { id: true, bidAmount: true, submittedAt: true, isSelected: true } },
