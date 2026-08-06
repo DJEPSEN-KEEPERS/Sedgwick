@@ -65,7 +65,24 @@ async function listFilesHandler(req, context) {
         ]);
         const uncategorised = allFiles.filter((f) => !knownCategories.has(f.attachmentCategory));
         categorised.projectDocuments.push(...uncategorised);
-        return { status: 200, jsonBody: categorised };
+        // ── Bid attachments (BidAttachment model, separate from ProjectAttachment) ──
+        const bidAttachmentRecords = await prisma_1.prisma.bidAttachment.findMany({
+            where: { bid: { projectId } },
+            include: { bid: { select: { contractor: { select: { companyName: true } } } } },
+            orderBy: { createdAt: 'desc' },
+        });
+        const bidFiles = bidAttachmentRecords.map((a) => ({
+            id: a.id,
+            fileName: a.fileName,
+            fileType: a.fileType,
+            blobUrl: a.blobUrl,
+            fileSizeMb: a.fileSizeMb,
+            attachmentCategory: 'bid',
+            isClientVisible: true,
+            createdAt: a.createdAt,
+            contractorName: a.bid?.contractor?.companyName ?? null,
+        }));
+        return { status: 200, jsonBody: { ...categorised, bidAttachments: bidFiles } };
     }
     catch (err) {
         return (0, authMiddleware_1.errorResponse)(err, context);

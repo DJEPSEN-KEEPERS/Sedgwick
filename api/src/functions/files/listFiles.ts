@@ -87,7 +87,26 @@ async function listFilesHandler(req: HttpRequest, context: InvocationContext): P
     const uncategorised = allFiles.filter((f) => !knownCategories.has(f.attachmentCategory))
     categorised.projectDocuments.push(...uncategorised)
 
-    return { status: 200, jsonBody: categorised }
+    // ── Bid attachments (BidAttachment model, separate from ProjectAttachment) ──
+    const bidAttachmentRecords = await prisma.bidAttachment.findMany({
+      where: { bid: { projectId } },
+      include: { bid: { select: { contractor: { select: { companyName: true } } } } },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    const bidFiles = bidAttachmentRecords.map((a) => ({
+      id: a.id,
+      fileName: a.fileName,
+      fileType: a.fileType,
+      blobUrl: a.blobUrl,
+      fileSizeMb: a.fileSizeMb,
+      attachmentCategory: 'bid',
+      isClientVisible: true,
+      createdAt: a.createdAt,
+      contractorName: (a as any).bid?.contractor?.companyName ?? null,
+    }))
+
+    return { status: 200, jsonBody: { ...categorised, bidAttachments: bidFiles } }
   } catch (err) {
     return errorResponse(err, context)
   }

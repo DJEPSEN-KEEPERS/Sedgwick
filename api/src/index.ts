@@ -35,6 +35,7 @@ import './functions/bids/inviteContractor'
 import './functions/bids/cancelInvitation'
 import './functions/bids/selectBid'
 import './functions/bids/overview'
+import './functions/bids/uploadBidAttachment'
 
 // Approvals
 import './functions/approvals/listPending'

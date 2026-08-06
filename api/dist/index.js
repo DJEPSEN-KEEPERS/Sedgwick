@@ -33,6 +33,7 @@ require("./functions/bids/inviteContractor");
 require("./functions/bids/cancelInvitation");
 require("./functions/bids/selectBid");
 require("./functions/bids/overview");
+require("./functions/bids/uploadBidAttachment");
 // Approvals
 require("./functions/approvals/listPending");
 require("./functions/approvals/approveStatusUpdate");
