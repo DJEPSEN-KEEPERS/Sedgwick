@@ -1,5 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
-import { BlobServiceClient } from '@azure/storage-blob'
+import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { randomUUID } from 'crypto'
@@ -27,11 +27,16 @@ async function uploadBidAttachmentHandler(req: HttpRequest, context: InvocationC
       return { status: 413, jsonBody: { error: 'Filen overstiger maksimal størrelse på 50 MB' } }
     }
 
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING!
+    const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME!
+    const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY!
     const containerName = process.env.AZURE_STORAGE_CONTAINER ?? 'sedgwick-files'
     const blobName = `bids/${bidId}/${randomUUID()}-${fileName}`
 
-    const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString)
+    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey)
+    const blobServiceClient = new BlobServiceClient(
+      `https://${accountName}.blob.core.windows.net`,
+      sharedKeyCredential,
+    )
     const containerClient = blobServiceClient.getContainerClient(containerName)
     const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 
