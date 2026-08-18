@@ -11,7 +11,7 @@ import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
 import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
 import { formatDate, formatRelativeTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import type { Project, ProjectStatus, PriorityLevel, ProjectMilestone } from '@/types'
+import type { Project, ProjectMilestone } from '@/types'
 
 // ─── Create project modal ─────────────────────────────────────────────────────
 
@@ -222,11 +222,15 @@ const PRIORITIES: { value: PriorityLevel; label: string }[] = [
 
 interface Filters {
   search: string
-  status: ProjectStatus | ''
+  status: string
   milestones: ProjectMilestone[]
-  priority: PriorityLevel | ''
+  priority: string
   region: string
   sla: 'all' | 'at_risk' | 'breached'
+  insurer: string
+  damageType: string
+  responsibleUser: string
+  contractor: string
 }
 
 export default function ProjectsPage() {
@@ -240,14 +244,33 @@ export default function ProjectsPage() {
 
   const [filters, setFilters] = useState<Filters>({
     search: '',
-    status: (searchParams.get('status') as ProjectStatus | '') ?? '',
+    status: (searchParams.get('status') as string) ?? '',
     milestones: [],
     priority: '',
     region: '',
     sla: (searchParams.get('sla') as Filters['sla']) ?? 'all',
+    insurer: '',
+    damageType: '',
+    responsibleUser: '',
+    contractor: '',
   })
 
   const { data: projects, loading, refetch } = useApi<Project[]>('/projects?pageSize=200')
+
+  // Derive unique option lists from loaded data
+  const options = useMemo(() => {
+    if (!projects) return { insurers: [], damageTypes: [], regions: [], priorities: [], statuses: [], responsibleUsers: [], contractors: [] }
+    const uniq = <T,>(arr: (T | undefined | null)[]): T[] => [...new Set(arr.filter((v): v is T => v != null))].sort((a, b) => String(a).localeCompare(String(b)))
+    return {
+      insurers: uniq(projects.map((p) => p.insuranceCompany?.name)),
+      damageTypes: uniq(projects.map((p) => p.damageType)),
+      regions: uniq(projects.map((p) => p.region)),
+      priorities: uniq(projects.map((p) => p.priorityLevel)),
+      statuses: uniq(projects.map((p) => p.status)),
+      responsibleUsers: uniq(projects.map((p) => p.responsibleUser?.fullName)),
+      contractors: uniq(projects.map((p) => p.selectedContractor?.companyName)),
+    }
+  }, [projects])
 
   const filtered = useMemo(() => {
     if (!projects) return []
@@ -263,10 +286,14 @@ export default function ProjectsPage() {
           p.city.toLowerCase().includes(q),
       )
     }
-    if (filters.status) list = list.filter((p) => p.status === filters.status)
+    if (filters.insurer)          list = list.filter((p) => p.insuranceCompany?.name === filters.insurer)
+    if (filters.damageType)       list = list.filter((p) => p.damageType === filters.damageType)
+    if (filters.region)           list = list.filter((p) => p.region === filters.region)
+    if (filters.priority)         list = list.filter((p) => p.priorityLevel === filters.priority)
+    if (filters.status)           list = list.filter((p) => p.status === filters.status)
+    if (filters.responsibleUser)  list = list.filter((p) => p.responsibleUser?.fullName === filters.responsibleUser)
+    if (filters.contractor)       list = list.filter((p) => p.selectedContractor?.companyName === filters.contractor)
     if (filters.milestones.length) list = list.filter((p) => filters.milestones.includes(p.currentMilestone))
-    if (filters.priority) list = list.filter((p) => p.priorityLevel === filters.priority)
-    if (filters.region) list = list.filter((p) => p.region.toLowerCase().includes(filters.region.toLowerCase()))
 
     if (filters.sla !== 'all') {
       const now = Date.now()
@@ -279,7 +306,6 @@ export default function ProjectsPage() {
       })
     }
 
-    // Sort
     list.sort((a, b) => {
       const av = a[sortField] as string ?? ''
       const bv = b[sortField] as string ?? ''
@@ -289,7 +315,8 @@ export default function ProjectsPage() {
     return list
   }, [projects, filters, sortField, sortDir])
 
-  const hasFilters = filters.status || filters.milestones.length || filters.priority || filters.region || filters.sla !== 'all'
+  const activeFilterCount = [filters.insurer, filters.damageType, filters.region, filters.priority, filters.status, filters.responsibleUser, filters.contractor, filters.sla !== 'all' ? '1' : ''].filter(Boolean).length
+  const hasFilters = activeFilterCount > 0
 
   const setSort = (field: keyof Project) => {
     if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -339,7 +366,7 @@ export default function ProjectsPage() {
         >
           <SlidersHorizontal className="h-4 w-4 mr-1" />
           Filtre
-          {hasFilters && <span className="ml-1 rounded-full bg-white text-primary-700 px-1.5 text-xs font-display font-semibold">{[filters.status, ...filters.milestones, filters.priority].filter(Boolean).length}</span>}
+          {hasFilters && <span className="ml-1 rounded-full bg-white text-primary-700 px-1.5 text-xs font-display font-semibold">{activeFilterCount}</span>}
         </Button>
 
         <div className="flex rounded-md border border-gray-300 overflow-hidden">
@@ -361,61 +388,45 @@ export default function ProjectsPage() {
       {/* Filter panel */}
       {showFilters && (
         <div className="bg-white border border-[#e5e7eb] rounded-lg p-4 mb-4 shadow-card">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            <div>
-              <label className="label">Status</label>
-              <select
-                className="input-field text-sm"
-                value={filters.status}
-                onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value as ProjectStatus | '' }))}
-              >
-                <option value="">Alle</option>
-                <option value="ACTIVE">Aktiv</option>
-                <option value="COMPLETED">Afsluttet</option>
-                <option value="ARCHIVED">Arkiveret</option>
-                <option value="CANCELLED">Annulleret</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Prioritet</label>
-              <select
-                className="input-field text-sm"
-                value={filters.priority}
-                onChange={(e) => setFilters((f) => ({ ...f, priority: e.target.value as PriorityLevel | '' }))}
-              >
-                <option value="">Alle</option>
-                {PRIORITIES.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">SLA</label>
-              <select
-                className="input-field text-sm"
-                value={filters.sla}
-                onChange={(e) => setFilters((f) => ({ ...f, sla: e.target.value as Filters['sla'] }))}
-              >
-                <option value="all">Alle</option>
-                <option value="at_risk">I risiko (&lt;7 dage)</option>
-                <option value="breached">Overskredet</option>
-              </select>
-            </div>
-            <div>
-              <label className="label">Region</label>
-              <Input
-                placeholder="Filtrer region..."
-                value={filters.region}
-                onChange={(e) => setFilters((f) => ({ ...f, region: e.target.value }))}
-              />
-            </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <FilterSelect label="Forsikring" value={filters.insurer} onChange={(v) => setFilters((f) => ({ ...f, insurer: v }))}>
+              {options.insurers.map((v) => <option key={v} value={v}>{v}</option>)}
+            </FilterSelect>
+            <FilterSelect label="Skadetype" value={filters.damageType} onChange={(v) => setFilters((f) => ({ ...f, damageType: v }))}>
+              {options.damageTypes.map((v) => <option key={v} value={v}>{v}</option>)}
+            </FilterSelect>
+            <FilterSelect label="Region" value={filters.region} onChange={(v) => setFilters((f) => ({ ...f, region: v }))}>
+              {options.regions.map((v) => <option key={v} value={v}>{v}</option>)}
+            </FilterSelect>
+            <FilterSelect label="Prioritet" value={filters.priority} onChange={(v) => setFilters((f) => ({ ...f, priority: v }))}>
+              {options.priorities.map((v) => <option key={v} value={v}>{v === 'NORMAL' ? 'Normal' : 'Fasttrack'}</option>)}
+            </FilterSelect>
+            <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilters((f) => ({ ...f, status: v }))}>
+              {options.statuses.map((v) => (
+                <option key={v} value={v}>
+                  {v === 'ACTIVE' ? 'Aktiv' : v === 'COMPLETED' ? 'Afsluttet' : v === 'ARCHIVED' ? 'Arkiveret' : v === 'CANCELLED' ? 'Annulleret' : v}
+                </option>
+              ))}
+            </FilterSelect>
+            <FilterSelect label="Ansvarlig" value={filters.responsibleUser} onChange={(v) => setFilters((f) => ({ ...f, responsibleUser: v }))}>
+              {options.responsibleUsers.map((v) => <option key={v} value={v}>{v}</option>)}
+            </FilterSelect>
+            <FilterSelect label="Håndværker" value={filters.contractor} onChange={(v) => setFilters((f) => ({ ...f, contractor: v }))}>
+              {options.contractors.map((v) => <option key={v} value={v}>{v}</option>)}
+            </FilterSelect>
+            <FilterSelect label="SLA" value={filters.sla} onChange={(v) => setFilters((f) => ({ ...f, sla: v as Filters['sla'] }))}>
+              <option value="at_risk">I risiko (&lt;7 dage)</option>
+              <option value="breached">Overskredet</option>
+            </FilterSelect>
             <div className="flex items-end">
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setFilters({ search: '', status: '', milestones: [], priority: '', region: '', sla: 'all' })}
+                onClick={() => setFilters({ search: filters.search, status: '', milestones: [], priority: '', region: '', sla: 'all', insurer: '', damageType: '', responsibleUser: '', contractor: '' })}
                 className="text-gray-500"
               >
                 <X className="h-4 w-4 mr-1" />
-                Ryd
+                Ryd filtre
               </Button>
             </div>
           </div>
@@ -520,6 +531,23 @@ function ProjectsTable({
           </tbody>
         </table>
       </div>
+    </div>
+  )
+}
+
+function FilterSelect({ label, value, onChange, children }: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <label className="label">{label}</label>
+      <select className="input-field text-sm" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Alle</option>
+        {children}
+      </select>
     </div>
   )
 }
