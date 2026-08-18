@@ -665,9 +665,11 @@ function ContractorsTab() {
   const [editEmail, setEditEmail]     = useState('')
   const [editPhone, setEditPhone]     = useState('')
   const [editMax, setEditMax]         = useState('5')
-  const [editStatus, setEditStatus]   = useState('')
-  const [editError, setEditError]     = useState('')
-  const [editSaving, setEditSaving]   = useState(false)
+  const [editStatus, setEditStatus]               = useState('')
+  const [editSedgwickRating, setEditSedgwickRating] = useState('0')
+  const [editClientRating, setEditClientRating]     = useState('0')
+  const [editError, setEditError]                   = useState('')
+  const [editSaving, setEditSaving]                 = useState(false)
 
   const resetCreate = () => {
     setNewName(''); setNewCvr(''); setNewContact(''); setNewEmail('')
@@ -706,6 +708,8 @@ function ContractorsTab() {
     setEditPhone(c.contactPhone)
     setEditMax(String(c.maxParallelProjects))
     setEditStatus(c.status)
+    setEditSedgwickRating(String((c as any).sedgwickRatingAvg ?? 0))
+    setEditClientRating(String((c as any).clientRatingAvg ?? 0))
     setEditError('')
   }
 
@@ -719,6 +723,8 @@ function ContractorsTab() {
       contactPhone: editPhone.trim(),
       maxParallelProjects: parseInt(editMax) || 5,
       status: editStatus,
+      sedgwickRatingAvg: parseFloat(editSedgwickRating) || 0,
+      clientRatingAvg: parseFloat(editClientRating) || 0,
     })
     setEditSaving(false)
     if (result) {
@@ -802,14 +808,14 @@ function ContractorsTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                  {['Firma', 'CVR', 'Kontakt', 'E-mail', 'Max sager', 'Status', ''].map((h) => (
+                  {['Firma', 'CVR', 'Kontakt', 'E-mail', 'Max sager', 'Status', 'Sedgwick-rating', 'Klientrating', ''].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {(contractors ?? []).length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">Ingen håndværkere endnu</td></tr>
+                  <tr><td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-400">Ingen håndværkere endnu</td></tr>
                 ) : (
                   (contractors ?? []).map((c) =>
                     editId === c.id ? (
@@ -839,6 +845,14 @@ function ContractorsTab() {
                           </select>
                         </td>
                         <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm w-20" type="number" min="0" max="5" step="0.1"
+                            value={editSedgwickRating} onChange={(e) => setEditSedgwickRating(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
+                          <Input className="h-8 text-sm w-20" type="number" min="0" max="5" step="0.1"
+                            value={editClientRating} onChange={(e) => setEditClientRating(e.target.value)} />
+                        </td>
+                        <td className="px-2 py-1.5">
                           <div className="flex gap-1.5 items-center whitespace-nowrap">
                             <Button size="sm" onClick={() => handleSave(c.id)} disabled={editSaving || saving}>
                               {(editSaving || saving) ? '...' : 'Gem'}
@@ -856,6 +870,12 @@ function ContractorsTab() {
                         <td className="px-4 py-2.5 text-xs text-gray-600">{c.contactEmail}</td>
                         <td className="px-4 py-2.5 text-xs text-gray-600 text-center">{c.maxParallelProjects}</td>
                         <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
+                        <td className="px-4 py-2.5 text-xs text-gray-700 text-center">
+                          {(c as any).sedgwickRatingAvg != null ? `★ ${Number((c as any).sedgwickRatingAvg).toFixed(1)}` : '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-gray-700 text-center">
+                          {(c as any).clientRatingAvg != null ? `★ ${Number((c as any).clientRatingAvg).toFixed(1)}` : '—'}
+                        </td>
                         <td className="px-4 py-2.5">
                           <Button size="sm" variant="secondary" onClick={() => startEdit(c)}>Rediger</Button>
                         </td>

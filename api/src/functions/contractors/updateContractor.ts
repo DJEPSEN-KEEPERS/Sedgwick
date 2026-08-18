@@ -12,6 +12,8 @@ interface UpdateContractorBody {
   maxParallelProjects?: number
   status?: string
   regions?: string[]
+  sedgwickRatingAvg?: number
+  clientRatingAvg?: number
 }
 
 async function updateContractorHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
