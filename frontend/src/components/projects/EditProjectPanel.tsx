@@ -16,6 +16,18 @@ const PRIORITY_OPTIONS: { value: PriorityLevel; label: string }[] = [
   { value: 'FASTTRACK', label: 'Fasttrack' },
 ]
 
+const MILESTONE_OPTIONS = [
+  { value: 'CASE_RECEIVED',          label: 'Sag modtaget' },
+  { value: 'BIDDING_IN_PROGRESS',    label: 'Tilbud indhentes' },
+  { value: 'CONTRACTOR_SELECTED',    label: 'Håndværker valgt' },
+  { value: 'WORK_SCHEDULED',         label: 'Arbejde planlagt' },
+  { value: 'WORK_STARTED',           label: 'Arbejde startet' },
+  { value: 'WORK_COMPLETED',         label: 'Arbejde afsluttet' },
+  { value: 'FINAL_REPORT_SUBMITTED', label: 'Slutrapport indsendt' },
+  { value: 'CASE_INVOICED',          label: 'Sag faktureret' },
+  { value: 'CASE_CLOSED',            label: 'Sag lukket' },
+]
+
 const DAMAGE_TYPES = [
   'Vandskade', 'Brandskade', 'Stormskade', 'Indbrudsskade',
   'Frostskade', 'Svampeskade', 'Konstruktionsskade', 'Andet',
@@ -35,6 +47,7 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
   const [error, setError] = useState('')
 
   const [form, setForm] = useState({
+    currentMilestone: project.currentMilestone ?? 'CASE_RECEIVED',
     damageType: project.damageType ?? '',
     damageDescription: project.damageDescription ?? '',
     buildingType: project.buildingType ?? '',
@@ -56,6 +69,7 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
   // Reset form when project changes (e.g. after external refetch)
   useEffect(() => {
     setForm({
+      currentMilestone: project.currentMilestone ?? 'CASE_RECEIVED',
       damageType: project.damageType ?? '',
       damageDescription: project.damageDescription ?? '',
       buildingType: project.buildingType ?? '',
@@ -82,6 +96,7 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
   const handleSave = async () => {
     setError('')
     const payload: Record<string, unknown> = {
+      currentMilestone:  form.currentMilestone,
       damageType:        form.damageType || undefined,
       damageDescription: form.damageDescription || undefined,
       buildingType:      form.buildingType || undefined,
@@ -140,6 +155,23 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
 
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
+
+          <Section title="Status og fase">
+            <Field label="Sagsfase">
+              <select
+                className="input-field w-full text-sm"
+                value={form.currentMilestone}
+                onChange={set('currentMilestone')}
+              >
+                {MILESTONE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </Field>
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+              Manuel ændring tilsidesætter automatisk faseskift. Brug med forsigtighed.
+            </p>
+          </Section>
 
           <Section title="Skade">
             <Field label="Skadetype">
