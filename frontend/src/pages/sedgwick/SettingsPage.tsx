@@ -640,12 +640,72 @@ interface ContractorListItem {
   createdAt: string
 }
 
+const DANISH_REGIONS = ['Hovedstaden', 'Sjælland', 'Syddanmark', 'Midtjylland', 'Nordjylland']
+
+function RegionSelector({ selected, onToggle }: { selected: string[]; onToggle: (r: string) => void }) {
+  return (
+    <div>
+      <Label>Regioner</Label>
+      <div className="mt-1.5 flex flex-wrap gap-2">
+        {DANISH_REGIONS.map((r) => (
+          <label key={r} className={`flex items-center gap-1.5 cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+            selected.includes(r)
+              ? 'border-primary-400 bg-primary-50 text-primary-700'
+              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+          }`}>
+            <input type="checkbox" className="hidden" checked={selected.includes(r)} onChange={() => onToggle(r)} />
+            {r}
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SkillSelector({
+  skills,
+  selected,
+  onToggle,
+}: {
+  skills: Record<string, { id: string; name: string; category: string }[]>
+  selected: string[]
+  onToggle: (id: string) => void
+}) {
+  if (!Object.keys(skills).length) return null
+  return (
+    <div>
+      <Label>Kompetencer</Label>
+      <div className="mt-1.5 space-y-2">
+        {Object.entries(skills).map(([category, items]) => (
+          <div key={category}>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">{category}</p>
+            <div className="flex flex-wrap gap-2">
+              {items.map((s) => (
+                <label key={s.id} className={`flex items-center gap-1.5 cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  selected.includes(s.id)
+                    ? 'border-primary-400 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                }`}>
+                  <input type="checkbox" className="hidden" checked={selected.includes(s.id)} onChange={() => onToggle(s.id)} />
+                  {s.name}
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function ContractorsTab() {
   const { data: contractors, loading, refetch } = useApi<ContractorListItem[]>('/contractors?pageSize=200')
   const { mutate: createContractor, loading: creating, error: createError } =
     useMutation<unknown, { data: ContractorListItem }>('post')
   const { mutate: updateContractor, loading: saving } =
     useMutation<unknown, { data: ContractorListItem }>('patch')
+
+  const { data: allSkills } = useApi<{ id: string; name: string; category: string }[]>('/skills')
 
   // Create form
   const [showForm, setShowForm]         = useState(false)
@@ -655,25 +715,35 @@ function ContractorsTab() {
   const [newEmail, setNewEmail]         = useState('')
   const [newPhone, setNewPhone]         = useState('')
   const [newMax, setNewMax]             = useState('5')
+  const [newRegions, setNewRegions]     = useState<string[]>([])
+  const [newSkillIds, setNewSkillIds]   = useState<string[]>([])
   const [formError, setFormError]       = useState('')
   const [formSuccess, setFormSuccess]   = useState('')
 
-  // Inline edit state
-  const [editId, setEditId]           = useState<string | null>(null)
-  const [editName, setEditName]       = useState('')
-  const [editContact, setEditContact] = useState('')
-  const [editEmail, setEditEmail]     = useState('')
-  const [editPhone, setEditPhone]     = useState('')
-  const [editMax, setEditMax]         = useState('5')
-  const [editStatus, setEditStatus]               = useState('')
+  // Edit state
+  const [editId, setEditId]                         = useState<string | null>(null)
+  const [editName, setEditName]                     = useState('')
+  const [editContact, setEditContact]               = useState('')
+  const [editEmail, setEditEmail]                   = useState('')
+  const [editPhone, setEditPhone]                   = useState('')
+  const [editMax, setEditMax]                       = useState('5')
+  const [editStatus, setEditStatus]                 = useState('')
   const [editSedgwickRating, setEditSedgwickRating] = useState('0')
   const [editClientRating, setEditClientRating]     = useState('0')
+  const [editRegions, setEditRegions]               = useState<string[]>([])
+  const [editSkillIds, setEditSkillIds]             = useState<string[]>([])
   const [editError, setEditError]                   = useState('')
   const [editSaving, setEditSaving]                 = useState(false)
 
+  const skillsByCategory = (allSkills ?? []).reduce<Record<string, { id: string; name: string; category: string }[]>>(
+    (acc, s) => { (acc[s.category] ??= []).push(s); return acc },
+    {},
+  )
+
   const resetCreate = () => {
     setNewName(''); setNewCvr(''); setNewContact(''); setNewEmail('')
-    setNewPhone(''); setNewMax('5'); setFormError(''); setFormSuccess('')
+    setNewPhone(''); setNewMax('5'); setNewRegions([]); setNewSkillIds([])
+    setFormError(''); setFormSuccess('')
   }
 
   const handleCreate = async () => {
@@ -689,6 +759,8 @@ function ContractorsTab() {
       contactEmail: newEmail.trim(),
       contactPhone: newPhone.trim(),
       maxParallelProjects: parseInt(newMax) || 5,
+      regions: newRegions,
+      skillIds: newSkillIds,
     })
     if (result) {
       setFormSuccess(`Håndværker oprettet: ${newName.trim()}`)
@@ -701,6 +773,7 @@ function ContractorsTab() {
   }
 
   const startEdit = (c: ContractorListItem) => {
+    setShowForm(false)
     setEditId(c.id)
     setEditName(c.companyName)
     setEditContact(c.contactName)
@@ -710,6 +783,8 @@ function ContractorsTab() {
     setEditStatus(c.status)
     setEditSedgwickRating(String((c as any).sedgwickRatingAvg ?? 0))
     setEditClientRating(String((c as any).clientRatingAvg ?? 0))
+    setEditRegions((c as any).regions?.map((r: any) => r.regionName) ?? [])
+    setEditSkillIds((c as any).skills?.map((s: any) => s.skillId) ?? [])
     setEditError('')
   }
 
@@ -725,6 +800,8 @@ function ContractorsTab() {
       status: editStatus,
       sedgwickRatingAvg: parseFloat(editSedgwickRating) || 0,
       clientRatingAvg: parseFloat(editClientRating) || 0,
+      regions: editRegions,
+      skillIds: editSkillIds,
     })
     setEditSaving(false)
     if (result) {
@@ -735,11 +812,13 @@ function ContractorsTab() {
     }
   }
 
+  const editContractor = editId ? (contractors ?? []).find((c) => c.id === editId) : null
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-display font-semibold text-gray-900">Håndværkere</h2>
-        <Button size="sm" onClick={() => { resetCreate(); setShowForm((v) => !v) }}>
+        <Button size="sm" onClick={() => { setEditId(null); resetCreate(); setShowForm((v) => !v) }}>
           {showForm ? 'Luk' : '+ Opret håndværker'}
         </Button>
       </div>
@@ -753,6 +832,7 @@ function ContractorsTab() {
       {showForm && (
         <Card className="mb-4">
           <CardContent className="p-4 space-y-4">
+            <p className="text-sm font-display font-semibold text-gray-700">Opret ny håndværker</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Firmanavn *</Label>
@@ -785,6 +865,8 @@ function ContractorsTab() {
                   onChange={(e) => setNewMax(e.target.value)} />
               </div>
             </div>
+            <RegionSelector selected={newRegions} onToggle={(r) => setNewRegions((p) => p.includes(r) ? p.filter((x) => x !== r) : [...p, r])} />
+            <SkillSelector skills={skillsByCategory} selected={newSkillIds} onToggle={(id) => setNewSkillIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id])} />
             {formError && <p className="text-sm text-red-600">{formError}</p>}
             <div className="flex gap-2">
               <Button size="sm" onClick={handleCreate} disabled={creating}>
@@ -793,6 +875,72 @@ function ContractorsTab() {
               <Button size="sm" variant="secondary" onClick={() => { setShowForm(false); resetCreate() }}>
                 Annuller
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {editId && editContractor && (
+        <Card className="mb-4 border-primary-200">
+          <CardContent className="p-4 space-y-4">
+            <p className="text-sm font-display font-semibold text-gray-700">
+              Rediger: <span className="text-primary-700">{editContractor.companyName}</span>
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Firmanavn</Label>
+                <Input className="mt-1" value={editName} onChange={(e) => setEditName(e.target.value)} />
+              </div>
+              <div>
+                <Label>CVR-nummer</Label>
+                <Input className="mt-1 bg-gray-50 text-gray-400" value={editContractor.cvrNumber} disabled />
+              </div>
+              <div>
+                <Label>Kontaktperson</Label>
+                <Input className="mt-1" value={editContact} onChange={(e) => setEditContact(e.target.value)} />
+              </div>
+              <div>
+                <Label>Kontakt e-mail</Label>
+                <Input className="mt-1" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+              </div>
+              <div>
+                <Label>Telefon</Label>
+                <Input className="mt-1" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+              </div>
+              <div>
+                <Label>Max. parallelle sager</Label>
+                <Input className="mt-1" type="number" min="1" max="50" value={editMax}
+                  onChange={(e) => setEditMax(e.target.value)} />
+              </div>
+              <div>
+                <Label>Status</Label>
+                <select className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  value={editStatus} onChange={(e) => setEditStatus(e.target.value)}>
+                  <option value="active">Aktiv</option>
+                  <option value="inactive">Inaktiv</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Sedgwick-rating (0–5)</Label>
+                <Input className="mt-1" type="number" min="0" max="5" step="0.1"
+                  value={editSedgwickRating} onChange={(e) => setEditSedgwickRating(e.target.value)} />
+              </div>
+              <div>
+                <Label>Klientrating (0–5)</Label>
+                <Input className="mt-1" type="number" min="0" max="5" step="0.1"
+                  value={editClientRating} onChange={(e) => setEditClientRating(e.target.value)} />
+              </div>
+            </div>
+            <RegionSelector selected={editRegions} onToggle={(r) => setEditRegions((p) => p.includes(r) ? p.filter((x) => x !== r) : [...p, r])} />
+            <SkillSelector skills={skillsByCategory} selected={editSkillIds} onToggle={(id) => setEditSkillIds((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id])} />
+            {editError && <p className="text-sm text-red-600">{editError}</p>}
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => handleSave(editId)} disabled={editSaving || saving}>
+                {(editSaving || saving) ? 'Gemmer...' : 'Gem ændringer'}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setEditId(null)}>Annuller</Button>
             </div>
           </CardContent>
         </Card>
@@ -808,8 +956,8 @@ function ContractorsTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                  {['Firma', 'CVR', 'Kontakt', 'E-mail', 'Max sager', 'Status', 'Sedgwick-rating', 'Klientrating', ''].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
+                  {['Firma', 'CVR', 'Kontakt', 'Regioner', 'Kompetencer', 'Status', '★ Sdgw', '★ Klient', ''].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -817,71 +965,33 @@ function ContractorsTab() {
                 {(contractors ?? []).length === 0 ? (
                   <tr><td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-400">Ingen håndværkere endnu</td></tr>
                 ) : (
-                  (contractors ?? []).map((c) =>
-                    editId === c.id ? (
-                      <tr key={c.id} className="border-b border-[#e5e7eb] bg-primary-50">
-                        <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm min-w-[140px]" value={editName}
-                            onChange={(e) => setEditName(e.target.value)} />
-                        </td>
-                        <td className="px-3 py-1.5 text-xs text-gray-400 font-mono whitespace-nowrap">{c.cvrNumber}</td>
-                        <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm min-w-[120px]" value={editContact}
-                            onChange={(e) => setEditContact(e.target.value)} />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm min-w-[140px]" value={editEmail}
-                            onChange={(e) => setEditEmail(e.target.value)} />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm w-16" type="number" min="1" max="50"
-                            value={editMax} onChange={(e) => setEditMax(e.target.value)} />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <select className="input-field h-8 text-sm" value={editStatus}
-                            onChange={(e) => setEditStatus(e.target.value)}>
-                            <option value="active">Aktiv</option>
-                            <option value="inactive">Inaktiv</option>
-                          </select>
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm w-20" type="number" min="0" max="5" step="0.1"
-                            value={editSedgwickRating} onChange={(e) => setEditSedgwickRating(e.target.value)} />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <Input className="h-8 text-sm w-20" type="number" min="0" max="5" step="0.1"
-                            value={editClientRating} onChange={(e) => setEditClientRating(e.target.value)} />
-                        </td>
-                        <td className="px-2 py-1.5">
-                          <div className="flex gap-1.5 items-center whitespace-nowrap">
-                            <Button size="sm" onClick={() => handleSave(c.id)} disabled={editSaving || saving}>
-                              {(editSaving || saving) ? '...' : 'Gem'}
-                            </Button>
-                            <Button size="sm" variant="secondary" onClick={() => setEditId(null)}>✕</Button>
-                            {editError && <span className="text-xs text-red-600">{editError}</span>}
-                          </div>
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={c.id} className="border-b border-[#e5e7eb] hover:bg-gray-50">
-                        <td className="px-4 py-2.5 font-display font-medium text-gray-900 whitespace-nowrap">{c.companyName}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-500 font-mono">{c.cvrNumber}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{c.contactName}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600">{c.contactEmail}</td>
-                        <td className="px-4 py-2.5 text-xs text-gray-600 text-center">{c.maxParallelProjects}</td>
-                        <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
-                        <td className="px-4 py-2.5 text-xs text-gray-700 text-center">
-                          {(c as any).sedgwickRatingAvg != null ? `★ ${Number((c as any).sedgwickRatingAvg).toFixed(1)}` : '—'}
-                        </td>
-                        <td className="px-4 py-2.5 text-xs text-gray-700 text-center">
-                          {(c as any).clientRatingAvg != null ? `★ ${Number((c as any).clientRatingAvg).toFixed(1)}` : '—'}
-                        </td>
-                        <td className="px-4 py-2.5">
-                          <Button size="sm" variant="secondary" onClick={() => startEdit(c)}>Rediger</Button>
-                        </td>
-                      </tr>
-                    )
-                  )
+                  (contractors ?? []).map((c) => (
+                    <tr key={c.id} className={`border-b border-[#e5e7eb] hover:bg-gray-50 ${editId === c.id ? 'bg-primary-50' : ''}`}>
+                      <td className="px-4 py-2.5 font-display font-medium text-gray-900 whitespace-nowrap">{c.companyName}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-500 font-mono">{c.cvrNumber}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-600 whitespace-nowrap">{c.contactName}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-600 max-w-[160px]">
+                        {(c as any).regions?.length
+                          ? (c as any).regions.map((r: any) => r.regionName).join(', ')
+                          : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-600 max-w-[200px]">
+                        {(c as any).skills?.length
+                          ? (c as any).skills.map((s: any) => s.skill?.name).filter(Boolean).join(', ')
+                          : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-4 py-2.5"><StatusBadge status={c.status} /></td>
+                      <td className="px-4 py-2.5 text-xs text-gray-700 text-center">
+                        {Number((c as any).sedgwickRatingAvg ?? 0).toFixed(1)}
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-700 text-center">
+                        {Number((c as any).clientRatingAvg ?? 0).toFixed(1)}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <Button size="sm" variant="secondary" onClick={() => startEdit(c)}>Rediger</Button>
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

@@ -12,6 +12,7 @@ interface UpdateContractorBody {
   maxParallelProjects?: number
   status?: string
   regions?: string[]
+  skillIds?: string[]
   sedgwickRatingAvg?: number
   clientRatingAvg?: number
 }
@@ -27,7 +28,7 @@ async function updateContractorHandler(req: HttpRequest, context: InvocationCont
     const existing = await prisma.contractor.findUnique({ where: { id: contractorId } })
     if (!existing) return { status: 404, jsonBody: { error: 'Håndværker ikke fundet' } }
 
-    const { regions, ...fields } = body
+    const { regions, skillIds, ...fields } = body
 
     const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       if (regions !== undefined) {
@@ -35,6 +36,14 @@ async function updateContractorHandler(req: HttpRequest, context: InvocationCont
         if (regions.length > 0) {
           await tx.contractorRegion.createMany({
             data: regions.map((r) => ({ contractorId, regionName: r })),
+          })
+        }
+      }
+      if (skillIds !== undefined) {
+        await tx.contractorSkill.deleteMany({ where: { contractorId } })
+        if (skillIds.length > 0) {
+          await tx.contractorSkill.createMany({
+            data: skillIds.map((skillId) => ({ contractorId, skillId })),
           })
         }
       }
