@@ -8,6 +8,7 @@ import { OverviewTab } from '@/components/projects/tabs/OverviewTab'
 import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
 import { BiddingTab } from '@/components/projects/tabs/BiddingTab'
 import { ProgressTab } from '@/components/projects/tabs/ProgressTab'
+import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { MessagesTab } from '@/components/projects/tabs/MessagesTab'
 import { FilesTab } from '@/components/projects/tabs/FilesTab'
 import { AuditTab } from '@/components/projects/tabs/AuditTab'
@@ -21,6 +22,7 @@ const TABS = [
   { key: 'entreprises',  label: 'Entrepriser' },
   { key: 'bidding',      label: 'Tilbud' },
   { key: 'progress',     label: 'Fremgang' },
+  { key: 'planning',     label: 'Planlægning' },
   { key: 'messages',     label: 'Beskeder' },
   { key: 'files',        label: 'Filer' },
   { key: 'audit',        label: 'Audit' },
@@ -157,6 +159,13 @@ export default function ProjectDetailPage() {
       {activeTab === 'entreprises' && <EntreprisesTab projectId={project.id} />}
       {activeTab === 'bidding'     && <BiddingTab projectId={project.id} />}
       {activeTab === 'progress'    && <ProgressTab project={project} onProjectUpdate={handleProjectUpdate} />}
+      {activeTab === 'planning'    && (
+        <WeekPlannerGrid
+          projectId={project.id}
+          entreprises={(project.entreprises ?? []).filter((e: any) => e.isRelevant !== false)}
+          canEdit={false}
+        />
+      )}
       {activeTab === 'messages'    && <MessagesTab projectId={project.id} />}
       {activeTab === 'files'       && <FilesTab projectId={project.id} />}
       {activeTab === 'audit'       && <AuditTab projectId={project.id} />}

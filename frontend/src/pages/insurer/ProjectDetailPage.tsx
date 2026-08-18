@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { ImageGallery } from '@/components/files/ImageGallery'
 import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
+import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -37,7 +38,7 @@ async function uploadRaw(projectId: string, file: File): Promise<void> {
   }
 }
 
-const TABS = ['Oversigt', 'Entrepriser', 'Beskeder', 'Filer']
+const TABS = ['Oversigt', 'Entrepriser', 'Planlægning', 'Beskeder', 'Filer']
 
 export default function InsurerProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -88,8 +89,15 @@ export default function InsurerProjectDetailPage() {
 
       {tab === 0 && <InsurerOverviewTab project={project} />}
       {tab === 1 && <EntreprisesTab projectId={project.id} />}
-      {tab === 2 && <InsurerMessagesTab projectId={project.id} />}
-      {tab === 3 && <InsurerFilesTab projectId={project.id} />}
+      {tab === 2 && (
+        <WeekPlannerGrid
+          projectId={project.id}
+          entreprises={(project.entreprises ?? []).filter((e: any) => e.isRelevant !== false)}
+          canEdit={false}
+        />
+      )}
+      {tab === 3 && <InsurerMessagesTab projectId={project.id} />}
+      {tab === 4 && <InsurerFilesTab projectId={project.id} />}
     </div>
   )
 }

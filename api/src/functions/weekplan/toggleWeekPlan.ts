@@ -21,13 +21,16 @@ async function toggleWeekPlanHandler(req: HttpRequest, context: InvocationContex
 
     const entreprise = await prisma.entreprise.findUnique({
       where: { id: entrepriseId },
-      include: { project: { select: { id: true } } },
+      include: { project: { select: { id: true, selectedContractorId: true } } },
     })
     if (!entreprise) return { status: 404, jsonBody: { error: 'Entreprise ikke fundet' } }
 
-    // Contractor can only edit their own entreprises
-    if (jwtUser.role === 'CONTRACTOR_USER' && entreprise.contractorId !== jwtUser.linkedEntityId) {
-      return { status: 403, jsonBody: { error: 'Ingen adgang' } }
+    if (jwtUser.role === 'CONTRACTOR_USER') {
+      const isEntrepriseContractor = entreprise.contractorId === jwtUser.linkedEntityId
+      const isProjectContractor = entreprise.project?.selectedContractorId === jwtUser.linkedEntityId
+      if (!isEntrepriseContractor && !isProjectContractor) {
+        return { status: 403, jsonBody: { error: 'Ingen adgang' } }
+      }
     }
 
     const existing = await prisma.entrepriseWeekPlan.findUnique({
