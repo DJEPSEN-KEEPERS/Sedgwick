@@ -42,14 +42,22 @@ async function toggleEntrepriseRelevanceHandler(req: HttpRequest, context: Invoc
     if (existing) {
       result = await prisma.entreprise.update({
         where: { id: existing.id },
-        data: { isRelevant: body.isRelevant, markedRelevantBy: markedBy },
+        data: {
+          isRelevant: body.isRelevant,
+          markedRelevantBy: markedBy,
+          // Reset milestone/progress when deactivating so re-activation always starts clean,
+          // consistent with the create branch which always initialises to NOT_STARTED/0.
+          ...(body.isRelevant === false
+            ? { currentMilestone: 'NOT_STARTED', progressPercent: 0 }
+            : {}),
+        },
       })
       await writeAuditLog({
         userId: jwtUser.sub,
         entityType: 'Entreprise',
         entityId: existing.id,
         action: 'UPDATE_RELEVANCE',
-        oldValue: { isRelevant: existing.isRelevant },
+        oldValue: { isRelevant: existing.isRelevant, currentMilestone: existing.currentMilestone, progressPercent: existing.progressPercent },
         newValue: { isRelevant: body.isRelevant },
       })
     } else {
