@@ -188,6 +188,9 @@ export interface Project {
   entreprises: Entreprise[]
   createdAt: string
   updatedAt: string
+  hasAnyBid?: boolean
+  daysSinceFirstInvitation?: number
+  staleBiddingDaysThreshold?: number
 }
 
 // ─── Entreprises ──────────────────────────────────────────────────────────────

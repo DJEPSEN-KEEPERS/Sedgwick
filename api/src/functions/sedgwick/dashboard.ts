@@ -9,6 +9,8 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
 
     const now = new Date()
     const oneWeekAgo = new Date(now.getTime() - 7 * 86400000)
+    const STALE_BIDDING_DAYS = 5
+    const staleBiddingCutoff = new Date(now.getTime() - STALE_BIDDING_DAYS * 86400000)
 
     const [
       activeProjects,
@@ -17,6 +19,7 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
       urgentBids,
       pendingApprovalCount,
       slaProjects,
+      staleBiddingProjects,
       recentProjects,
       pendingStatusUpdates,
       pendingFinalReports,
@@ -42,6 +45,20 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
         },
         orderBy: { requestedDeadline: 'asc' },
         take: 5,
+      }),
+      prisma.project.findMany({
+        where: {
+          status: 'ACTIVE',
+          currentMilestone: 'BIDDING_IN_PROGRESS',
+          bids: { none: {} },
+          bidInvitations: { some: { invitedAt: { lt: staleBiddingCutoff } } },
+        },
+        include: {
+          insuranceCompany: { select: { id: true, name: true } },
+          bidInvitations: { select: { invitedAt: true } },
+        },
+        orderBy: { updatedAt: 'asc' },
+        take: 10,
       }),
       prisma.project.findMany({
         include: {
@@ -148,6 +165,13 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
       createdAt: m.createdAt.toISOString(),
     }))
 
+    const nowMs = now.getTime()
+    const staleBiddingEnriched = staleBiddingProjects.map((p: any) => {
+      const oldest = Math.min(...p.bidInvitations.map((i: any) => new Date(i.invitedAt).getTime()))
+      const { bidInvitations, ...rest } = p
+      return { ...rest, hasAnyBid: false, daysSinceFirstInvitation: Math.floor((nowMs - oldest) / 86400000) }
+    })
+
     return {
       status: 200,
       jsonBody: {
@@ -159,7 +183,10 @@ async function sedgwickDashboardHandler(req: HttpRequest, context: InvocationCon
           pendingApprovals: pendingApprovalCount,
           oldestApprovalDays,
           slaBreaches: slaProjects.length,
+          staleBiddingCount: staleBiddingProjects.length,
         },
+        staleBiddingProjects: staleBiddingEnriched,
+        staleBiddingDaysThreshold: STALE_BIDDING_DAYS,
         recentProjects,
         pendingItems,
         slaProjects,
