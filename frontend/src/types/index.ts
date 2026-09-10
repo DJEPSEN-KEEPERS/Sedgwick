@@ -200,6 +200,15 @@ export interface Entreprise {
   actualEnd?: string
   createdAt: string
   updatedAt: string
+  statusUpdates?: EntrepriseStatusUpdate[]
+  finalReport?: {
+    id: string
+    approvalStatus: ApprovalStatus
+    submittedAt?: string
+    summary?: string
+    answers?: FinalReportAnswer[]
+    attachments?: FinalReportAttachment[]
+  }
 }
 
 // ─── Bids ─────────────────────────────────────────────────────────────────────

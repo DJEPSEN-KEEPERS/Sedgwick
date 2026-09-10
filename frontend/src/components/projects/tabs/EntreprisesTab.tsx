@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, FileText } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
 import { Progress } from '@/components/ui/progress'
@@ -26,7 +27,7 @@ const MILESTONE_OPTIONS: { value: EntrepriseMilestone; label: string }[] = [
   { value: 'SIGNED_OFF', label: 'Godkendt' },
 ]
 
-export function EntreprisesTab({ projectId }: { projectId: string }) {
+export function EntreprisesTab({ projectId, canSubmitFinalReport = false }: { projectId: string; canSubmitFinalReport?: boolean }) {
   const { data: entreprises, loading, refetch } = useApi<Entreprise[]>(`/projects/${projectId}/entreprises`)
   const { mutate: updateRelevance } = useMutation('patch')
   const { mutate: approveMutation } = useMutation('post')
@@ -73,6 +74,7 @@ export function EntreprisesTab({ projectId }: { projectId: string }) {
                   type={type}
                   entreprise={e}
                   isExpanded={isExpanded}
+                  canSubmitFinalReport={canSubmitFinalReport}
                   onToggleExpand={() => setExpanded(isExpanded ? null : type)}
                   onToggleRelevance={() => e && toggleRelevance(e)}
                   onApprove={async (updateId) => { await approveMutation(`/status-updates/${updateId}/approve`); refetch() }}
@@ -91,6 +93,7 @@ function EntrepriseRow({
   type,
   entreprise,
   isExpanded,
+  canSubmitFinalReport,
   onToggleExpand,
   onToggleRelevance,
   onApprove,
@@ -99,6 +102,7 @@ function EntrepriseRow({
   type: EntrepriseType
   entreprise?: Entreprise
   isExpanded: boolean
+  canSubmitFinalReport: boolean
   onToggleExpand: () => void
   onToggleRelevance: () => void
   onApprove: (id: string) => void
@@ -172,6 +176,7 @@ function EntrepriseRow({
           <td colSpan={6} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
             <EntrepriseDetail
               entreprise={entreprise}
+              canSubmitFinalReport={canSubmitFinalReport}
               onApprove={onApprove}
               onReject={onReject}
             />
@@ -184,13 +189,18 @@ function EntrepriseRow({
 
 function EntrepriseDetail({
   entreprise,
+  canSubmitFinalReport,
   onApprove,
   onReject,
 }: {
   entreprise: Entreprise
+  canSubmitFinalReport: boolean
   onApprove: (id: string) => void
   onReject: (id: string) => void
 }) {
+  const navigate = useNavigate()
+  const finalReport = entreprise.finalReport
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-4 text-sm">
@@ -247,6 +257,46 @@ function EntrepriseDetail({
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {finalReport && (
+        <div>
+          <p className="text-xs font-display font-semibold text-gray-700 mb-2">Slutrapport</p>
+          <div className={cn(
+            'flex items-center gap-3 rounded-lg border p-3',
+            finalReport.approvalStatus === 'REJECTED'
+              ? 'border-red-200 bg-red-50'
+              : 'border-[#e5e7eb] bg-white',
+          )}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                {finalReport.approvalStatus === 'REJECTED' && (
+                  <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                )}
+                {finalReport.approvalStatus === 'APPROVED' && (
+                  <FileText className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                )}
+                {finalReport.approvalStatus === 'PENDING' && (
+                  <FileText className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                )}
+                <ApprovalBadge status={finalReport.approvalStatus} />
+              </div>
+              {finalReport.submittedAt && (
+                <p className="text-xs text-gray-400">Indsendt {formatDate(finalReport.submittedAt)}</p>
+              )}
+            </div>
+            {canSubmitFinalReport && finalReport.approvalStatus === 'REJECTED' && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => navigate(`/contractor/final-report/${entreprise.id}`)}
+                className="shrink-0 text-xs border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Rediger og genindsend
+              </Button>
+            )}
           </div>
         </div>
       )}

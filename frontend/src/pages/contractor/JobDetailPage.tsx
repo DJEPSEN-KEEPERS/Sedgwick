@@ -223,15 +223,38 @@ function ReportTab({ entreprises, navigate }: { entreprises: any[]; navigate: Re
 
             <div className="p-4 space-y-3">
               {report ? (
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-semibold text-gray-900">Slutrapport indsendt</span>
-                  </div>
-                  {report.submittedAt && (
+                <div className="space-y-2">
+                  {report.approvalStatus === 'REJECTED' ? (
+                    <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+                      <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-red-800">Slutrapport afvist af Sedgwick</p>
+                        {report.submittedAt && (
+                          <p className="text-xs text-red-700 mt-0.5">Indsendt {formatDate(report.submittedAt)}</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-semibold text-gray-900">Slutrapport indsendt</span>
+                    </div>
+                  )}
+                  {report.approvalStatus !== 'REJECTED' && report.submittedAt && (
                     <p className="text-xs text-gray-500">{formatDate(report.submittedAt)}</p>
                   )}
                   <ApprovalBadge status={report.approvalStatus} />
+                  {report.approvalStatus === 'REJECTED' && (
+                    <Button
+                      size="sm"
+                      className="w-full gap-2 mt-1 border-red-300 text-red-700 hover:bg-red-50"
+                      variant="secondary"
+                      onClick={() => navigate(`/contractor/final-report/${e.id}`)}
+                    >
+                      <AlertCircle className="h-4 w-4" />
+                      Rediger og genindsend
+                    </Button>
+                  )}
                 </div>
               ) : canSubmit ? (
                 <Button
