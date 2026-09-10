@@ -29,6 +29,10 @@ async function selectBidHandler(req: HttpRequest, context: InvocationContext): P
         where: { id: bid.projectId },
         data: { selectedContractorId: bid.contractorId, currentMilestone: 'CONTRACTOR_SELECTED' },
       })
+      await tx.contractor.update({
+        where: { id: bid.contractorId },
+        data: { currentWorkload: { increment: 1 } },
+      })
       return selected
     })
 

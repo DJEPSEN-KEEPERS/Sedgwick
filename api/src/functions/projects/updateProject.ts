@@ -76,6 +76,18 @@ async function updateProjectHandler(req: HttpRequest, context: InvocationContext
       },
     })
 
+    // Decrement workload when a case is closed — only on the actual transition to avoid double-counting
+    if (
+      body.currentMilestone === 'CASE_CLOSED' &&
+      existing.currentMilestone !== 'CASE_CLOSED' &&
+      existing.selectedContractorId
+    ) {
+      await prisma.contractor.updateMany({
+        where: { id: existing.selectedContractorId, currentWorkload: { gt: 0 } },
+        data: { currentWorkload: { decrement: 1 } },
+      })
+    }
+
     await writeAuditLog({
       userId: jwtUser.sub,
       entityType: 'Project',
