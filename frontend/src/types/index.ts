@@ -4,7 +4,7 @@ export type UserRole = 'SEDGWICK_ADMIN' | 'INSURER_USER' | 'CONTRACTOR_USER'
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
 export type TwoFactorMethod = 'TOTP' | 'SMS'
 
-export type PriorityLevel = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT'
+export type PriorityLevel = 'NORMAL' | 'FASTTRACK'
 export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'CANCELLED'
 export type ProjectMilestone =
   | 'CASE_RECEIVED'
@@ -14,6 +14,7 @@ export type ProjectMilestone =
   | 'WORK_STARTED'
   | 'WORK_COMPLETED'
   | 'FINAL_REPORT_SUBMITTED'
+  | 'CASE_INVOICED'
   | 'CASE_CLOSED'
 
 export type EntrepriseType =
@@ -35,7 +36,7 @@ export type EntrepriseMilestone =
 
 export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
 export type InvitationStatus = 'PENDING' | 'INTERESTED' | 'NOT_INTERESTED'
-export type ChannelType = 'SEDGWICK_CONTRACTOR' | 'SEDGWICK_INSURER' | 'SEDGWICK_BIDDER'
+export type ChannelType = 'SEDGWICK_CONTRACTOR' | 'SEDGWICK_INSURER' | 'SEDGWICK_BIDDER' | 'PROJECT'
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -145,6 +146,12 @@ export interface ContractorCertification {
 
 // ─── Projects ─────────────────────────────────────────────────────────────────
 
+export interface ResponsibleUser {
+  id: string
+  fullName: string
+  email: string
+}
+
 export interface Project {
   id: string
   claimId: string
@@ -152,6 +159,8 @@ export interface Project {
   insurancePolicyNumber: string
   insuranceCompanyId: string
   insuranceCompany?: InsuranceCompany
+  responsibleUserId?: string | null
+  responsibleUser?: ResponsibleUser | null
   damageType: string
   damageDescription: string
   priorityLevel: PriorityLevel

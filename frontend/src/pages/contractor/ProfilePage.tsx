@@ -1,6 +1,7 @@
 import { useApi, useMutation } from '@/hooks/useApi'
 import { Building2, Mail, Phone, Star, MapPin, Award, Bell } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { TwoFactorSection } from '@/components/auth/TwoFactorSection'
 import { getEntrepriseTypeLabel } from '@/lib/utils'
 import type { EntrepriseType } from '@/types'
 
@@ -193,6 +194,9 @@ export default function ProfilePage() {
           })}
         </div>
       </div>
+
+      {/* 2FA settings */}
+      <TwoFactorSection />
     </div>
   )
 }

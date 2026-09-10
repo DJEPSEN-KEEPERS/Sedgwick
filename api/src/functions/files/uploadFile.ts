@@ -1,5 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
-import { BlobServiceClient } from '@azure/storage-blob'
+import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob'
 import { prisma } from '../../lib/prisma'
 import { authenticate, errorResponse } from '../../middleware/authMiddleware'
 import { randomUUID } from 'crypto'
@@ -18,18 +18,28 @@ async function uploadFileHandler(req: HttpRequest, context: InvocationContext): 
 
     const contentType = req.headers.get('content-type') ?? 'application/octet-stream'
     const fileName = req.headers.get('x-file-name') ?? `upload-${Date.now()}`
-    const fileBuffer = Buffer.from(await req.arrayBuffer())
+    if (!req.body) return { status: 400, jsonBody: { error: 'Ingen fil modtaget' } }
+    const chunks: Buffer[] = []
+    for await (const chunk of req.body as unknown as AsyncIterable<Uint8Array>) {
+      chunks.push(Buffer.from(chunk))
+    }
+    const fileBuffer = Buffer.concat(chunks)
     const fileSizeMb = fileBuffer.length / (1024 * 1024)
 
     if (fileSizeMb > 50) {
       return { status: 413, jsonBody: { error: 'Filen overstiger maksimal størrelse på 50 MB' } }
     }
 
-    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING!
+    const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME!
+    const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY!
     const containerName = process.env.AZURE_STORAGE_CONTAINER ?? 'sedgwick-files'
     const blobName = `projects/${projectId}/${randomUUID()}-${fileName}`
 
-    const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString)
+    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey)
+    const blobServiceClient = new BlobServiceClient(
+      `https://${accountName}.blob.core.windows.net`,
+      sharedKeyCredential,
+    )
     const containerClient = blobServiceClient.getContainerClient(containerName)
     const blockBlobClient = containerClient.getBlockBlobClient(blobName)
 

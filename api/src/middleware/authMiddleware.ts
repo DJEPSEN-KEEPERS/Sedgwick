@@ -1,13 +1,16 @@
 import type { HttpRequest, InvocationContext } from '@azure/functions'
 import { verifyAccessToken, type JwtPayload } from '../lib/jwt'
-import { writeAuditLog } from '../lib/auditLog'
-import type { UserRole } from '@prisma/client'
 
 export interface AuthContext {
   user: JwtPayload
 }
 
 export function extractBearerToken(req: HttpRequest): string | null {
+  // Prefer X-Auth-Token — Azure SWA proxy can corrupt the Authorization header
+  const customToken = req.headers.get('x-auth-token') ?? req.headers.get('X-Auth-Token')
+  if (customToken) return customToken
+
+  // Fall back to standard Authorization: Bearer header (local dev / other clients)
   const authHeader = req.headers.get('authorization') ?? req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) return null
   return authHeader.slice(7)
@@ -24,7 +27,7 @@ export function authenticate(req: HttpRequest): JwtPayload {
   }
 }
 
-export function requireRoles(user: JwtPayload, ...roles: UserRole[]): void {
+export function requireRoles(user: JwtPayload, ...roles: string[]): void {
   if (!roles.includes(user.role)) {
     throw new AuthError('Insufficient permissions', 403)
   }

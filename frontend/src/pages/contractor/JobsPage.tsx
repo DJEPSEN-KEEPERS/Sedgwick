@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
 import { Briefcase, ChevronRight, Clock, CheckCircle2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
 import { Progress } from '@/components/ui/progress'
@@ -12,6 +13,7 @@ type Tab = 'active' | 'completed'
 
 export default function JobsPage() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('active')
   const { data: jobs, loading } = useApi<Project[]>('/contractor/jobs')
 
@@ -21,13 +23,13 @@ export default function JobsPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <h1 className="text-xl font-display font-bold text-gray-900">Mine sager</h1>
+      <h1 className="text-xl font-display font-bold text-gray-900">{t('jobs.title')}</h1>
 
       {/* Tabs */}
       <div className="flex rounded-lg bg-gray-100 p-0.5 gap-0.5">
         {([
-          { key: 'active', label: 'Aktive', count: active.length },
-          { key: 'completed', label: 'Afsluttede', count: completed.length },
+          { key: 'active', label: t('common.active'), count: active.length },
+          { key: 'completed', label: t('projects.milestones.WORK_COMPLETED'), count: completed.length },
         ] as { key: Tab; label: string; count: number }[]).map(({ key, label, count }) => (
           <button
             key={key}
@@ -50,8 +52,8 @@ export default function JobsPage() {
       ) : displayed.length === 0 ? (
         <EmptyState
           icon={tab === 'active' ? Briefcase : CheckCircle2}
-          title={tab === 'active' ? 'Ingen aktive sager' : 'Ingen afsluttede sager'}
-          description={tab === 'active' ? 'Du er endnu ikke tildelt nogen aktive sager.' : undefined}
+          title={tab === 'active' ? t('jobs.noJobs') : t('dashboard.noActiveJobs')}
+          description={tab === 'active' ? t('jobs.noJobs') : undefined}
         />
       ) : (
         <div className="space-y-3">

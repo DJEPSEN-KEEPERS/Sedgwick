@@ -1,9 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
 import { Briefcase, Mail, MessageSquare, User, ChevronRight, Clock } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useCurrentUser } from '@/stores/authStore'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatRelativeTime } from '@/lib/utils'
+
+interface InboxItem {
+  projectId: string
+  claimId: string
+  address: string
+  city: string
+  latestMessage: { messageBody: string; senderName: string; createdAt: string } | null
+}
+
+interface InboxData {
+  items: InboxItem[]
+}
 
 interface ContractorDashboardData {
   stats: { activeJobs: number; pendingInvitations: number; unreadMessages: number }
@@ -30,37 +43,40 @@ interface ActionCard {
 
 export default function ContractorDashboard() {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const user = useCurrentUser()
   const { data, loading } = useApi<ContractorDashboardData>('/contractor/dashboard')
+  const { data: inboxData } = useApi<InboxData>('/messages/inbox')
 
   const stats = data?.stats ?? { activeJobs: 0, pendingInvitations: 0, unreadMessages: 0 }
   const recentJobs = data?.recentJobs ?? []
+  const inboxItems = inboxData?.items?.filter((i) => i.latestMessage) ?? []
 
   const actions: ActionCard[] = [
     {
-      label: 'Mine sager',
-      sublabel: `${stats.activeJobs} aktive`,
+      label: t('dashboard.myJobs'),
+      sublabel: t('dashboard.activeJobs', { count: stats.activeJobs }),
       icon: Briefcase,
       to: '/contractor/jobs',
     },
     {
-      label: 'Invitationer',
-      sublabel: stats.pendingInvitations > 0 ? `${stats.pendingInvitations} afventer svar` : 'Ingen nye',
+      label: t('nav.invitations'),
+      sublabel: stats.pendingInvitations > 0 ? t('dashboard.pendingReply', { count: stats.pendingInvitations }) : t('dashboard.noNew'),
       icon: Mail,
       to: '/contractor/invitations',
       badge: stats.pendingInvitations,
       accent: stats.pendingInvitations > 0,
     },
     {
-      label: 'Beskeder',
-      sublabel: stats.unreadMessages > 0 ? `${stats.unreadMessages} nye` : 'Ingen nye',
+      label: t('nav.messages'),
+      sublabel: stats.unreadMessages > 0 ? t('dashboard.newMessages', { count: stats.unreadMessages }) : t('dashboard.noNew'),
       icon: MessageSquare,
       to: '/contractor/chat',
       badge: stats.unreadMessages,
     },
     {
-      label: 'Min profil',
-      sublabel: 'Virksomhedsinfo & indstillinger',
+      label: t('nav.profile'),
+      sublabel: t('dashboard.companyInfo'),
       icon: User,
       to: '/contractor/profile',
     },
@@ -71,9 +87,9 @@ export default function ContractorDashboard() {
       {/* Greeting */}
       <div>
         <h1 className="text-xl font-display font-bold text-gray-900">
-          Hej, {user.fullName.split(' ')[0]}
+          {t('dashboard.greeting', { name: user.fullName.split(' ')[0] })}
         </h1>
-        <p className="text-sm text-gray-500 mt-0.5">Her er din dagens overblik</p>
+        <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.todayOverview')}</p>
       </div>
 
       {/* Action cards */}
@@ -104,12 +120,42 @@ export default function ContractorDashboard() {
         ))}
       </div>
 
+      {/* Messages inbox */}
+      {inboxItems.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <MessageSquare className="h-4 w-4 text-gray-400" />
+            <h2 className="font-display font-semibold text-sm text-gray-900">Seneste beskeder</h2>
+          </div>
+          <div className="space-y-2">
+            {inboxItems.slice(0, 3).map((item) => (
+              <button
+                key={item.projectId}
+                onClick={() => navigate(`/contractor/jobs/${item.projectId}`)}
+                className="w-full flex items-start gap-3 rounded-xl border border-[#e5e7eb] bg-white p-3 text-left hover:border-primary-300 transition-colors"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700 text-xs font-display font-semibold">
+                  <MessageSquare className="h-4 w-4 text-primary-600" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="font-mono text-xs font-semibold text-primary-700">{item.claimId}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 truncate">{item.latestMessage!.messageBody}</p>
+                </div>
+                <span className="text-xs text-gray-400 shrink-0">{formatRelativeTime(item.latestMessage!.createdAt)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Recent jobs */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-semibold text-sm text-gray-900">Seneste sager</h2>
+          <h2 className="font-display font-semibold text-sm text-gray-900">{t('dashboard.recentJobs')}</h2>
           <button onClick={() => navigate('/contractor/jobs')} className="text-xs text-primary-600 hover:underline">
-            Se alle
+            {t('common.seeAll')}
           </button>
         </div>
 
@@ -119,7 +165,7 @@ export default function ContractorDashboard() {
           </div>
         ) : recentJobs.length === 0 ? (
           <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 text-center text-sm text-gray-400">
-            Ingen aktive sager
+            {t('dashboard.noActiveJobs')}
           </div>
         ) : (
           <div className="space-y-2">
@@ -140,7 +186,7 @@ export default function ContractorDashboard() {
                   {job.requestedDeadline && (
                     <p className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                       <Clock className="h-3 w-3" />
-                      Frist: {formatDate(job.requestedDeadline)}
+                      {t('common.deadline')}: {formatDate(job.requestedDeadline)}
                     </p>
                   )}
                 </div>

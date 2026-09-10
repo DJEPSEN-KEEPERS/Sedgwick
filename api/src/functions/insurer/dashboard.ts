@@ -32,8 +32,8 @@ async function insurerDashboardHandler(req: HttpRequest, context: InvocationCont
 
     const now = new Date()
     const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000)
-    const delayed = all.filter((p) => p.requestedDeadline && new Date(p.requestedDeadline) < now).length
-    const recentlyUpdated = all.filter((p) => new Date(p.updatedAt) >= sevenDaysAgo).length
+    const delayed = all.filter((p: any) => p.requestedDeadline && new Date(p.requestedDeadline) < now).length
+    const recentlyUpdated = all.filter((p: any) => new Date(p.updatedAt) >= sevenDaysAgo).length
 
     return {
       status: 200,

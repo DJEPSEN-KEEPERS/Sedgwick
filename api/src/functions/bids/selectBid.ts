@@ -1,8 +1,10 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
 import { notifyContractorBidSelected } from '../../lib/notificationService'
+import { ensureProjectChannel } from '../../lib/projectChannel'
 
 async function selectBidHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -17,7 +19,7 @@ async function selectBidHandler(req: HttpRequest, context: InvocationContext): P
     })
     if (!bid) return { status: 404, jsonBody: { error: 'Tilbud ikke fundet' } }
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       await tx.bid.updateMany({ where: { projectId: bid.projectId, isSelected: true }, data: { isSelected: false } })
       const selected = await tx.bid.update({
         where: { id: bidId },
@@ -40,6 +42,15 @@ async function selectBidHandler(req: HttpRequest, context: InvocationContext): P
 
     const project = await prisma.project.findUnique({ where: { id: bid.projectId }, select: { claimId: true } })
     if (project) await notifyContractorBidSelected(bid.contractorId, project.claimId)
+
+    // Add the contractor's users to the project message thread
+    const contractorUsers = await prisma.user.findMany({
+      where: { contractorUser: { contractorId: bid.contractorId } },
+      select: { id: true },
+    })
+    if (contractorUsers.length > 0) {
+      await ensureProjectChannel(bid.projectId, contractorUsers.map((u) => u.id))
+    }
 
     return { status: 200, jsonBody: { data: updated } }
   } catch (err) {

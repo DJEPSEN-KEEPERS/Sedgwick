@@ -44,6 +44,17 @@ export default function ContractorDetailPage() {
   if (loading) return <Skeleton />
   if (!contractor) return <div className="text-center py-16 text-gray-500">Håndværker ikke fundet</div>
 
+  // Guard: ensure arrays are never undefined (protects against unexpected API shapes)
+  const safeContractor: ContractorDetail = {
+    ...contractor,
+    regions:          contractor.regions          ?? [],
+    skills:           contractor.skills           ?? [],
+    certifications:   contractor.certifications   ?? [],
+    sedgwickReviews:  contractor.sedgwickReviews  ?? [],
+    clientReviews:    contractor.clientReviews    ?? [],
+    projectHistory:   contractor.projectHistory   ?? [],
+  }
+
   return (
     <div>
       <button onClick={() => navigate('/sedgwick/contractors')} className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary-700 mb-4">
@@ -54,17 +65,17 @@ export default function ContractorDetailPage() {
       <div className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4 mb-6">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-display font-bold text-gray-900">{contractor.companyName}</h1>
-            <p className="text-sm text-gray-500 font-mono">CVR: {contractor.cvrNumber}</p>
+            <h1 className="text-xl font-display font-bold text-gray-900">{safeContractor.companyName}</h1>
+            <p className="text-sm text-gray-500 font-mono">CVR: {safeContractor.cvrNumber}</p>
             <div className="flex items-center gap-1 mt-1">
               {[1,2,3,4,5].map((s) => (
-                <Star key={s} className={cn('h-4 w-4', s <= Math.round(contractor.sedgwickRatingAvg) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300')} />
+                <Star key={s} className={cn('h-4 w-4', s <= Math.round(safeContractor.sedgwickRatingAvg ?? 0) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300')} />
               ))}
-              <span className="ml-1 text-sm text-gray-600">{contractor.sedgwickRatingAvg.toFixed(1)}</span>
+              <span className="ml-1 text-sm text-gray-600">{(safeContractor.sedgwickRatingAvg ?? 0).toFixed(1)}</span>
             </div>
           </div>
-          <Badge variant={contractor.status === 'active' ? 'success' : 'gray'}>
-            {contractor.status === 'active' ? 'Aktiv' : contractor.status}
+          <Badge variant={safeContractor.status === 'active' ? 'success' : 'gray'}>
+            {safeContractor.status === 'active' ? 'Aktiv' : safeContractor.status}
           </Badge>
         </div>
       </div>
@@ -81,10 +92,10 @@ export default function ContractorDetailPage() {
         </nav>
       </div>
 
-      {tab === 0 && <ProfileTab contractor={contractor} />}
-      {tab === 1 && <PerformanceTab contractor={contractor} />}
-      {tab === 2 && <ProjectsTab history={contractor.projectHistory ?? []} onNavigate={(id) => navigate(`/sedgwick/projects/${id}`)} />}
-      {tab === 3 && <ReviewsTab sedgwick={contractor.sedgwickReviews ?? []} client={contractor.clientReviews ?? []} />}
+      {tab === 0 && <ProfileTab contractor={safeContractor} />}
+      {tab === 1 && <PerformanceTab contractor={safeContractor} />}
+      {tab === 2 && <ProjectsTab history={safeContractor.projectHistory} onNavigate={(id) => navigate(`/sedgwick/projects/${id}`)} />}
+      {tab === 3 && <ReviewsTab sedgwick={safeContractor.sedgwickReviews} client={safeContractor.clientReviews} />}
     </div>
   )
 }

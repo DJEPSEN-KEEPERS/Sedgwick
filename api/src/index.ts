@@ -1,3 +1,6 @@
+// Health check
+import './functions/health'
+
 // Auth
 import './functions/auth/login'
 import './functions/auth/verify2fa'
@@ -5,11 +8,17 @@ import './functions/auth/refresh'
 import './functions/auth/me'
 import './functions/auth/logout'
 import './functions/auth/setupTotp'
+import './functions/auth/debugToken'
+import './functions/auth/forgotPassword'
+import './functions/auth/resetPassword'
+import './functions/auth/manage2fa'
 
 // Projects
 import './functions/projects/list'
 import './functions/projects/get'
+import './functions/projects/createProject'
 import './functions/projects/updateProject'
+import './functions/projects/deleteProject'
 import './functions/projects/getRecommendations'
 import './functions/projects/auditLog'
 
@@ -17,6 +26,7 @@ import './functions/projects/auditLog'
 import './functions/entreprises/listEntreprises'
 import './functions/entreprises/updateEntrepriseRelevance'
 import './functions/entreprises/updateEntrepriseStatus'
+import './functions/entreprises/toggleEntrepriseRelevance'
 
 // Bids
 import './functions/bids/listBids'
@@ -25,6 +35,7 @@ import './functions/bids/inviteContractor'
 import './functions/bids/cancelInvitation'
 import './functions/bids/selectBid'
 import './functions/bids/overview'
+import './functions/bids/uploadBidAttachment'
 
 // Approvals
 import './functions/approvals/listPending'
@@ -45,6 +56,14 @@ import './functions/chat/listProjectChannels'
 import './functions/chat/createChannel'
 import './functions/chat/getMessages'
 import './functions/chat/sendMessage'
+import './functions/chat/getProjectThread'
+
+// Messages
+import './functions/messages/inbox'
+
+// Week planner
+import './functions/weekplan/getWeekPlan'
+import './functions/weekplan/toggleWeekPlan'
 
 // Files
 import './functions/files/listFiles'
@@ -55,8 +74,11 @@ import './functions/files/getSignedUrl'
 import './functions/sedgwick/dashboard'
 import './functions/insurer/dashboard'
 
-// Users & Skills
+// Users, Insurers & Skills
 import './functions/users/listUsers'
+import './functions/users/manageUser'
+import './functions/insurers/list'
+import './functions/insurers/manage'
 import './functions/skills/listSkills'
 
 // Notifications

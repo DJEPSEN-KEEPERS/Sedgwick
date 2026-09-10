@@ -1,16 +1,19 @@
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Edit2, Archive, FileDown } from 'lucide-react'
-import { useApi } from '@/hooks/useApi'
+import { ArrowLeft, Edit2, Archive, FileDown, X } from 'lucide-react'
+import { useApi, useMutation } from '@/hooks/useApi'
 import { Button } from '@/components/ui/button'
 import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
 import { OverviewTab } from '@/components/projects/tabs/OverviewTab'
 import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
 import { BiddingTab } from '@/components/projects/tabs/BiddingTab'
 import { ProgressTab } from '@/components/projects/tabs/ProgressTab'
+import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { MessagesTab } from '@/components/projects/tabs/MessagesTab'
 import { FilesTab } from '@/components/projects/tabs/FilesTab'
 import { AuditTab } from '@/components/projects/tabs/AuditTab'
+import { EditProjectPanel } from '@/components/projects/EditProjectPanel'
+import { exportProjectPdf } from '@/lib/exportProjectPdf'
 import { cn } from '@/lib/utils'
 import type { Project } from '@/types'
 
@@ -19,6 +22,7 @@ const TABS = [
   { key: 'entreprises',  label: 'Entrepriser' },
   { key: 'bidding',      label: 'Tilbud' },
   { key: 'progress',     label: 'Fremgang' },
+  { key: 'planning',     label: 'Planlægning' },
   { key: 'messages',     label: 'Beskeder' },
   { key: 'files',        label: 'Filer' },
   { key: 'audit',        label: 'Audit' },
@@ -29,8 +33,27 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'overview')
+  const [confirmClose, setConfirmClose] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
-  const { data: project, loading } = useApi<Project>(`/projects/${projectId}`)
+  const { data: project, loading, refetch } = useApi<Project>(`/projects/${projectId}`)
+  const { mutate: closeProject, loading: closing } = useMutation('delete')
+
+  // Allow child tabs to trigger a refetch after inline updates
+  const handleProjectUpdate = () => refetch()
+
+  const handleProjectSaved = (updated: Project) => {
+    refetch()
+    setEditOpen(false)
+  }
+
+  const handleClose = async () => {
+    const result = await closeProject(`/projects/${projectId}`)
+    if (result) {
+      setConfirmClose(false)
+      refetch()
+    }
+  }
 
   useEffect(() => {
     setSearchParams(activeTab !== 'overview' ? { tab: activeTab } : {}, { replace: true })
@@ -76,16 +99,37 @@ export default function ProjectDetailPage() {
             <p className="text-base font-display font-semibold text-gray-700">{project.damageType} — {project.buildingType}</p>
             <p className="text-sm text-gray-500">{project.address}, {project.postalCode} {project.city}, {project.region}</p>
           </div>
-          <div className="flex gap-2 shrink-0">
-            <Button variant="secondary" size="sm">
-              <Edit2 className="h-4 w-4 mr-1" /> Rediger
-            </Button>
-            <Button variant="secondary" size="sm">
-              <FileDown className="h-4 w-4 mr-1" /> Eksporter
-            </Button>
-            <Button variant="secondary" size="sm" className="text-gray-500">
-              <Archive className="h-4 w-4 mr-1" /> Arkiver
-            </Button>
+          <div className="flex gap-2 shrink-0 items-center flex-wrap">
+            {confirmClose ? (
+              <div className="flex items-center gap-2 rounded-md bg-red-50 border border-red-200 px-3 py-1.5">
+                <span className="text-xs font-medium text-red-700">Luk sag permanent?</span>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white border-red-600 h-7 text-xs"
+                  onClick={handleClose} disabled={closing}>
+                  {closing ? '...' : 'Ja, luk sag'}
+                </Button>
+                <button onClick={() => setConfirmClose(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+                  <Edit2 className="h-4 w-4 mr-1" /> Rediger
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => exportProjectPdf(project)}>
+                  <FileDown className="h-4 w-4 mr-1" /> Eksporter
+                </Button>
+                {project.status !== 'CLOSED' && (
+                  <Button variant="secondary" size="sm" className="text-gray-500 hover:text-red-600 hover:border-red-300"
+                    onClick={() => setConfirmClose(true)}>
+                    <Archive className="h-4 w-4 mr-1" /> Luk sag
+                  </Button>
+                )}
+                {project.status === 'CLOSED' && (
+                  <span className="text-xs font-medium text-gray-400 border border-gray-200 rounded-md px-2 py-1">Lukket</span>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -111,13 +155,27 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'overview'    && <OverviewTab project={project} />}
+      {activeTab === 'overview'    && <OverviewTab project={project} onProjectUpdate={handleProjectUpdate} />}
       {activeTab === 'entreprises' && <EntreprisesTab projectId={project.id} />}
       {activeTab === 'bidding'     && <BiddingTab projectId={project.id} />}
-      {activeTab === 'progress'    && <ProgressTab project={project} />}
+      {activeTab === 'progress'    && <ProgressTab project={project} onProjectUpdate={handleProjectUpdate} />}
+      {activeTab === 'planning'    && (
+        <WeekPlannerGrid
+          projectId={project.id}
+          entreprises={(project.entreprises ?? []).filter((e: any) => e.isRelevant !== false)}
+          canEdit={false}
+        />
+      )}
       {activeTab === 'messages'    && <MessagesTab projectId={project.id} />}
       {activeTab === 'files'       && <FilesTab projectId={project.id} />}
       {activeTab === 'audit'       && <AuditTab projectId={project.id} />}
+
+      <EditProjectPanel
+        project={project}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={handleProjectSaved}
+      />
     </div>
   )
 }

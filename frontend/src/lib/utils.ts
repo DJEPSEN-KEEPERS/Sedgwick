@@ -71,6 +71,7 @@ export function getProjectMilestoneLabel(milestone: ProjectMilestone): string {
     WORK_STARTED: 'Arbejde startet',
     WORK_COMPLETED: 'Arbejde afsluttet',
     FINAL_REPORT_SUBMITTED: 'Slutrapport indsendt',
+    CASE_INVOICED: 'Sag faktureret',
     CASE_CLOSED: 'Sag lukket',
   }
   return labels[milestone]
@@ -89,12 +90,10 @@ export function getEntrepriseMilestoneLabel(milestone: EntrepriseMilestone): str
 
 export function getPriorityLabel(level: PriorityLevel): string {
   const labels: Record<PriorityLevel, string> = {
-    LOW: 'Lav',
     NORMAL: 'Normal',
-    HIGH: 'Høj',
-    URGENT: 'Akut',
+    FASTTRACK: 'Fasttrack',
   }
-  return labels[level]
+  return labels[level] ?? level
 }
 
 export function projectMilestoneToStep(milestone: ProjectMilestone): number {
@@ -106,7 +105,8 @@ export function projectMilestoneToStep(milestone: ProjectMilestone): number {
     WORK_STARTED: 4,
     WORK_COMPLETED: 5,
     FINAL_REPORT_SUBMITTED: 6,
-    CASE_CLOSED: 7,
+    CASE_INVOICED: 7,
+    CASE_CLOSED: 8,
   }
   return steps[milestone]
 }

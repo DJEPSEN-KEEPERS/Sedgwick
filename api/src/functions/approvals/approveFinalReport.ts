@@ -1,4 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
@@ -22,14 +23,14 @@ async function approveFinalReportHandler(req: HttpRequest, context: InvocationCo
 
     const projectId = report.entreprise.projectId
 
-    const approved = await prisma.$transaction(async (tx) => {
+    const approved = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const result = await tx.finalReport.update({
         where: { id: reportId },
         data: { approvalStatus: 'APPROVED', approvedByUserId: jwtUser.sub, approvedAt: new Date() },
       })
       await tx.project.update({
         where: { id: projectId },
-        data: { currentMilestone: 'CASE_CLOSED', status: 'COMPLETED', finalCompletionDate: new Date(), progressPercent: 100 },
+        data: { currentMilestone: 'CASE_INVOICED', progressPercent: 100 },
       })
       return result
     })

@@ -1,0 +1,24 @@
+{
+  "name": "Sedgwick Case Management",
+  "short_name": "Sedgwick",
+  "description": "Sedgwick Denmark skadeshåndteringsportal",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f4f6f9",
+  "theme_color": "#0d2d57",
+  "icons": [
+    {
+      "src": "/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

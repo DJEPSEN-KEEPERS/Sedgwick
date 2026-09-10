@@ -1,5 +1,4 @@
 node_modules/
-dist/
 .env
 .env.local
 *.env.local
@@ -13,7 +12,10 @@ prisma/migrations/
 
 # Build artifacts
 frontend/dist/
-api/dist/
+# api/dist/ intentionally tracked so Oryx deploys compiled output
+
+# Claude Code
+.claude/worktrees/
 
 # IDE
 .vscode/

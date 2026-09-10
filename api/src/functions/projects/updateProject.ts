@@ -2,22 +2,27 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
-import type { ProjectMilestone, ProjectStatus, PriorityLevel } from '@prisma/client'
-
 interface UpdateProjectBody {
+  damageType?: string
   damageDescription?: string
-  priorityLevel?: PriorityLevel
+  buildingType?: string
+  priorityLevel?: string
   maxApprovedPrice?: number
   estimatedScope?: string
   requestedStartDate?: string
   requestedDeadline?: string
   slaCategory?: string
+  address?: string
+  postalCode?: string
+  city?: string
+  region?: string
   contactName?: string
   contactPhone?: string
   contactEmail?: string
-  currentMilestone?: ProjectMilestone
-  status?: ProjectStatus
+  currentMilestone?: string
+  status?: string
   finalCompletionDate?: string
+  responsibleUserId?: string | null
 }
 
 async function updateProjectHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -35,10 +40,17 @@ async function updateProjectHandler(req: HttpRequest, context: InvocationContext
 
     const updateData: Record<string, unknown> = {}
     const allowedFields: (keyof UpdateProjectBody)[] = [
-      'damageDescription', 'priorityLevel', 'maxApprovedPrice', 'estimatedScope',
-      'slaCategory', 'contactName', 'contactPhone', 'contactEmail',
+      'damageType', 'damageDescription', 'buildingType', 'priorityLevel',
+      'maxApprovedPrice', 'estimatedScope', 'slaCategory',
+      'address', 'postalCode', 'city', 'region',
+      'contactName', 'contactPhone', 'contactEmail',
       'currentMilestone', 'status',
     ]
+
+    // responsibleUserId may be set to null (unassign) or a string (assign)
+    if (body.responsibleUserId !== undefined) {
+      updateData.responsibleUserId = body.responsibleUserId ?? null
+    }
 
     for (const field of allowedFields) {
       if (body[field] !== undefined) {
@@ -59,6 +71,9 @@ async function updateProjectHandler(req: HttpRequest, context: InvocationContext
     const updated = await prisma.project.update({
       where: { id: projectId },
       data: updateData,
+      include: {
+        responsibleUser: { select: { id: true, fullName: true, email: true } },
+      },
     })
 
     await writeAuditLog({

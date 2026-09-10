@@ -1,11 +1,33 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApi, useMutation } from '@/hooks/useApi'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StepForm } from '@/components/ui/StepForm'
 import { formatCurrency, getEntrepriseTypeLabel } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import type { Project, EntrepriseType } from '@/types'
+
+const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL ?? '/api'
+const ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip'
+const MAX_MB = 25
+
+async function uploadBidFile(bidId: string, file: File): Promise<void> {
+  const token = localStorage.getItem('accessToken') ?? ''
+  const res = await fetch(`${BASE_URL}/bids/${bidId}/attachments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
+      'X-File-Name': encodeURIComponent(file.name),
+      'X-Auth-Token': token,
+    },
+    body: file,
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as any).error ?? `Upload fejlede (${res.status})`)
+  }
+}
 
 export default function BidSubmitPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -17,25 +39,53 @@ export default function BidSubmitPage() {
   // Step 1: Entreprise relevance
   const [relevance, setRelevance] = useState<Record<string, boolean>>({})
 
-  // Step 2: Bid details
-  const [bidAmount, setBidAmount] = useState('')
+  // Step 2: Bid details + files
+  const [materialsCost, setMaterialsCost] = useState('')
+  const [laborCost, setLaborCost] = useState('')
   const [comments, setComments] = useState('')
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const [done, setDone] = useState(false)
+  const [uploadError, setUploadError] = useState('')
 
   const entreprises = project?.entreprises ?? []
-
-  // Pre-populate relevance from project when loaded
   const relevanceWithDefaults = { ...Object.fromEntries(entreprises.map((e) => [e.id, e.isRelevant])), ...relevance }
 
+  const addFiles = useCallback((list: FileList | null) => {
+    if (!list) return
+    const arr = Array.from(list).filter((f) => f.size <= MAX_MB * 1024 * 1024)
+    setPendingFiles((prev) => [...prev, ...arr].slice(0, 10))
+  }, [])
+
+  const removeFile = (idx: number) => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))
+
+  const matVal = parseFloat(materialsCost) || 0
+  const labVal = parseFloat(laborCost) || 0
+  const totalBid = matVal + labVal
+
   const handleSubmit = async () => {
+    setUploadError('')
     const result = await submit('/contractor/bids', {
       projectId,
-      bidAmount: parseFloat(bidAmount),
-      comments: comments || undefined,
+      materialsCost: matVal,
+      laborCost: labVal,
+      comments,
       entrepriseRelevance: relevanceWithDefaults,
-    })
-    if (result) setDone(true)
+    }) as any
+
+    if (result) {
+      const bidId: string = result.id
+      if (pendingFiles.length > 0) {
+        try {
+          await Promise.all(pendingFiles.map((f) => uploadBidFile(bidId, f)))
+        } catch (e: unknown) {
+          setUploadError(e instanceof Error ? e.message : 'Bilag kunne ikke uploades')
+        }
+      }
+      setDone(true)
+    }
   }
 
   if (loading) {
@@ -54,7 +104,13 @@ export default function BidSubmitPage() {
           <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
         <h2 className="font-display font-bold text-lg text-gray-900 mb-2">Bud afgivet!</h2>
-        <p className="text-sm text-gray-500 mb-6">Dit bud er sendt til Sedgwick for vurdering.</p>
+        <p className="text-sm text-gray-500 mb-6">
+          Dit bud er sendt til Sedgwick for vurdering.
+          {pendingFiles.length > 0 && !uploadError && ` ${pendingFiles.length} bilag er vedhæftet.`}
+        </p>
+        {uploadError && (
+          <p className="text-sm text-red-600 mb-4">Bilag kunne ikke uploades: {uploadError}</p>
+        )}
         <Button onClick={() => navigate('/contractor/invitations')}>Tilbage til invitationer</Button>
       </div>
     )
@@ -90,9 +146,7 @@ export default function BidSubmitPage() {
                 <input
                   type="checkbox"
                   checked={!!relevanceWithDefaults[e.id]}
-                  onChange={(ev) =>
-                    setRelevance((r) => ({ ...r, [e.id]: ev.target.checked }))
-                  }
+                  onChange={(ev) => setRelevance((r) => ({ ...r, [e.id]: ev.target.checked }))}
                   className="h-5 w-5 rounded accent-primary-600"
                 />
               </label>
@@ -103,57 +157,128 @@ export default function BidSubmitPage() {
     },
     {
       label: 'Bud',
-      isValid: parseFloat(bidAmount) > 0,
+      isValid: matVal > 0 && labVal > 0 && comments.trim().length > 0,
       content: (
         <div className="space-y-4">
           {project && (
             <div className="rounded-lg bg-gray-50 p-3 text-xs text-gray-600 space-y-1">
               <p><span className="font-semibold">Sag:</span> {project.claimId}</p>
               <p><span className="font-semibold">Adresse:</span> {project.address}, {project.city}</p>
-              {project.maxApprovedPrice && (
-                <p><span className="font-semibold">Maks. godkendt:</span> {formatCurrency(project.maxApprovedPrice)}</p>
-              )}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
+                Materialer (DKK) <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={materialsCost}
+                  onChange={(e) => setMaterialsCost(e.target.value)}
+                  placeholder="0"
+                  className="w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2.5 text-base font-display font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold">DKK</span>
+              </div>
+              {matVal > 0 && <p className="mt-0.5 text-xs text-gray-500">{formatCurrency(matVal)}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
+                Håndværkertimer (DKK) <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  value={laborCost}
+                  onChange={(e) => setLaborCost(e.target.value)}
+                  placeholder="0"
+                  className="w-full rounded-lg border border-gray-300 pl-3 pr-10 py-2.5 text-base font-display font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-semibold">DKK</span>
+              </div>
+              {labVal > 0 && <p className="mt-0.5 text-xs text-gray-500">{formatCurrency(labVal)}</p>}
+            </div>
+          </div>
+
+          {(matVal > 0 || labVal > 0) && (
+            <div className="rounded-lg border border-primary-200 bg-primary-50 px-4 py-3 flex items-center justify-between">
+              <span className="text-sm font-display font-semibold text-primary-800">Samlet Budbeløb</span>
+              <span className="text-lg font-display font-bold text-primary-700">{formatCurrency(totalBid)}</span>
             </div>
           )}
 
           <div>
             <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
-              Budbeløb (DKK) <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                inputMode="numeric"
-                value={bidAmount}
-                onChange={(e) => setBidAmount(e.target.value)}
-                placeholder="0"
-                className="w-full rounded-lg border border-gray-300 pl-3 pr-12 py-3 text-lg font-display font-semibold focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-semibold">DKK</span>
-            </div>
-            {bidAmount && parseFloat(bidAmount) > 0 && (
-              <p className="mt-1 text-sm text-primary-700 font-semibold">{formatCurrency(parseFloat(bidAmount))}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-display font-semibold text-gray-700 mb-1">
-              Kommentar (valgfrit)
+              Kommentar <span className="text-red-500">*</span>
             </label>
             <textarea
               value={comments}
               onChange={(e) => setComments(e.target.value)}
-              rows={4}
+              rows={3}
               placeholder="Beskriv dit bud og eventuelle forbehold..."
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
+          </div>
+
+          {/* File upload */}
+          <div>
+            <label className="block text-sm font-display font-semibold text-gray-700 mb-2">
+              Bilag (valgfrit)
+            </label>
+            <div
+              className={cn(
+                'flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-5 transition-colors cursor-pointer',
+                isDragging
+                  ? 'border-primary-500 bg-primary-50'
+                  : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-gray-100',
+              )}
+              onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files) }}
+              onClick={() => inputRef.current?.click()}
+            >
+              <Upload className="h-6 w-6 text-gray-400 mb-1.5" />
+              <p className="text-sm font-display font-medium text-gray-700">Træk filer hertil eller klik for at vælge</p>
+              <p className="mt-0.5 text-xs text-gray-400">Maks {MAX_MB} MB · billeder, PDF, Word, Excel, ZIP</p>
+              <input
+                ref={inputRef}
+                type="file"
+                className="hidden"
+                accept={ACCEPT}
+                multiple
+                onChange={(e) => addFiles(e.target.files)}
+              />
+            </div>
+
+            {pendingFiles.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {pendingFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5">
+                    <span className="flex-1 text-xs text-gray-700 truncate">{f.name}</span>
+                    <span className="text-xs text-gray-400 shrink-0">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); removeFile(i) }}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       ),
     },
     {
       label: 'Gennemse',
-      isValid: parseFloat(bidAmount) > 0,
+      isValid: matVal > 0 && labVal > 0,
       content: (
         <div className="space-y-4">
           <div className="rounded-xl border border-[#e5e7eb] bg-gray-50 p-4 space-y-3">
@@ -163,10 +288,16 @@ export default function BidSubmitPage() {
                 <span className="font-semibold text-gray-900">{project?.claimId}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Budbeløb</span>
-                <span className="font-semibold text-primary-700 text-base">
-                  {bidAmount ? formatCurrency(parseFloat(bidAmount)) : '—'}
-                </span>
+                <span className="text-gray-500">Materialer</span>
+                <span className="font-semibold text-gray-900">{matVal > 0 ? formatCurrency(matVal) : '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Håndværkertimer</span>
+                <span className="font-semibold text-gray-900">{labVal > 0 ? formatCurrency(labVal) : '—'}</span>
+              </div>
+              <div className="flex justify-between border-t border-gray-200 pt-2">
+                <span className="text-gray-700 font-semibold">Samlet Budbeløb</span>
+                <span className="font-bold text-primary-700 text-base">{formatCurrency(totalBid)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Entrepriser (relevant)</span>
@@ -178,6 +309,12 @@ export default function BidSubmitPage() {
                 <div>
                   <span className="text-gray-500 block mb-1">Kommentar</span>
                   <p className="text-xs text-gray-700 bg-white rounded-lg border border-gray-100 p-2">{comments}</p>
+                </div>
+              )}
+              {pendingFiles.length > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Bilag</span>
+                  <span className="font-semibold text-gray-900">{pendingFiles.length} fil{pendingFiles.length !== 1 ? 'er' : ''}</span>
                 </div>
               )}
             </div>

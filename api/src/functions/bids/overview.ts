@@ -40,14 +40,14 @@ async function bidsOverviewHandler(req: HttpRequest, context: InvocationContext)
     return {
       status: 200,
       jsonBody: {
-        awaitingResponse: awaitingInvitations.map((i) => ({
+        awaitingResponse: awaitingInvitations.map((i: any) => ({
           id: i.id,
           projectId: i.project.id,
           claimId: i.project.claimId,
           contractorName: i.contractor.companyName,
           invitedAt: i.invitedAt.toISOString(),
         })),
-        bidsReceived: receivedBids.map((b) => ({
+        bidsReceived: receivedBids.map((b: any) => ({
           id: b.id,
           projectId: b.project.id,
           claimId: b.project.claimId,
@@ -56,7 +56,7 @@ async function bidsOverviewHandler(req: HttpRequest, context: InvocationContext)
           currency: b.currency,
           submittedAt: b.submittedAt.toISOString(),
         })),
-        recentDecisions: recentDecisions.map((b) => ({
+        recentDecisions: recentDecisions.map((b: any) => ({
           id: b.id,
           projectId: b.project.id,
           claimId: b.project.claimId,

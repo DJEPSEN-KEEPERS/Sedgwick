@@ -4,7 +4,7 @@ import { authenticate, errorResponse } from '../../middleware/authMiddleware'
 
 async function listSkillsHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
-    const jwtUser = authenticate(req)
+    authenticate(req)
 
     const skills = await prisma.skill.findMany({
       orderBy: [{ category: 'asc' }, { name: 'asc' }],

@@ -10,6 +10,7 @@ const MILESTONES: ProjectMilestone[] = [
   'WORK_STARTED',
   'WORK_COMPLETED',
   'FINAL_REPORT_SUBMITTED',
+  'CASE_INVOICED',
   'CASE_CLOSED',
 ]
 

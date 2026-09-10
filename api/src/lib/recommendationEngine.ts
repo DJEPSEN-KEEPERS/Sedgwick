@@ -26,8 +26,8 @@ export async function getRecommendations(projectId: string): Promise<MatchResult
     throw new Error('Project not found')
   }
 
-  const invitedContractorIds = new Set(project.bidInvitations.map((i) => i.contractorId))
-  const projectSkillIds = new Set(project.requiredSkills.map((rs) => rs.skillId))
+  const invitedContractorIds = new Set(project.bidInvitations.map((i: any) => i.contractorId))
+  const projectSkillIds = new Set(project.requiredSkills.map((rs: any) => rs.skillId))
 
   const contractors = await prisma.contractor.findMany({
     where: { status: 'active' },
@@ -45,17 +45,17 @@ export async function getRecommendations(projectId: string): Promise<MatchResult
     const matchReasons: string[] = []
 
     // Region match: +40 pts if contractor covers project region
-    const regionMatch = contractor.regions.some((r) => r.regionName === project.region) ? 40 : 0
+    const regionMatch = contractor.regions.some((r: any) => r.regionName === project.region) ? 40 : 0
     if (regionMatch > 0) matchReasons.push(`Dækker region: ${project.region}`)
 
     // Skill match: min(matchingSkills * 15, 30)
-    const contractorSkillIds = new Set(contractor.skills.map((cs) => cs.skillId))
+    const contractorSkillIds = new Set(contractor.skills.map((cs: any) => cs.skillId))
     const matchingSkillCount = [...projectSkillIds].filter((id) => contractorSkillIds.has(id)).length
     const skillMatch = Math.min(matchingSkillCount * 15, 30)
     if (skillMatch > 0) {
       const matchedSkillNames = contractor.skills
-        .filter((cs) => projectSkillIds.has(cs.skillId))
-        .map((cs) => cs.skill.name)
+        .filter((cs: any) => projectSkillIds.has(cs.skillId))
+        .map((cs: any) => cs.skill.name)
       matchReasons.push(`Matcher ${matchingSkillCount} kompetence(r): ${matchedSkillNames.join(', ')}`)
     }
 

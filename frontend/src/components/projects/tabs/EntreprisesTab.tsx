@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronDown, ChevronRight, CheckCircle2, XCircle, AlertTriangle, FileText } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { getEntrepriseTypeLabel, formatDate, formatDateTime } from '@/lib/utils'
@@ -27,9 +26,19 @@ const MILESTONE_OPTIONS: { value: EntrepriseMilestone; label: string }[] = [
   { value: 'SIGNED_OFF', label: 'Godkendt' },
 ]
 
-export function EntreprisesTab({ projectId, canSubmitFinalReport = false }: { projectId: string; canSubmitFinalReport?: boolean }) {
-  const { data: entreprises, loading, refetch } = useApi<Entreprise[]>(`/projects/${projectId}/entreprises`)
-  const { mutate: updateRelevance } = useMutation('patch')
+export function EntreprisesTab({
+  projectId,
+  allTypes = false,
+  canSubmitFinalReport = false,
+}: {
+  projectId: string
+  allTypes?: boolean
+  canSubmitFinalReport?: boolean
+}) {
+  const { data: entreprises, loading, refetch } = useApi<Entreprise[]>(
+    `/projects/${projectId}/entreprises${allTypes ? '?all=true' : ''}`,
+  )
+  const { mutate: toggleRelevanceMutation } = useMutation('patch')
   const { mutate: approveMutation } = useMutation('post')
   const { mutate: rejectMutation } = useMutation('post')
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -38,8 +47,8 @@ export function EntreprisesTab({ projectId, canSubmitFinalReport = false }: { pr
 
   const entrepriseMap = new Map(entreprises?.map((e) => [e.type, e]) ?? [])
 
-  const toggleRelevance = async (e: Entreprise) => {
-    await updateRelevance(`/entreprises/${e.id}/relevance`, { isRelevant: !e.isRelevant })
+  const toggleRelevance = async (type: EntrepriseType, currentValue: boolean) => {
+    await toggleRelevanceMutation(`/projects/${projectId}/entreprises/${type}/relevance`, { isRelevant: !currentValue })
     refetch()
   }
 
@@ -59,9 +68,7 @@ export function EntreprisesTab({ projectId, canSubmitFinalReport = false }: { pr
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500 w-8" />
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Fag</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Relevant</th>
-              <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Håndværker</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Status</th>
-              <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500 w-32">Fremgang</th>
             </tr>
           </thead>
           <tbody>
@@ -76,7 +83,7 @@ export function EntreprisesTab({ projectId, canSubmitFinalReport = false }: { pr
                   isExpanded={isExpanded}
                   canSubmitFinalReport={canSubmitFinalReport}
                   onToggleExpand={() => setExpanded(isExpanded ? null : type)}
-                  onToggleRelevance={() => e && toggleRelevance(e)}
+                  onToggleRelevance={() => toggleRelevance(type, e?.isRelevant ?? false)}
                   onApprove={async (updateId) => { await approveMutation(`/status-updates/${updateId}/approve`); refetch() }}
                   onReject={async (updateId) => { await rejectMutation(`/status-updates/${updateId}/reject`); refetch() }}
                 />
@@ -149,22 +156,9 @@ function EntrepriseRow({
             )}
           </button>
         </td>
-        <td className="px-4 py-3 text-xs text-gray-600">
-          {entreprise?.contractor?.companyName ?? '—'}
-        </td>
         <td className="px-4 py-3">
           {isRelevant && entreprise ? (
             <EntrepriseBadge milestone={entreprise.currentMilestone} />
-          ) : (
-            <span className="text-xs text-gray-400">—</span>
-          )}
-        </td>
-        <td className="px-4 py-3">
-          {isRelevant && entreprise ? (
-            <div className="flex items-center gap-2">
-              <Progress value={entreprise.progressPercent} className="h-1.5 w-20" />
-              <span className="text-xs text-gray-500 w-8">{entreprise.progressPercent}%</span>
-            </div>
           ) : (
             <span className="text-xs text-gray-400">—</span>
           )}
@@ -173,7 +167,7 @@ function EntrepriseRow({
 
       {isExpanded && entreprise && (
         <tr>
-          <td colSpan={6} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
+          <td colSpan={4} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
             <EntrepriseDetail
               entreprise={entreprise}
               canSubmitFinalReport={canSubmitFinalReport}

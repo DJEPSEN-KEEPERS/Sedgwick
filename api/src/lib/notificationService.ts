@@ -42,7 +42,7 @@ export async function notifyContractorBidSelected(contractorId: string, projectC
     select: { userId: true },
   })
   await Promise.all(
-    users.map((u) =>
+    users.map((u: any) =>
       createNotification({
         userId: u.userId,
         eventType: 'BID_SELECTED',
@@ -85,7 +85,7 @@ export async function notifyNewInvitation(contractorId: string, projectClaimId: 
     select: { userId: true },
   })
   await Promise.all(
-    users.map((u) =>
+    users.map((u: any) =>
       createNotification({
         userId: u.userId,
         eventType: 'NEW_INVITATION',

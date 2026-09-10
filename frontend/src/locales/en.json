@@ -1,0 +1,362 @@
+{
+  "lang": {
+    "da": "Dansk",
+    "en": "English"
+  },
+
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Cases",
+    "contractors": "Contractors",
+    "bids": "Bids",
+    "approvals": "Approvals",
+    "messages": "Messages",
+    "settings": "Settings",
+    "notifications": "Notifications",
+    "jobs": "Jobs",
+    "invitations": "Invitations",
+    "chat": "Messages",
+    "profile": "Profile",
+    "home": "Home"
+  },
+
+  "portal": {
+    "sedgwick": "Sedgwick",
+    "sedgwickIntern": "Sedgwick Internal",
+    "insurer": "Insurance Portal",
+    "contractor": "Contractor Portal"
+  },
+
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading…",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "status": "Status",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "password": "Password",
+    "address": "Address",
+    "city": "City",
+    "region": "Region",
+    "date": "Date",
+    "actions": "Actions",
+    "seeAll": "See all",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "logOut": "Log out",
+    "noData": "No data",
+    "noResults": "No results",
+    "approve": "Approve",
+    "reject": "Reject",
+    "deactivate": "Deactivate",
+    "active": "Active",
+    "inactive": "Inactive",
+    "priority": "Priority",
+    "deadline": "Deadline",
+    "submit": "Submit",
+    "send": "Send",
+    "upload": "Upload",
+    "download": "Download",
+    "preview": "Preview",
+    "required": "Required",
+    "optional": "Optional",
+    "new": "New",
+    "association": "Association"
+  },
+
+  "auth": {
+    "login": "Log in",
+    "logout": "Log out",
+    "email": "Email",
+    "password": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "loginError": "Login failed",
+    "twoFactor": "Two-factor verification",
+    "twoFactorCode": "Verification code",
+    "verify": "Verify",
+    "loginHelp": "Problems logging in? Contact IT support",
+    "employeeLogin": "Employee login",
+    "sedgwickPortal": "Sedgwick internal portal",
+    "insurerLogin": "Insurance company login",
+    "insurerPortal": "Insurance company portal",
+    "contractorLogin": "Contractor login",
+    "contractorPortal": "Contractor portal"
+  },
+
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Sedgwick operations centre",
+    "activeProjects": "Active cases",
+    "thisWeek": "this week",
+    "awaitingBids": "Awaiting bids",
+    "urgent": "Urgent",
+    "awaitingApproval": "Awaiting approval",
+    "oldest": "Oldest",
+    "slaBreaches": "SLA breaches",
+    "reviewNow": "Review immediately",
+    "recentProjects": "Recently updated cases",
+    "approvalQueue": "Approval queue",
+    "openQueue": "Open queue",
+    "noApprovals": "No pending approvals ✓",
+    "slaWarnings": "SLA warnings",
+    "noSlaBreaches": "No SLA breaches ✓",
+    "recentMessages": "Recent messages",
+    "noMessages": "No messages",
+    "topContractors": "Top contractors",
+    "noActiveProjects": "No active cases",
+    "greeting": "Hi, {{name}}",
+    "todayOverview": "Here is your overview for today",
+    "myJobs": "My jobs",
+    "activeJobs": "{{count}} active",
+    "pendingReply": "{{count}} awaiting reply",
+    "newMessages": "{{count}} new",
+    "noNew": "Nothing new",
+    "companyInfo": "Company info & settings",
+    "recentJobs": "Recent jobs",
+    "noActiveJobs": "No active jobs"
+  },
+
+  "projects": {
+    "title": "Cases",
+    "new": "New case",
+    "claimId": "Case ID",
+    "insurance": "Insurance",
+    "region": "Region",
+    "priority": "Priority",
+    "status": "Status",
+    "sla": "SLA",
+    "address": "Address",
+    "milestone": "Milestone",
+    "deadline": "Deadline",
+    "progress": "Progress",
+    "createdAt": "Created",
+    "updatedAt": "Last updated",
+    "description": "Description",
+    "noProjects": "No cases found",
+    "searchPlaceholder": "Search case ID, address, insurance…",
+    "filters": "Filters",
+    "clearFilters": "Clear filters",
+    "milestones": {
+      "CASE_RECEIVED": "Case received",
+      "BIDDING_IN_PROGRESS": "Bidding in progress",
+      "CONTRACTOR_SELECTED": "Contractor selected",
+      "WORK_SCHEDULED": "Work scheduled",
+      "WORK_STARTED": "Work started",
+      "WORK_COMPLETED": "Work completed",
+      "FINAL_REPORT_SUBMITTED": "Final report submitted",
+      "CASE_CLOSED": "Case closed"
+    },
+    "priorities": {
+      "LOW": "Low",
+      "NORMAL": "Normal",
+      "HIGH": "High",
+      "URGENT": "Urgent"
+    },
+    "statuses": {
+      "ACTIVE": "Active",
+      "CLOSED": "Closed",
+      "ON_HOLD": "On hold"
+    },
+    "slaStatus": {
+      "ok": "OK",
+      "atRisk": "At risk ({{days}}d)",
+      "breached": "Breached",
+      "all": "All",
+      "at_risk": "At risk",
+      "breached_label": "Breached"
+    },
+    "overview": "Overview",
+    "details": "Details",
+    "documents": "Documents",
+    "messages": "Messages",
+    "timeline": "Timeline",
+    "contractors": "Contractors",
+    "bids": "Bids",
+    "approvals": "Approvals"
+  },
+
+  "contractors": {
+    "title": "Contractors",
+    "new": "New contractor",
+    "companyName": "Company name",
+    "contactName": "Contact person",
+    "phone": "Phone",
+    "email": "Email",
+    "region": "Region",
+    "rating": "Rating",
+    "workload": "Workload",
+    "noContractors": "No contractors found",
+    "searchPlaceholder": "Search name, region…",
+    "details": "Details",
+    "currentJobs": "Current jobs",
+    "completedJobs": "Completed jobs",
+    "inviteToProject": "Invite to case"
+  },
+
+  "bids": {
+    "title": "Bids",
+    "new": "New bid",
+    "amount": "Amount",
+    "submittedAt": "Submitted",
+    "status": "Status",
+    "contractor": "Contractor",
+    "noBids": "No bids",
+    "accept": "Accept",
+    "decline": "Decline",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "declined": "Declined"
+  },
+
+  "approvals": {
+    "title": "Approvals",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "statusUpdate": "Status update",
+    "finalReport": "Final report",
+    "noApprovals": "No pending approvals",
+    "approve": "Approve",
+    "reject": "Reject"
+  },
+
+  "messages": {
+    "title": "Messages",
+    "send": "Send",
+    "typeMessage": "Type a message…",
+    "noMessages": "No messages yet",
+    "noChannels": "Select a case to see messages"
+  },
+
+  "settings": {
+    "title": "Settings",
+    "users": "Users",
+    "insurers": "Insurance companies",
+    "contractors": "Contractors",
+    "general": "General",
+    "newUser": "New user",
+    "newInsurer": "New insurance company",
+    "newContractor": "New contractor",
+    "editUser": "Edit user",
+    "deleteUser": "Delete user",
+    "deleteConfirm": "Are you sure?",
+    "deleteWarning": "This action cannot be undone.",
+    "deactivateInstead": "Deactivate instead",
+    "confirmDelete": "Yes, delete",
+    "userCreated": "User created",
+    "userUpdated": "User updated",
+    "userDeleted": "User deleted",
+    "userDeactivated": "User deactivated",
+    "tabs": {
+      "users": "Users",
+      "insurers": "Insurance companies",
+      "contractors": "Contractors"
+    },
+    "table": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "role": "Role",
+      "association": "Association",
+      "status": "Status",
+      "actions": "Actions",
+      "password": "Password"
+    }
+  },
+
+  "jobs": {
+    "title": "My jobs",
+    "noJobs": "You have no active jobs",
+    "deadline": "Deadline",
+    "progress": "Progress",
+    "statusUpdate": "Status update",
+    "finalReport": "Final report",
+    "submitUpdate": "Submit update",
+    "submitReport": "Submit final report",
+    "details": "Details",
+    "documents": "Documents",
+    "milestoneLabel": "Milestone"
+  },
+
+  "invitations": {
+    "title": "Invitations",
+    "noInvitations": "No invitations",
+    "accept": "Accept",
+    "decline": "Decline",
+    "project": "Case",
+    "expiry": "Expires",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "declined": "Declined"
+  },
+
+  "profile": {
+    "title": "My profile",
+    "companyName": "Company name",
+    "contactName": "Contact person",
+    "phone": "Phone",
+    "email": "Email",
+    "region": "Region",
+    "save": "Save changes",
+    "saved": "Changes saved"
+  },
+
+  "statusUpdate": {
+    "title": "Status update",
+    "milestone": "Milestone",
+    "progress": "Progress (%)",
+    "comments": "Comments",
+    "photos": "Photos",
+    "submit": "Submit update",
+    "submitted": "Update submitted"
+  },
+
+  "finalReport": {
+    "title": "Final report",
+    "summary": "Summary",
+    "totalCost": "Total cost",
+    "completionDate": "Completion date",
+    "photos": "Photos",
+    "submit": "Submit final report",
+    "submitted": "Final report submitted"
+  },
+
+  "loginPage": {
+    "sedgwick": {
+      "title": "Case Management\nSystem",
+      "subtitle": "Internal management of insurance claims and contracts",
+      "stats": {
+        "activeProjects": "Active cases",
+        "contractors": "Contractor companies",
+        "insurers": "Insurance companies"
+      }
+    },
+    "insurer": {
+      "title": "Insurance Company\nPortal",
+      "subtitle": "Monitor and track your insurance claims"
+    },
+    "contractor": {
+      "title": "Contractor\nPortal",
+      "subtitle": "Manage your jobs and submit reports"
+    }
+  }
+}

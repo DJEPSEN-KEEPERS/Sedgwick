@@ -1,20 +1,44 @@
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
-import { ArrowLeft, Phone, Mail, MapPin } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { ArrowLeft, Phone, Mail, Upload, X, Loader2, CheckCircle2 } from 'lucide-react'
 import { useApi } from '@/hooks/useApi'
-import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
-import { Progress } from '@/components/ui/progress'
-import { EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
+import { MilestoneBadge, EntrepriseBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { ImageGallery } from '@/components/files/ImageGallery'
-import { formatDate, formatDateTime, getEntrepriseTypeLabel } from '@/lib/utils'
+import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
+import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
+import { formatDate, formatDateTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import type { Project, Entreprise } from '@/types'
+import { Button } from '@/components/ui/button'
+import type { Project } from '@/types'
 
-const TABS = ['Oversigt', 'Fremgang', 'Beskeder', 'Filer']
+const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL ?? '/api'
+const ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip'
+const MAX_MB = 25
+
+async function uploadRaw(projectId: string, file: File): Promise<void> {
+  const token = localStorage.getItem('accessToken') ?? ''
+  const res = await fetch(
+    `${BASE_URL}/projects/${projectId}/files?category=general&clientVisible=true`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-File-Name': encodeURIComponent(file.name),
+        'X-Auth-Token': token,
+      },
+      body: file,
+    },
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as any).error ?? `Upload fejlede (${res.status})`)
+  }
+}
+
+const TABS = ['Oversigt', 'Entrepriser', 'Planlægning', 'Beskeder', 'Filer']
 
 export default function InsurerProjectDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -23,7 +47,6 @@ export default function InsurerProjectDetailPage() {
   const [tab, setTab] = useState(parseInt(searchParams.get('tab') ?? '0'))
 
   const { data: project, loading } = useApi<Project>(`/projects/${projectId}`)
-  const { data: entreprises } = useApi<Entreprise[]>(`/projects/${projectId}/entreprises`, { enabled: tab === 1 })
 
   useEffect(() => {
     setSearchParams(tab > 0 ? { tab: String(tab) } : {}, { replace: true })
@@ -49,10 +72,6 @@ export default function InsurerProjectDetailPage() {
             <p className="text-base font-display font-semibold text-gray-700">{project.damageType}</p>
             <p className="text-sm text-gray-500">{project.address}, {project.postalCode} {project.city}</p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">Samlet fremgang</p>
-            <p className="text-2xl font-display font-bold text-primary-700">{project.progressPercent}%</p>
-          </div>
         </div>
       </div>
 
@@ -69,9 +88,16 @@ export default function InsurerProjectDetailPage() {
       </div>
 
       {tab === 0 && <InsurerOverviewTab project={project} />}
-      {tab === 1 && <InsurerProgressTab project={project} entreprises={entreprises ?? []} />}
-      {tab === 2 && <InsurerMessagesTab projectId={project.id} />}
-      {tab === 3 && <InsurerFilesTab projectId={project.id} />}
+      {tab === 1 && <EntreprisesTab projectId={project.id} />}
+      {tab === 2 && (
+        <WeekPlannerGrid
+          projectId={project.id}
+          entreprises={(project.entreprises ?? []).filter((e: any) => e.isRelevant !== false)}
+          canEdit={false}
+        />
+      )}
+      {tab === 3 && <InsurerMessagesTab projectId={project.id} />}
+      {tab === 4 && <InsurerFilesTab projectId={project.id} />}
     </div>
   )
 }
@@ -133,83 +159,155 @@ function InsurerOverviewTab({ project }: { project: Project }) {
   )
 }
 
-function InsurerProgressTab({ project, entreprises }: { project: Project; entreprises: Entreprise[] }) {
-  const relevant = entreprises.filter((e) => e.isRelevant)
-  return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4">
-        <h3 className="text-sm font-display font-semibold text-gray-900 mb-3">Milepæle</h3>
-        <ProjectProgressBar currentMilestone={project.currentMilestone} className="mb-3" />
-        <Progress value={project.progressPercent} className="h-2" />
-        <p className="text-xs text-gray-500 mt-1 text-right">{project.progressPercent}% samlet</p>
-      </div>
-
-      {relevant.length > 0 && (
-        <div className="space-y-3">
-          {relevant.map((e) => (
-            <div key={e.id} className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="font-display font-medium text-sm text-gray-900">{getEntrepriseTypeLabel(e.type)}</span>
-                  <EntrepriseBadge milestone={e.currentMilestone} />
-                </div>
-                <span className="text-sm font-display font-bold text-gray-700">{e.progressPercent}%</span>
-              </div>
-              <Progress value={e.progressPercent} className="h-1.5 mb-3" />
-
-              {/* Only show approved updates */}
-              {e.statusUpdates?.filter((u) => u.approvalStatus === 'APPROVED').map((u) => (
-                <div key={u.id} className="flex items-center gap-2 text-xs text-gray-600 py-1 border-t border-gray-100 first:border-0">
-                  <span className="text-gray-400">{formatDateTime(u.createdAt)}</span>
-                  <EntrepriseBadge milestone={u.milestone} />
-                  <span>{u.progressPercent}%</span>
-                  {u.comments && <span className="text-gray-500 truncate">{u.comments}</span>}
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
 function InsurerMessagesTab({ projectId }: { projectId: string }) {
   return <ChatPanel projectId={projectId} singleChannel className="h-[560px]" />
 }
 
-function InsurerFilesTab({ projectId }: { projectId: string }) {
-  const { data, loading } = useApi<{ files: { id: string; fileName: string; fileType: string; blobUrl: string; fileSizeMb: number }[] }>(
-    `/projects/${projectId}/files?clientVisible=true`,
-  )
-  const images = data?.files.filter(f => f.fileType.startsWith('image/')) ?? []
-  const others = data?.files.filter(f => !f.fileType.startsWith('image/')) ?? []
+interface ProjectFile {
+  id: string
+  fileName: string
+  fileType: string
+  blobUrl: string
+  fileSizeMb: number
+  attachmentCategory: string
+}
 
-  if (loading) return <div className="h-32 bg-gray-200 animate-pulse rounded-lg" />
+interface FilesData {
+  projectDocuments: ProjectFile[]
+  bidAttachments: ProjectFile[]
+  statusUpdatePhotos: Record<string, ProjectFile[]>
+  finalReportFiles: Record<string, ProjectFile[]>
+  chatAttachments: ProjectFile[]
+}
+
+function InsurerFilesTab({ projectId }: { projectId: string }) {
+  const { data, loading, refetch } = useApi<FilesData>(`/projects/${projectId}/files?clientVisible=true`)
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState('')
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const addFiles = useCallback((list: FileList | null) => {
+    if (!list) return
+    const arr = Array.from(list).filter((f) => f.size <= MAX_MB * 1024 * 1024)
+    setPendingFiles((prev) => [...prev, ...arr].slice(0, 10))
+    setUploadError('')
+    setUploadSuccess(false)
+  }, [])
+
+  const removeFile = (idx: number) => setPendingFiles((prev) => prev.filter((_, i) => i !== idx))
+
+  const handleUpload = async () => {
+    if (pendingFiles.length === 0) return
+    setUploading(true)
+    setUploadError('')
+    setUploadSuccess(false)
+    try {
+      await Promise.all(pendingFiles.map((f) => uploadRaw(projectId, f)))
+      setPendingFiles([])
+      setUploadSuccess(true)
+      refetch()
+      setTimeout(() => setUploadSuccess(false), 3000)
+    } catch (e: unknown) {
+      setUploadError(e instanceof Error ? e.message : 'Upload fejlede')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const allFlat: ProjectFile[] = [
+    ...(data?.projectDocuments ?? []),
+    ...(data?.bidAttachments ?? []),
+    ...Object.values(data?.statusUpdatePhotos ?? {}).flat(),
+    ...Object.values(data?.finalReportFiles ?? {}).flat(),
+    ...(data?.chatAttachments ?? []),
+  ]
+
+  const images = allFlat.filter(f => f.fileType?.startsWith('image/'))
+  const others = allFlat.filter(f => !f.fileType?.startsWith('image/'))
 
   return (
     <div className="space-y-4">
-      {images.length > 0 && (
-        <div>
-          <h3 className="text-sm font-display font-semibold text-gray-900 mb-2">Billeder</h3>
-          <ImageGallery images={images} />
+      {/* Upload zone */}
+      <div className="rounded-lg border border-[#e5e7eb] bg-white shadow-card p-4 space-y-3">
+        <h3 className="text-sm font-display font-semibold text-gray-900">Upload filer</h3>
+        <div
+          className={cn(
+            'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors cursor-pointer',
+            isDragging
+              ? 'border-primary-500 bg-primary-50'
+              : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-gray-100',
+          )}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files) }}
+          onClick={() => inputRef.current?.click()}
+        >
+          <Upload className="h-7 w-7 text-gray-400 mb-2" />
+          <p className="text-sm font-display font-medium text-gray-700">Træk filer hertil eller klik for at vælge</p>
+          <p className="mt-1 text-xs text-gray-400">Maks {MAX_MB} MB · billeder, PDF, Word, Excel, ZIP</p>
+          <input ref={inputRef} type="file" className="hidden" accept={ACCEPT} multiple onChange={(e) => addFiles(e.target.files)} />
         </div>
-      )}
-      {others.length > 0 && (
-        <div>
-          <h3 className="text-sm font-display font-semibold text-gray-900 mb-2">Dokumenter</h3>
-          <div className="divide-y divide-[#e5e7eb] rounded-lg border border-[#e5e7eb] bg-white shadow-card">
-            {others.map((f) => (
-              <div key={f.id} className="flex items-center justify-between px-4 py-2.5">
-                <span className="text-sm text-gray-900">{f.fileName}</span>
-                <a href={f.blobUrl} download className="text-xs text-primary-600 hover:underline">Download</a>
+
+        {pendingFiles.length > 0 && (
+          <div className="space-y-1">
+            {pendingFiles.map((f, i) => (
+              <div key={i} className="flex items-center gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5">
+                <span className="flex-1 text-xs text-gray-700 truncate">{f.name}</span>
+                <span className="text-xs text-gray-400 shrink-0">{(f.size / 1024 / 1024).toFixed(1)} MB</span>
+                <button onClick={() => removeFile(i)} className="text-gray-400 hover:text-red-500">
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
             ))}
           </div>
+        )}
+
+        <div className="flex items-center justify-end gap-2">
+          {uploadSuccess && (
+            <span className="flex items-center gap-1 text-xs text-green-600">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Uploadet
+            </span>
+          )}
+          {uploadError && <span className="text-xs text-red-600">{uploadError}</span>}
+          <Button size="sm" disabled={pendingFiles.length === 0 || uploading} onClick={handleUpload}>
+            {uploading
+              ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> Uploader...</>
+              : `Upload${pendingFiles.length > 0 ? ` (${pendingFiles.length})` : ''}`}
+          </Button>
         </div>
-      )}
-      {!images.length && !others.length && (
-        <div className="text-center py-8 text-sm text-gray-400">Ingen filer tilgængelige</div>
+      </div>
+
+      {/* File list */}
+      {loading ? (
+        <div className="h-32 bg-gray-200 animate-pulse rounded-lg" />
+      ) : (
+        <>
+          {images.length > 0 && (
+            <div>
+              <h3 className="text-sm font-display font-semibold text-gray-900 mb-2">Billeder</h3>
+              <ImageGallery images={images} />
+            </div>
+          )}
+          {others.length > 0 && (
+            <div>
+              <h3 className="text-sm font-display font-semibold text-gray-900 mb-2">Dokumenter</h3>
+              <div className="divide-y divide-[#e5e7eb] rounded-lg border border-[#e5e7eb] bg-white shadow-card">
+                {others.map((f) => (
+                  <div key={f.id} className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-sm text-gray-900">{f.fileName}</span>
+                    <a href={f.blobUrl} download className="text-xs text-primary-600 hover:underline">Download</a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {!images.length && !others.length && (
+            <div className="text-center py-8 text-sm text-gray-400">Ingen filer tilgængelige</div>
+          )}
+        </>
       )}
     </div>
   )

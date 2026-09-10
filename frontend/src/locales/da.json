@@ -1,0 +1,362 @@
+{
+  "lang": {
+    "da": "Dansk",
+    "en": "English"
+  },
+
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Sager",
+    "contractors": "Håndværkere",
+    "bids": "Tilbud",
+    "approvals": "Godkendelser",
+    "messages": "Beskeder",
+    "settings": "Indstillinger",
+    "notifications": "Notifikationer",
+    "jobs": "Sager",
+    "invitations": "Invitationer",
+    "chat": "Beskeder",
+    "profile": "Profil",
+    "home": "Hjem"
+  },
+
+  "portal": {
+    "sedgwick": "Sedgwick",
+    "sedgwickIntern": "Sedgwick Intern",
+    "insurer": "Forsikringsportal",
+    "contractor": "Håndværkerportal"
+  },
+
+  "common": {
+    "save": "Gem",
+    "cancel": "Annuller",
+    "delete": "Slet",
+    "edit": "Rediger",
+    "create": "Opret",
+    "search": "Søg",
+    "filter": "Filter",
+    "all": "Alle",
+    "none": "Ingen",
+    "yes": "Ja",
+    "no": "Nej",
+    "ok": "OK",
+    "close": "Luk",
+    "back": "Tilbage",
+    "next": "Næste",
+    "loading": "Indlæser…",
+    "error": "Fejl",
+    "success": "Succes",
+    "confirm": "Bekræft",
+    "status": "Status",
+    "name": "Navn",
+    "email": "E-mail",
+    "phone": "Telefon",
+    "role": "Rolle",
+    "password": "Adgangskode",
+    "address": "Adresse",
+    "city": "By",
+    "region": "Region",
+    "date": "Dato",
+    "actions": "Handlinger",
+    "seeAll": "Se alle",
+    "openMenu": "Åbn menu",
+    "closeMenu": "Luk menu",
+    "logOut": "Log ud",
+    "noData": "Ingen data",
+    "noResults": "Ingen resultater",
+    "approve": "Godkend",
+    "reject": "Afvis",
+    "deactivate": "Deaktiver",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "priority": "Prioritet",
+    "deadline": "Frist",
+    "submit": "Indsend",
+    "send": "Send",
+    "upload": "Upload",
+    "download": "Download",
+    "preview": "Forhåndsvis",
+    "required": "Påkrævet",
+    "optional": "Valgfrit",
+    "new": "Ny",
+    "association": "Tilknytning"
+  },
+
+  "auth": {
+    "login": "Log ind",
+    "logout": "Log ud",
+    "email": "E-mail",
+    "password": "Adgangskode",
+    "rememberMe": "Husk mig",
+    "forgotPassword": "Glemt adgangskode?",
+    "loginError": "Login fejlede",
+    "twoFactor": "To-faktor bekræftelse",
+    "twoFactorCode": "Bekræftelseskode",
+    "verify": "Bekræft",
+    "loginHelp": "Problemer med login? Kontakt IT-support",
+    "employeeLogin": "Medarbejder login",
+    "sedgwickPortal": "Sedgwick intern portal",
+    "insurerLogin": "Forsikringsselskab login",
+    "insurerPortal": "Forsikringsselskab portal",
+    "contractorLogin": "Håndværker login",
+    "contractorPortal": "Håndværker portal"
+  },
+
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Sedgwick operationscentral",
+    "activeProjects": "Aktive sager",
+    "thisWeek": "denne uge",
+    "awaitingBids": "Afventer tilbud",
+    "urgent": "Akut",
+    "awaitingApproval": "Afventer godkendelse",
+    "oldest": "Ældste",
+    "slaBreaches": "SLA-brud",
+    "reviewNow": "Gennemgå straks",
+    "recentProjects": "Senest opdaterede sager",
+    "approvalQueue": "Godkendelseskø",
+    "openQueue": "Åbn kø",
+    "noApprovals": "Ingen ventende godkendelser ✓",
+    "slaWarnings": "SLA-advarsler",
+    "noSlaBreaches": "Ingen SLA-brud ✓",
+    "recentMessages": "Seneste beskeder",
+    "noMessages": "Ingen beskeder",
+    "topContractors": "Top håndværkere",
+    "noActiveProjects": "Ingen aktive sager",
+    "greeting": "Hej, {{name}}",
+    "todayOverview": "Her er din dagens overblik",
+    "myJobs": "Mine sager",
+    "activeJobs": "{{count}} aktive",
+    "pendingReply": "{{count}} afventer svar",
+    "newMessages": "{{count}} nye",
+    "noNew": "Ingen nye",
+    "companyInfo": "Virksomhedsinfo & indstillinger",
+    "recentJobs": "Seneste sager",
+    "noActiveJobs": "Ingen aktive sager"
+  },
+
+  "projects": {
+    "title": "Sager",
+    "new": "Ny sag",
+    "claimId": "Sag ID",
+    "insurance": "Forsikring",
+    "region": "Region",
+    "priority": "Prioritet",
+    "status": "Status",
+    "sla": "SLA",
+    "address": "Adresse",
+    "milestone": "Milepæl",
+    "deadline": "Frist",
+    "progress": "Fremgang",
+    "createdAt": "Oprettet",
+    "updatedAt": "Sidst opdateret",
+    "description": "Beskrivelse",
+    "noProjects": "Ingen sager fundet",
+    "searchPlaceholder": "Søg sag-ID, adresse, forsikring…",
+    "filters": "Filtre",
+    "clearFilters": "Ryd filtre",
+    "milestones": {
+      "CASE_RECEIVED": "Sag modtaget",
+      "BIDDING_IN_PROGRESS": "Tilbud indhentes",
+      "CONTRACTOR_SELECTED": "Håndværker valgt",
+      "WORK_SCHEDULED": "Arbejde planlagt",
+      "WORK_STARTED": "Arbejde startet",
+      "WORK_COMPLETED": "Arbejde afsluttet",
+      "FINAL_REPORT_SUBMITTED": "Slutrapport indsendt",
+      "CASE_CLOSED": "Sag lukket"
+    },
+    "priorities": {
+      "LOW": "Lav",
+      "NORMAL": "Normal",
+      "HIGH": "Høj",
+      "URGENT": "Akut"
+    },
+    "statuses": {
+      "ACTIVE": "Aktiv",
+      "CLOSED": "Lukket",
+      "ON_HOLD": "På hold"
+    },
+    "slaStatus": {
+      "ok": "OK",
+      "atRisk": "Risiko ({{days}}d)",
+      "breached": "Overskredet",
+      "all": "Alle",
+      "at_risk": "Risiko",
+      "breached_label": "Brud"
+    },
+    "overview": "Overblik",
+    "details": "Detaljer",
+    "documents": "Dokumenter",
+    "messages": "Beskeder",
+    "timeline": "Tidslinje",
+    "contractors": "Håndværkere",
+    "bids": "Tilbud",
+    "approvals": "Godkendelser"
+  },
+
+  "contractors": {
+    "title": "Håndværkere",
+    "new": "Ny håndværker",
+    "companyName": "Virksomhedsnavn",
+    "contactName": "Kontaktperson",
+    "phone": "Telefon",
+    "email": "E-mail",
+    "region": "Region",
+    "rating": "Rating",
+    "workload": "Arbejdsbyrde",
+    "noContractors": "Ingen håndværkere fundet",
+    "searchPlaceholder": "Søg navn, region…",
+    "details": "Detaljer",
+    "currentJobs": "Aktuelle sager",
+    "completedJobs": "Afsluttede sager",
+    "inviteToProject": "Inviter til sag"
+  },
+
+  "bids": {
+    "title": "Tilbud",
+    "new": "Nyt tilbud",
+    "amount": "Beløb",
+    "submittedAt": "Indsendt",
+    "status": "Status",
+    "contractor": "Håndværker",
+    "noBids": "Ingen tilbud",
+    "accept": "Accepter",
+    "decline": "Afvis",
+    "pending": "Afventer",
+    "accepted": "Accepteret",
+    "declined": "Afvist"
+  },
+
+  "approvals": {
+    "title": "Godkendelser",
+    "pending": "Afventer",
+    "approved": "Godkendt",
+    "rejected": "Afvist",
+    "statusUpdate": "Statusopdatering",
+    "finalReport": "Slutrapport",
+    "noApprovals": "Ingen ventende godkendelser",
+    "approve": "Godkend",
+    "reject": "Afvis"
+  },
+
+  "messages": {
+    "title": "Beskeder",
+    "send": "Send",
+    "typeMessage": "Skriv en besked…",
+    "noMessages": "Ingen beskeder endnu",
+    "noChannels": "Vælg en sag for at se beskeder"
+  },
+
+  "settings": {
+    "title": "Indstillinger",
+    "users": "Brugere",
+    "insurers": "Forsikringsselskaber",
+    "contractors": "Håndværkere",
+    "general": "Generelt",
+    "newUser": "Ny bruger",
+    "newInsurer": "Nyt forsikringsselskab",
+    "newContractor": "Ny håndværker",
+    "editUser": "Rediger bruger",
+    "deleteUser": "Slet bruger",
+    "deleteConfirm": "Er du sikker?",
+    "deleteWarning": "Denne handling kan ikke fortrydes.",
+    "deactivateInstead": "Deaktiver i stedet",
+    "confirmDelete": "Ja, slet",
+    "userCreated": "Bruger oprettet",
+    "userUpdated": "Bruger opdateret",
+    "userDeleted": "Bruger slettet",
+    "userDeactivated": "Bruger deaktiveret",
+    "tabs": {
+      "users": "Brugere",
+      "insurers": "Forsikringsselskaber",
+      "contractors": "Håndværkere"
+    },
+    "table": {
+      "name": "Navn",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "role": "Rolle",
+      "association": "Tilknytning",
+      "status": "Status",
+      "actions": "Handlinger",
+      "password": "Adgangskode"
+    }
+  },
+
+  "jobs": {
+    "title": "Mine sager",
+    "noJobs": "Du har ingen aktive sager",
+    "deadline": "Frist",
+    "progress": "Fremgang",
+    "statusUpdate": "Statusopdatering",
+    "finalReport": "Slutrapport",
+    "submitUpdate": "Indsend opdatering",
+    "submitReport": "Indsend slutrapport",
+    "details": "Detaljer",
+    "documents": "Dokumenter",
+    "milestoneLabel": "Milepæl"
+  },
+
+  "invitations": {
+    "title": "Invitationer",
+    "noInvitations": "Ingen invitationer",
+    "accept": "Accepter",
+    "decline": "Afvis",
+    "project": "Sag",
+    "expiry": "Udløber",
+    "pending": "Afventer",
+    "accepted": "Accepteret",
+    "declined": "Afvist"
+  },
+
+  "profile": {
+    "title": "Min profil",
+    "companyName": "Virksomhedsnavn",
+    "contactName": "Kontaktperson",
+    "phone": "Telefon",
+    "email": "E-mail",
+    "region": "Region",
+    "save": "Gem ændringer",
+    "saved": "Ændringer gemt"
+  },
+
+  "statusUpdate": {
+    "title": "Statusopdatering",
+    "milestone": "Milepæl",
+    "progress": "Fremgang (%)",
+    "comments": "Kommentarer",
+    "photos": "Billeder",
+    "submit": "Indsend opdatering",
+    "submitted": "Opdatering indsendt"
+  },
+
+  "finalReport": {
+    "title": "Slutrapport",
+    "summary": "Sammenfatning",
+    "totalCost": "Samlet pris",
+    "completionDate": "Afslutningsdato",
+    "photos": "Billeder",
+    "submit": "Indsend slutrapport",
+    "submitted": "Slutrapport indsendt"
+  },
+
+  "loginPage": {
+    "sedgwick": {
+      "title": "Case Management\nSystem",
+      "subtitle": "Intern administration af skadesager og entrepriser",
+      "stats": {
+        "activeProjects": "Aktive sager",
+        "contractors": "Håndværkervirksomheder",
+        "insurers": "Forsikringsselskaber"
+      }
+    },
+    "insurer": {
+      "title": "Forsikringsselskab\nPortal",
+      "subtitle": "Overvåg og følg dine skadesager"
+    },
+    "contractor": {
+      "title": "Håndværker\nPortal",
+      "subtitle": "Administrer dine sager og indsend rapporter"
+    }
+  }
+}

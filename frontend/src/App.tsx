@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore'
 import SedgwickLoginPage from '@/pages/auth/SedgwickLoginPage'
 import InsurerLoginPage from '@/pages/auth/InsurerLoginPage'
 import ContractorLoginPage from '@/pages/auth/ContractorLoginPage'
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 import UnauthorizedPage from '@/pages/UnauthorizedPage'
 
 import RoleGuard from '@/components/auth/RoleGuard'
@@ -28,10 +29,12 @@ const SedgwickSettingsPage    = lazy(() => import('@/pages/sedgwick/SettingsPage
 // ─── Insurer pages ─────────────────────────────────────────────────────────────
 const InsurerDashboard      = lazy(() => import('@/pages/insurer/DashboardPage'))
 const InsurerProjectsPage   = lazy(() => import('@/pages/insurer/ProjectsPage'))
+const InsurerAccountPage    = lazy(() => import('@/pages/insurer/AccountPage'))
 const InsurerProjectDetail  = lazy(() => import('@/pages/insurer/ProjectDetailPage'))
 
 // ─── Contractor pages ──────────────────────────────────────────────────────────
 const ContractorDashboard        = lazy(() => import('@/pages/contractor/DashboardPage'))
+const ContractorProjectsPage     = lazy(() => import('@/pages/contractor/ProjectsPage'))
 const ContractorInvitationsPage  = lazy(() => import('@/pages/contractor/InvitationsPage'))
 const ContractorBidSubmitPage    = lazy(() => import('@/pages/contractor/BidSubmitPage'))
 const ContractorJobsPage         = lazy(() => import('@/pages/contractor/JobsPage'))
@@ -62,6 +65,7 @@ export default function App() {
         <Route path="/login/sedgwick"   element={<SedgwickLoginPage />} />
         <Route path="/login/insurer"    element={<InsurerLoginPage />} />
         <Route path="/login/contractor" element={<ContractorLoginPage />} />
+        <Route path="/reset-password"   element={<ResetPasswordPage />} />
         <Route path="/unauthorized"     element={<UnauthorizedPage />} />
 
         {/* Sedgwick portal */}
@@ -102,6 +106,7 @@ export default function App() {
           <Route path="dashboard"           element={<InsurerDashboard />} />
           <Route path="projects"            element={<InsurerProjectsPage />} />
           <Route path="projects/:projectId" element={<InsurerProjectDetail />} />
+          <Route path="account"             element={<InsurerAccountPage />} />
         </Route>
 
         {/* Contractor portal */}
@@ -117,6 +122,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/contractor/dashboard" replace />} />
           <Route path="dashboard"                       element={<ContractorDashboard />} />
+          <Route path="projects"                        element={<ContractorProjectsPage />} />
           <Route path="invitations"                     element={<ContractorInvitationsPage />} />
           <Route path="bids/submit/:projectId"          element={<ContractorBidSubmitPage />} />
           <Route path="jobs"                            element={<ContractorJobsPage />} />

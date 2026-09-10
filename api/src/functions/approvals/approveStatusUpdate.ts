@@ -1,4 +1,5 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
@@ -20,7 +21,7 @@ async function approveStatusUpdateHandler(req: HttpRequest, context: InvocationC
       return { status: 409, jsonBody: { error: 'Statusopdatering er allerede behandlet' } }
     }
 
-    const approved = await prisma.$transaction(async (tx) => {
+    const approved = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const result = await tx.entrepriseStatusUpdate.update({
         where: { id: updateId },
         data: { approvalStatus: 'APPROVED', approvedByUserId: jwtUser.sub, approvedAt: new Date() },

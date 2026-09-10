@@ -15,8 +15,10 @@ async function listEntreprisesHandler(req: HttpRequest, context: InvocationConte
       return { status: 403, jsonBody: { error: 'Ingen adgang' } }
     }
 
+    // ?all=true lets any role see all entreprise types (used by EntreprisesTab toggle view)
+    const allParam = req.query.get('all') === 'true'
     const where =
-      jwtUser.role === 'CONTRACTOR_USER' && jwtUser.linkedEntityId
+      jwtUser.role === 'CONTRACTOR_USER' && jwtUser.linkedEntityId && !allParam
         ? { projectId, contractorId: jwtUser.linkedEntityId }
         : { projectId }
 

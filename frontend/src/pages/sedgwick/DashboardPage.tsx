@@ -1,4 +1,6 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { FolderOpen, Gavel, CheckSquare, AlertTriangle, Clock, Star } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -99,7 +101,8 @@ function StatCard({
 
 export default function SedgwickDashboard() {
   const navigate = useNavigate()
-  const { data, loading, refetch } = useApi<DashboardData>('/dashboard')
+  const { t } = useTranslation()
+  const { data, loading, error, refetch } = useApi<DashboardData>('/dashboard')
   const { mutate: approve } = useMutation('post')
   const { mutate: reject } = useMutation('post')
 
@@ -123,15 +126,14 @@ export default function SedgwickDashboard() {
 
   if (loading) return <PageSkeleton />
 
-  // Fallback demo data
   const stats = data?.stats ?? {
-    activeProjects: 87,
-    newThisWeek: 4,
-    bidsAwaiting: 12,
-    urgentBids: 3,
-    pendingApprovals: 5,
-    oldestApprovalDays: 2,
-    slaBreaches: 3,
+    activeProjects: 0,
+    newThisWeek: 0,
+    bidsAwaiting: 0,
+    urgentBids: 0,
+    pendingApprovals: 0,
+    oldestApprovalDays: 0,
+    slaBreaches: 0,
   }
 
   const recentProjects = data?.recentProjects ?? []
@@ -143,40 +145,47 @@ export default function SedgwickDashboard() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-display font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Sedgwick operationscentral</p>
+        <h1 className="text-2xl font-display font-bold text-gray-900">{t('dashboard.title')}</h1>
+        <p className="text-sm text-gray-500 mt-0.5">{t('dashboard.subtitle')}</p>
       </div>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 space-y-2">
+          <p><span className="font-semibold">API-fejl:</span> {error}</p>
+          <DebugPanel />
+        </div>
+      )}
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4 mb-6">
         <StatCard
-          label="Aktive sager"
+          label={t('dashboard.activeProjects')}
           value={stats.activeProjects}
-          sub={`↑ ${stats.newThisWeek} denne uge`}
+          sub={`↑ ${stats.newThisWeek} ${t('dashboard.thisWeek')}`}
           icon={FolderOpen}
           borderColor="border-l-primary-600"
           onClick={() => navigate('/sedgwick/projects?status=ACTIVE')}
         />
         <StatCard
-          label="Afventer tilbud"
+          label={t('dashboard.awaitingBids')}
           value={stats.bidsAwaiting}
-          sub={`Akut: ${stats.urgentBids}`}
+          sub={`${t('dashboard.urgent')}: ${stats.urgentBids}`}
           icon={Gavel}
           borderColor="border-l-accent"
           onClick={() => navigate('/sedgwick/bids')}
         />
         <StatCard
-          label="Afventer godkendelse"
+          label={t('dashboard.awaitingApproval')}
           value={stats.pendingApprovals}
-          sub={`Ældste: ${stats.oldestApprovalDays}d`}
+          sub={`${t('dashboard.oldest')}: ${stats.oldestApprovalDays}d`}
           icon={CheckSquare}
           borderColor="border-l-warning"
           onClick={() => navigate('/sedgwick/approvals')}
         />
         <StatCard
-          label="SLA-brud"
+          label={t('dashboard.slaBreaches')}
           value={stats.slaBreaches}
-          sub="⚠ Gennemgå straks"
+          sub={`⚠ ${t('dashboard.reviewNow')}`}
           icon={AlertTriangle}
           borderColor="border-l-danger"
           onClick={() => navigate('/sedgwick/projects?sla=breached')}
@@ -191,21 +200,21 @@ export default function SedgwickDashboard() {
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Senest opdaterede sager</CardTitle>
+                <CardTitle className="text-sm">{t('dashboard.recentProjects')}</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/sedgwick/projects')}>
-                  Se alle
+                  {t('common.seeAll')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {recentProjects.length === 0 ? (
-                <EmptyTableRow message="Ingen aktive sager" />
+                <EmptyTableRow message={t('dashboard.noActiveProjects')} />
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                        {['Sag ID', 'Forsikring', 'Region', 'Prioritet', 'Status', 'SLA'].map((h) => (
+                        {[t('projects.claimId'), t('projects.insurance'), t('projects.region'), t('projects.priority'), t('projects.status'), t('projects.sla')].map((h) => (
                           <th key={h} className="px-4 py-2 text-left text-xs font-display font-medium text-gray-500">
                             {h}
                           </th>
@@ -241,7 +250,7 @@ export default function SedgwickDashboard() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">
-                  Godkendelseskø
+                  {t('dashboard.approvalQueue')}
                   {pendingItems.length > 0 && (
                     <span className="ml-2 rounded-full bg-warning px-2 py-0.5 text-xs text-white">
                       {pendingItems.length}
@@ -249,14 +258,14 @@ export default function SedgwickDashboard() {
                   )}
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/sedgwick/approvals')}>
-                  Åbn kø
+                  {t('dashboard.openQueue')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {pendingItems.length === 0 ? (
                 <div className="px-4 py-6 text-center text-sm text-gray-400">
-                  Ingen ventende godkendelser ✓
+                  {t('dashboard.noApprovals')}
                 </div>
               ) : (
                 <div className="divide-y divide-[#e5e7eb]">
@@ -287,13 +296,13 @@ export default function SedgwickDashboard() {
                           onClick={() => handleApprove(item)}
                           className="rounded px-2 py-1 text-xs bg-green-100 text-green-700 hover:bg-green-200 font-display font-medium"
                         >
-                          Godkend
+                          {t('common.approve')}
                         </button>
                         <button
                           onClick={() => handleReject(item)}
                           className="rounded px-2 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 font-display font-medium"
                         >
-                          Afvis
+                          {t('common.reject')}
                         </button>
                       </div>
                     </div>
@@ -309,11 +318,11 @@ export default function SedgwickDashboard() {
           {/* SLA Breaches */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-danger">SLA-advarsler</CardTitle>
+              <CardTitle className="text-sm text-danger">{t('dashboard.slaWarnings')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {slaProjects.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-400">Ingen SLA-brud ✓</div>
+                <div className="px-4 py-6 text-center text-sm text-gray-400">{t('dashboard.noSlaBreaches')}</div>
               ) : (
                 <div className="divide-y divide-[#e5e7eb]">
                   {slaProjects.map((p) => (
@@ -339,15 +348,15 @@ export default function SedgwickDashboard() {
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Seneste beskeder</CardTitle>
+                <CardTitle className="text-sm">{t('dashboard.recentMessages')}</CardTitle>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/sedgwick/messages')}>
-                  Alle
+                  {t('common.seeAll')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {recentMessages.length === 0 ? (
-                <div className="px-4 py-4 text-center text-sm text-gray-400">Ingen beskeder</div>
+                <div className="px-4 py-4 text-center text-sm text-gray-400">{t('dashboard.noMessages')}</div>
               ) : (
                 <div className="divide-y divide-[#e5e7eb]">
                   {recentMessages.map((m) => (
@@ -377,11 +386,11 @@ export default function SedgwickDashboard() {
           {/* Contractor Performance */}
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Top håndværkere</CardTitle>
+              <CardTitle className="text-sm">{t('dashboard.topContractors')}</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {topContractors.length === 0 ? (
-                <div className="px-4 py-4 text-center text-sm text-gray-400">Ingen data</div>
+                <div className="px-4 py-4 text-center text-sm text-gray-400">{t('common.noData')}</div>
               ) : (
                 <div className="divide-y divide-[#e5e7eb]">
                   {topContractors.map((c, i) => (
@@ -420,18 +429,42 @@ export default function SedgwickDashboard() {
 }
 
 function SlaIndicator({ project }: { project: Project }) {
+  const { t } = useTranslation()
   if (!project.requestedDeadline) return <span className="text-xs text-gray-400">—</span>
   const deadline = new Date(project.requestedDeadline)
   const now = new Date()
   const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / 86400000)
-  if (daysLeft < 0) return <span className="text-xs text-danger font-medium">Overskredet</span>
-  if (daysLeft <= 7) return <span className="text-xs text-warning font-medium">Risiko ({daysLeft}d)</span>
-  return <span className="text-xs text-success">OK</span>
+  if (daysLeft < 0) return <span className="text-xs text-danger font-medium">{t('projects.slaStatus.breached')}</span>
+  if (daysLeft <= 7) return <span className="text-xs text-warning font-medium">{t('projects.slaStatus.atRisk', { days: daysLeft })}</span>
+  return <span className="text-xs text-success">{t('projects.slaStatus.ok')}</span>
 }
 
 function EmptyTableRow({ message }: { message: string }) {
   return (
     <div className="px-4 py-8 text-center text-sm text-gray-400">{message}</div>
+  )
+}
+
+function DebugPanel() {
+  const [result, setResult] = useState<Record<string, unknown> | null>(null)
+  const [ran, setRan] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken') ?? ''
+    fetch('/api/auth/debug-token', {
+      headers: { 'X-Auth-Token': token },
+    })
+      .then((r) => r.json())
+      .then((d) => { setResult(d); setRan(true) })
+      .catch((e) => { setResult({ fetchError: String(e) }); setRan(true) })
+  }, [])
+
+  if (!ran) return <p className="text-xs text-red-500 italic">Kører diagnostik…</p>
+
+  return (
+    <pre className="mt-1 rounded bg-red-100 p-2 text-xs text-red-800 overflow-auto whitespace-pre-wrap break-all">
+      {JSON.stringify(result, null, 2)}
+    </pre>
   )
 }
 

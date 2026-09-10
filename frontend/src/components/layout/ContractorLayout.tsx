@@ -1,20 +1,23 @@
 import { Outlet } from 'react-router-dom'
 import { NavLink } from 'react-router-dom'
 import { LayoutDashboard, FolderOpen, MessageSquare, User } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { useCurrentUser } from '@/stores/authStore'
 import { getInitials } from '@/lib/utils'
 import { NotificationBell } from '@/components/ui/NotificationBell'
-
-const bottomNavItems = [
-  { to: '/contractor/dashboard', label: 'Hjem', icon: LayoutDashboard },
-  { to: '/contractor/jobs', label: 'Sager', icon: FolderOpen },
-  { to: '/contractor/chat', label: 'Beskeder', icon: MessageSquare },
-  { to: '/contractor/profile', label: 'Profil', icon: User },
-]
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
 
 export default function ContractorLayout() {
+  const { t } = useTranslation()
   const user = useCurrentUser()
+
+  const bottomNavItems = [
+    { to: '/contractor/dashboard', label: t('nav.home'), icon: LayoutDashboard },
+    { to: '/contractor/jobs', label: t('nav.jobs'), icon: FolderOpen },
+    { to: '/contractor/chat', label: t('nav.chat'), icon: MessageSquare },
+    { to: '/contractor/profile', label: t('nav.profile'), icon: User },
+  ]
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f4f6f9]">
@@ -24,6 +27,7 @@ export default function ContractorLayout() {
           <span className="font-display font-bold text-lg tracking-tight">Sedgwick</span>
         </div>
         <div className="flex items-center gap-2">
+          <LanguageSwitcher />
           <NotificationBell />
           <div
             className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-display font-semibold"

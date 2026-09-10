@@ -1,10 +1,15 @@
-import { MapPin, Phone, Mail, Building2, FileText, Calendar, DollarSign } from 'lucide-react'
+import { useState } from 'react'
+import { MapPin, Phone, Mail, UserCheck } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { useApi, useMutation } from '@/hooks/useApi'
 import type { Project } from '@/types'
 
-export function OverviewTab({ project }: { project: Project }) {
+interface SedgwickUser { id: string; fullName: string; email: string; role: string }
+
+export function OverviewTab({ project, onProjectUpdate }: { project: Project; onProjectUpdate?: (updated: Project) => void }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Left */}
@@ -53,6 +58,9 @@ export function OverviewTab({ project }: { project: Project }) {
 
       {/* Right */}
       <div className="space-y-4">
+        {/* Ansvarlig Sedgwick-medarbejder */}
+        <ResponsibleUserCard project={project} onProjectUpdate={onProjectUpdate} />
+
         <Card>
           <CardHeader><CardTitle className="text-sm">Datoer</CardTitle></CardHeader>
           <CardContent className="p-4 pt-0 space-y-3">
@@ -121,6 +129,98 @@ export function OverviewTab({ project }: { project: Project }) {
     </div>
   )
 }
+
+// ─── Responsible user card ────────────────────────────────────────────────────
+
+function ResponsibleUserCard({
+  project,
+  onProjectUpdate,
+}: {
+  project: Project
+  onProjectUpdate?: (updated: Project) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [selectedId, setSelectedId] = useState(project.responsibleUserId ?? '')
+  const [error, setError] = useState('')
+
+  const { data: allUsers } = useApi<SedgwickUser[]>('/users')
+  const { mutate: updateProject, loading: saving } = useMutation<unknown, Project>('patch')
+
+  // Only Sedgwick admins appear in the dropdown
+  const sedgwickUsers = (allUsers ?? []).filter((u) => u.role === 'SEDGWICK_ADMIN')
+
+  const handleSave = async () => {
+    setError('')
+    const result = await updateProject(`/projects/${project.id}`, {
+      responsibleUserId: selectedId || null,
+    })
+    if (result) {
+      onProjectUpdate?.(result)
+      setEditing(false)
+    } else {
+      setError('Kunne ikke gemme — prøv igen')
+    }
+  }
+
+  const current = project.responsibleUser
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm flex items-center gap-1.5">
+            <UserCheck className="h-4 w-4 text-primary-600" />
+            Ansvarlig medarbejder
+          </CardTitle>
+          {!editing && onProjectUpdate && (
+            <Button size="sm" variant="secondary" onClick={() => { setSelectedId(project.responsibleUserId ?? ''); setEditing(true) }}>
+              {current ? 'Skift' : 'Tildel'}
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="p-4 pt-0">
+        {editing ? (
+          <div className="space-y-3">
+            <select
+              className="input-field w-full text-sm"
+              value={selectedId}
+              onChange={(e) => setSelectedId(e.target.value)}
+            >
+              <option value="">— Ingen ansvarlig —</option>
+              {sedgwickUsers.map((u) => (
+                <option key={u.id} value={u.id}>{u.fullName}</option>
+              ))}
+            </select>
+            {error && <p className="text-xs text-red-600">{error}</p>}
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleSave} disabled={saving}>
+                {saving ? 'Gemmer...' : 'Gem'}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => setEditing(false)}>Annuller</Button>
+            </div>
+          </div>
+        ) : current ? (
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-100">
+              <span className="text-sm font-display font-semibold text-primary-700">
+                {current.fullName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-display font-medium text-gray-900">{current.fullName}</p>
+              <p className="text-xs text-gray-500">{current.email}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">Ikke tildelt</p>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
 
 function Row({ label, value, mono }: { label: string; value?: string | null; mono?: boolean }) {
   return (

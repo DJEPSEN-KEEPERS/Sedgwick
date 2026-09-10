@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: Number(process.env.PORT) || 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:7071',
@@ -23,9 +23,9 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['lucide-react', 'clsx', 'tailwind-merge'],
+        manualChunks: (id) => {
+          if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) return 'vendor'
+          if (id.includes('lucide-react') || id.includes('clsx') || id.includes('tailwind-merge')) return 'ui'
         },
       },
     },

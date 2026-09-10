@@ -13,6 +13,7 @@ interface CreateContractorBody {
   postalCode?: string
   city?: string
   regions?: string[]
+  skillIds?: string[]
   maxParallelProjects?: number
 }
 
@@ -41,8 +42,11 @@ async function createContractorHandler(req: HttpRequest, context: InvocationCont
         regions: body.regions?.length
           ? { create: body.regions.map((r) => ({ regionName: r })) }
           : undefined,
+        skills: body.skillIds?.length
+          ? { create: body.skillIds.map((skillId) => ({ skillId })) }
+          : undefined,
       },
-      include: { regions: true },
+      include: { regions: true, skills: { include: { skill: true } } },
     })
 
     await writeAuditLog({
