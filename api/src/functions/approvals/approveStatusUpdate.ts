@@ -28,7 +28,12 @@ async function approveStatusUpdateHandler(req: HttpRequest, context: InvocationC
       })
       await tx.entreprise.update({
         where: { id: update.entrepriseId },
-        data: { currentMilestone: update.milestone, progressPercent: update.progressPercent },
+        data: {
+          currentMilestone: update.milestone,
+          progressPercent: update.progressPercent,
+          ...(update.startedFlag ? { actualStart: update.createdAt } : {}),
+          ...(update.completedFlag ? { actualEnd: update.createdAt } : {}),
+        },
       })
       return result
     })
