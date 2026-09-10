@@ -5,7 +5,7 @@ export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
 export type TwoFactorMethod = 'TOTP' | 'SMS'
 
 export type PriorityLevel = 'NORMAL' | 'FASTTRACK'
-export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'CANCELLED'
+export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'CANCELLED' | 'CLOSED'
 export type ProjectMilestone =
   | 'CASE_RECEIVED'
   | 'BIDDING_IN_PROGRESS'

@@ -404,7 +404,7 @@ export default function ProjectsPage() {
             <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilters((f) => ({ ...f, status: v }))}>
               {options.statuses.map((v) => (
                 <option key={v} value={v}>
-                  {v === 'ACTIVE' ? 'Aktiv' : v === 'COMPLETED' ? 'Afsluttet' : v === 'ARCHIVED' ? 'Arkiveret' : v === 'CANCELLED' ? 'Annulleret' : v}
+                  {v === 'ACTIVE' ? 'Aktiv' : v === 'COMPLETED' ? 'Afsluttet' : v === 'ARCHIVED' ? 'Arkiveret' : v === 'CANCELLED' ? 'Annulleret' : v === 'CLOSED' ? 'Lukket' : v}
                 </option>
               ))}
             </FilterSelect>
