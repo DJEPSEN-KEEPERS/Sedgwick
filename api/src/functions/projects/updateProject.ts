@@ -2,6 +2,13 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
+
+const PROJECT_MILESTONES = [
+  'CASE_RECEIVED', 'BIDDING_IN_PROGRESS', 'CONTRACTOR_SELECTED',
+  'WORK_SCHEDULED', 'WORK_STARTED', 'WORK_COMPLETED',
+  'FINAL_REPORT_SUBMITTED', 'CASE_INVOICED', 'CASE_CLOSED',
+] as const
+
 interface UpdateProjectBody {
   damageType?: string
   damageDescription?: string
@@ -36,6 +43,13 @@ async function updateProjectHandler(req: HttpRequest, context: InvocationContext
     const existing = await prisma.project.findUnique({ where: { id: projectId } })
     if (!existing) {
       return { status: 404, jsonBody: { error: 'Projekt ikke fundet' } }
+    }
+
+    if (body.currentMilestone !== undefined && !(PROJECT_MILESTONES as readonly string[]).includes(body.currentMilestone)) {
+      return {
+        status: 400,
+        jsonBody: { error: `Ugyldig sagsfase: '${body.currentMilestone}'. Gyldige værdier er: ${PROJECT_MILESTONES.join(', ')}` },
+      }
     }
 
     const updateData: Record<string, unknown> = {}
@@ -75,6 +89,22 @@ async function updateProjectHandler(req: HttpRequest, context: InvocationContext
         responsibleUser: { select: { id: true, fullName: true, email: true } },
       },
     })
+
+    // Warn in audit log when milestone moves backwards (allowed, but worth tracking)
+    if (body.currentMilestone && existing.currentMilestone) {
+      const newIdx = PROJECT_MILESTONES.indexOf(body.currentMilestone as typeof PROJECT_MILESTONES[number])
+      const oldIdx = PROJECT_MILESTONES.indexOf(existing.currentMilestone as typeof PROJECT_MILESTONES[number])
+      if (newIdx !== -1 && oldIdx !== -1 && newIdx < oldIdx) {
+        await writeAuditLog({
+          userId: jwtUser.sub,
+          entityType: 'Project',
+          entityId: projectId,
+          action: 'MILESTONE_REGRESSION',
+          oldValue: { currentMilestone: existing.currentMilestone, step: oldIdx },
+          newValue: { currentMilestone: body.currentMilestone, step: newIdx },
+        })
+      }
+    }
 
     // Decrement workload when a case is closed — only on the actual transition to avoid double-counting
     if (

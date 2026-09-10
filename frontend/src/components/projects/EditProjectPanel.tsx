@@ -42,9 +42,16 @@ const REGIONS = [
   'Hovedstaden', 'Sjælland', 'Syddanmark', 'Midtjylland', 'Nordjylland',
 ]
 
+const MILESTONE_ORDER = MILESTONE_OPTIONS.map((o) => o.value)
+
+function getMilestoneLabel(value: string) {
+  return MILESTONE_OPTIONS.find((o) => o.value === value)?.label ?? value
+}
+
 export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
   const { mutate: updateProject, loading: saving } = useMutation<unknown, Project>('patch')
   const [error, setError] = useState('')
+  const [confirmBackwards, setConfirmBackwards] = useState(false)
 
   const [form, setForm] = useState({
     currentMilestone: project.currentMilestone ?? 'CASE_RECEIVED',
@@ -93,8 +100,7 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
 
-  const handleSave = async () => {
-    setError('')
+  const buildPayload = () => {
     const payload: Record<string, unknown> = {
       currentMilestone:  form.currentMilestone,
       damageType:        form.damageType || undefined,
@@ -116,8 +122,12 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
     if (form.maxApprovedPrice !== '') {
       payload.maxApprovedPrice = parseFloat(form.maxApprovedPrice)
     }
+    return payload
+  }
 
-    const result = await updateProject(`/projects/${project.id}`, payload)
+  const doSave = async () => {
+    setError('')
+    const result = await updateProject(`/projects/${project.id}`, buildPayload())
     if (result) {
       onSaved(result)
       onClose()
@@ -126,8 +136,47 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
     }
   }
 
+  const handleSave = () => {
+    const currentIdx = MILESTONE_ORDER.indexOf(project.currentMilestone ?? '')
+    const newIdx = MILESTONE_ORDER.indexOf(form.currentMilestone)
+    if (newIdx !== -1 && currentIdx !== -1 && newIdx < currentIdx) {
+      setConfirmBackwards(true)
+    } else {
+      doSave()
+    }
+  }
+
   return (
     <>
+      {/* Backwards-milestone confirmation dialog */}
+      {confirmBackwards && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-elevated p-6 max-w-sm w-full">
+            <h3 className="font-display font-bold text-gray-900 mb-2">Sæt sagen tilbage?</h3>
+            <p className="text-sm text-gray-600 mb-1">
+              Du er ved at sætte sagsfasen fra{' '}
+              <strong>{getMilestoneLabel(project.currentMilestone ?? '')}</strong> tilbage til{' '}
+              <strong>{getMilestoneLabel(form.currentMilestone)}</strong>.
+            </p>
+            <p className="text-sm text-gray-500 mb-4">Er du sikker på, at du vil sætte sagen tilbage til et tidligere trin?</p>
+            <div className="flex gap-3">
+              <button
+                className="flex-1 rounded-lg border border-red-300 bg-red-50 text-red-700 text-sm font-display font-medium py-2 hover:bg-red-100 transition-colors"
+                onClick={() => { setConfirmBackwards(false); doSave() }}
+              >
+                Ja, sæt tilbage
+              </button>
+              <button
+                className="flex-1 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm font-display font-medium py-2 hover:bg-gray-100 transition-colors"
+                onClick={() => setConfirmBackwards(false)}
+              >
+                Annuller
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Overlay */}
       {open && (
         <div
