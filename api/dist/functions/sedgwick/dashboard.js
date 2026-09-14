@@ -9,7 +9,9 @@ async function sedgwickDashboardHandler(req, context) {
         (0, authMiddleware_1.requireRoles)(jwtUser, 'SEDGWICK_ADMIN');
         const now = new Date();
         const oneWeekAgo = new Date(now.getTime() - 7 * 86400000);
-        const [activeProjects, newThisWeek, bidsAwaiting, urgentBids, pendingApprovalCount, slaProjects, recentProjects, pendingStatusUpdates, pendingFinalReports, recentMessages, topContractors,] = await Promise.all([
+        const STALE_BIDDING_DAYS = 5;
+        const staleBiddingCutoff = new Date(now.getTime() - STALE_BIDDING_DAYS * 86400000);
+        const [activeProjects, newThisWeek, bidsAwaiting, urgentBids, pendingApprovalCount, slaProjects, staleBiddingProjects, recentProjects, pendingStatusUpdates, pendingFinalReports, recentMessages, topContractors,] = await Promise.all([
             prisma_1.prisma.project.count({ where: { status: 'ACTIVE' } }),
             prisma_1.prisma.project.count({ where: { createdAt: { gte: oneWeekAgo } } }),
             prisma_1.prisma.bidInvitation.count({ where: { status: 'PENDING' } }),
@@ -29,6 +31,20 @@ async function sedgwickDashboardHandler(req, context) {
                 },
                 orderBy: { requestedDeadline: 'asc' },
                 take: 5,
+            }),
+            prisma_1.prisma.project.findMany({
+                where: {
+                    status: 'ACTIVE',
+                    currentMilestone: 'BIDDING_IN_PROGRESS',
+                    bids: { none: {} },
+                    bidInvitations: { some: { invitedAt: { lt: staleBiddingCutoff } } },
+                },
+                include: {
+                    insuranceCompany: { select: { id: true, name: true } },
+                    bidInvitations: { select: { invitedAt: true } },
+                },
+                orderBy: { updatedAt: 'asc' },
+                take: 10,
             }),
             prisma_1.prisma.project.findMany({
                 include: {
@@ -131,6 +147,12 @@ async function sedgwickDashboardHandler(req, context) {
             messageBody: m.messageBody,
             createdAt: m.createdAt.toISOString(),
         }));
+        const nowMs = now.getTime();
+        const staleBiddingEnriched = staleBiddingProjects.map((p) => {
+            const oldest = Math.min(...p.bidInvitations.map((i) => new Date(i.invitedAt).getTime()));
+            const { bidInvitations, ...rest } = p;
+            return { ...rest, hasAnyBid: false, daysSinceFirstInvitation: Math.floor((nowMs - oldest) / 86400000) };
+        });
         return {
             status: 200,
             jsonBody: {
@@ -142,7 +164,10 @@ async function sedgwickDashboardHandler(req, context) {
                     pendingApprovals: pendingApprovalCount,
                     oldestApprovalDays,
                     slaBreaches: slaProjects.length,
+                    staleBiddingCount: staleBiddingProjects.length,
                 },
+                staleBiddingProjects: staleBiddingEnriched,
+                staleBiddingDaysThreshold: STALE_BIDDING_DAYS,
                 recentProjects,
                 pendingItems,
                 slaProjects,

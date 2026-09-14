@@ -20,22 +20,31 @@ async function approveFinalReportHandler(req, context) {
             return { status: 409, jsonBody: { error: 'Slutrapport er allerede behandlet' } };
         }
         const projectId = report.entreprise.projectId;
-        const approved = await prisma_1.prisma.$transaction(async (tx) => {
+        const { approved, approvedCount, totalRelevant } = await prisma_1.prisma.$transaction(async (tx) => {
             const result = await tx.finalReport.update({
                 where: { id: reportId },
                 data: { approvalStatus: 'APPROVED', approvedByUserId: jwtUser.sub, approvedAt: new Date() },
             });
-            await tx.project.update({
-                where: { id: projectId },
-                data: { currentMilestone: 'CASE_INVOICED', progressPercent: 100 },
+            // Check if ALL relevant entreprises now have an approved final report
+            const allRelevant = await tx.entreprise.findMany({
+                where: { projectId, isRelevant: true },
+                select: { id: true, finalReport: { select: { approvalStatus: true } } },
             });
-            return result;
+            const total = allRelevant.length;
+            const approved = allRelevant.filter((e) => e.finalReport?.approvalStatus === 'APPROVED').length;
+            if (approved === total && total > 0) {
+                await tx.project.update({
+                    where: { id: projectId },
+                    data: { currentMilestone: 'CASE_INVOICED', progressPercent: 100 },
+                });
+            }
+            return { approved: result, approvedCount: approved, totalRelevant: total };
         });
-        await (0, auditLog_1.writeAuditLog)({ userId: jwtUser.sub, entityType: 'FinalReport', entityId: reportId, action: 'APPROVE', newValue: { projectId } });
+        await (0, auditLog_1.writeAuditLog)({ userId: jwtUser.sub, entityType: 'FinalReport', entityId: reportId, action: 'APPROVE', newValue: { projectId, approvedCount, totalRelevant } });
         const project = await prisma_1.prisma.project.findUnique({ where: { id: projectId }, select: { claimId: true } });
         if (project)
             await (0, notificationService_1.notifyFinalReportReviewed)(report.submittedByUserId, true, project.claimId);
-        return { status: 200, jsonBody: { data: approved } };
+        return { status: 200, jsonBody: { data: approved, approvedCount, totalRelevant } };
     }
     catch (err) {
         return (0, authMiddleware_1.errorResponse)(err, context);

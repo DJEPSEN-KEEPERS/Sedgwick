@@ -22,8 +22,48 @@ async function submitFinalReportHandler(req, context) {
             return { status: 403, jsonBody: { error: 'Ingen adgang' } };
         }
         const existing = await prisma_1.prisma.finalReport.findUnique({ where: { entrepriseId } });
-        if (existing)
-            return { status: 409, jsonBody: { error: 'Slutrapport er allerede indsendt for denne entreprise' } };
+        if (existing) {
+            if (existing.approvalStatus !== 'REJECTED') {
+                return { status: 409, jsonBody: { error: 'Slutrapport er allerede indsendt for denne entreprise' } };
+            }
+            // REJECTED → update the existing row so the 1:1 relation stays intact
+            const report = await prisma_1.prisma.$transaction(async (tx) => {
+                await tx.finalReportAnswer.deleteMany({ where: { finalReportId: existing.id } });
+                await tx.finalReportAttachment.deleteMany({ where: { finalReportId: existing.id } });
+                return tx.finalReport.update({
+                    where: { id: existing.id },
+                    data: {
+                        summary: body.summary,
+                        submittedAt: new Date(),
+                        submittedByUserId: jwtUser.sub,
+                        approvalStatus: 'PENDING',
+                        approvedByUserId: null,
+                        approvedAt: null,
+                        answers: {
+                            create: (body.answers ?? []).map((a) => ({
+                                questionKey: a.questionKey,
+                                questionLabel: a.questionLabel,
+                                answerValue: a.answerValue,
+                            })),
+                        },
+                        ...(body.attachmentUrls?.length
+                            ? {
+                                attachments: {
+                                    create: body.attachmentUrls.map((a) => ({
+                                        fileName: a.fileName,
+                                        fileType: a.fileType,
+                                        blobUrl: a.blobUrl,
+                                        fileSizeMb: a.fileSizeMb,
+                                    })),
+                                },
+                            }
+                            : {}),
+                    },
+                    include: { answers: true, attachments: true },
+                });
+            });
+            return { status: 200, jsonBody: report };
+        }
         const report = await prisma_1.prisma.finalReport.create({
             data: {
                 entrepriseId,

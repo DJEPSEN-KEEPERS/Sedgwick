@@ -26,8 +26,11 @@ async function createContractorHandler(req, context) {
                 regions: body.regions?.length
                     ? { create: body.regions.map((r) => ({ regionName: r })) }
                     : undefined,
+                skills: body.skillIds?.length
+                    ? { create: body.skillIds.map((skillId) => ({ skillId })) }
+                    : undefined,
             },
-            include: { regions: true },
+            include: { regions: true, skills: { include: { skill: true } } },
         });
         await (0, auditLog_1.writeAuditLog)({
             userId: jwtUser.sub,
