@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApi, useMutation } from '@/hooks/useApi'
-import { ArrowLeft, Camera, Upload, X, CheckCircle, FileText } from 'lucide-react'
+import { ArrowLeft, Camera, X, CheckCircle, FileText, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StepForm } from '@/components/ui/StepForm'
 import { getEntrepriseTypeLabel } from '@/lib/utils'
@@ -33,16 +33,27 @@ export default function FinalReportPage() {
   )
   const { mutate: submit, loading: submitting, error } = useMutation('post')
 
-  // Step 1: Checklist
+  const existingReport = entreprise?.finalReport
+  const reportStatus: string | undefined = existingReport?.approvalStatus
+  const isRejected = reportStatus === 'REJECTED'
+  const isPendingOrApproved = reportStatus === 'PENDING' || reportStatus === 'APPROVED'
+
   const [answers, setAnswers] = useState<Record<string, string>>({})
-
-  // Step 2: Photos
   const [photos, setPhotos] = useState<PhotoFile[]>([])
-
-  // Step 3: Summary
   const [summary, setSummary] = useState('')
-
   const [done, setDone] = useState(false)
+
+  // Pre-fill from rejected report once loaded
+  useEffect(() => {
+    if (isRejected && existingReport) {
+      setSummary(existingReport.summary ?? '')
+      const prefilled: Record<string, string> = {}
+      for (const a of existingReport.answers ?? []) {
+        prefilled[a.questionKey] = a.answerValue
+      }
+      setAnswers(prefilled)
+    }
+  }, [isRejected, existingReport?.id])
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files) return
@@ -115,9 +126,35 @@ export default function FinalReportPage() {
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
           <CheckCircle className="h-8 w-8 text-green-600" />
         </div>
-        <h2 className="font-display font-bold text-lg text-gray-900 mb-2">Slutrapport indsendt!</h2>
+        <h2 className="font-display font-bold text-lg text-gray-900 mb-2">
+          {isRejected ? 'Slutrapport genindsendt!' : 'Slutrapport indsendt!'}
+        </h2>
         <p className="text-sm text-gray-500 mb-6">Din slutrapport er sendt til gennemgang af Sedgwick.</p>
         <Button onClick={() => navigate(-1)}>Tilbage til sagen</Button>
+      </div>
+    )
+  }
+
+  // Report is pending review or already approved — show locked view
+  if (isPendingOrApproved) {
+    return (
+      <div className="p-4">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-4">
+          <ArrowLeft className="h-4 w-4" />
+          Tilbage
+        </button>
+        <h1 className="font-display font-bold text-xl text-gray-900 mb-6">Slutrapport</h1>
+        <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 text-center space-y-3">
+          <CheckCircle className="h-10 w-10 text-green-500 mx-auto" />
+          <p className="font-display font-semibold text-gray-900">
+            {reportStatus === 'APPROVED' ? 'Slutrapport godkendt' : 'Slutrapport afventer godkendelse'}
+          </p>
+          <p className="text-sm text-gray-500">
+            {reportStatus === 'APPROVED'
+              ? 'Din slutrapport er godkendt af Sedgwick.'
+              : 'Din slutrapport er indsendt og afventer gennemgang af Sedgwick.'}
+          </p>
+        </div>
       </div>
     )
   }
@@ -130,6 +167,15 @@ export default function FinalReportPage() {
       isValid: allAnswered,
       content: (
         <div className="space-y-3">
+          {isRejected && (
+            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+              <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-semibold text-red-800">Slutrapport afvist af Sedgwick</p>
+                <p className="text-xs text-red-700 mt-0.5">Ret rapporten og genindsend. Dine tidligere svar er forudfyldt.</p>
+              </div>
+            </div>
+          )}
           <p className="text-sm text-gray-600">Bekræft at alle opgaver er udført</p>
           {CHECKLIST_QUESTIONS.map((q) => (
             <div key={q.key} className="rounded-xl border border-[#e5e7eb] bg-white p-4">
@@ -241,9 +287,11 @@ export default function FinalReportPage() {
               <p><span className="font-semibold">Sammenfatning:</span> {summary.length > 0 ? '✓' : 'Mangler'}</p>
             </div>
           </div>
-          <p className="text-sm text-gray-600">
-            Rapporten vil blive sendt til Sedgwick for gennemgang. Du kan ikke redigere den efterfølgende.
-          </p>
+          {!isRejected && (
+            <p className="text-sm text-gray-600">
+              Rapporten vil blive sendt til Sedgwick for gennemgang. Du kan ikke redigere den efterfølgende.
+            </p>
+          )}
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
       ),
@@ -256,13 +304,27 @@ export default function FinalReportPage() {
         <ArrowLeft className="h-4 w-4" />
         Tilbage
       </button>
-      <h1 className="font-display font-bold text-xl text-gray-900 mb-6">Indsend slutrapport</h1>
+      <h1 className="font-display font-bold text-xl text-gray-900 mb-6">
+        {isRejected ? 'Ret og genindsend slutrapport' : 'Indsend slutrapport'}
+      </h1>
+
+      {isRejected && (
+        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 mb-4">
+          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-red-800">Slutrapport er afvist af Sedgwick</p>
+            <p className="text-xs text-red-700 mt-0.5">
+              Ret indholdet og genindsend. Dine tidligere svar er forudfyldt.
+            </p>
+          </div>
+        </div>
+      )}
 
       <StepForm
         steps={steps}
         onSubmit={handleSubmit}
         isSubmitting={submitting}
-        submitLabel="Indsend slutrapport"
+        submitLabel={isRejected ? 'Rediger og genindsend' : 'Indsend slutrapport'}
       />
     </div>
   )

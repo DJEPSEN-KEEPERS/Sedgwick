@@ -27,6 +27,10 @@ async function selectBidHandler(req, context) {
                 where: { id: bid.projectId },
                 data: { selectedContractorId: bid.contractorId, currentMilestone: 'CONTRACTOR_SELECTED' },
             });
+            await tx.contractor.update({
+                where: { id: bid.contractorId },
+                data: { currentWorkload: { increment: 1 } },
+            });
             return selected;
         });
         await (0, auditLog_1.writeAuditLog)({

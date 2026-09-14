@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Receipt } from 'lucide-react'
+import { Receipt, CheckCircle2, Clock } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { ProjectProgressBar } from '@/components/ui/ProjectProgressBar'
 import { Button } from '@/components/ui/button'
@@ -172,6 +172,10 @@ export function ProgressTab({ project, onProjectUpdate }: { project: Project; on
 
   const relevant = entreprises?.filter((e) => e.isRelevant) ?? []
 
+  const approvedReportCount = relevant.filter(
+    (e) => e.finalReport?.approvalStatus === 'APPROVED',
+  ).length
+
   const handleMarkInvoiced = async () => {
     const result = await updateProject(`/projects/${project.id}`, {
       currentMilestone: 'CASE_CLOSED',
@@ -191,6 +195,41 @@ export function ProgressTab({ project, onProjectUpdate }: { project: Project; on
 
       {/* Entreprise week Gantt — only shown when entreprises have scheduled dates */}
       {!loading && <WeekGanttGrid entreprises={relevant} />}
+
+      {/* Final report approval progress */}
+      {!loading && relevant.length > 0 && (
+        <div className="bg-white rounded-lg border border-[#e5e7eb] shadow-card p-4">
+          <h3 className="text-sm font-display font-semibold text-gray-900 mb-3">Slutrapporter</h3>
+          <div className="space-y-2">
+            {relevant.map((e) => {
+              const status = e.finalReport?.approvalStatus
+              const isApproved = status === 'APPROVED'
+              const isPending = status === 'PENDING'
+              return (
+                <div key={e.id} className="flex items-center gap-3">
+                  {isApproved ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                  ) : isPending ? (
+                    <Clock className="h-4 w-4 text-amber-500 shrink-0" />
+                  ) : (
+                    <div className="h-4 w-4 rounded-full border-2 border-gray-300 shrink-0" />
+                  )}
+                  <span className="text-sm text-gray-700 flex-1">{getEntrepriseTypeLabel(e.type)}</span>
+                  <span className={cn(
+                    'text-xs font-display font-medium',
+                    isApproved ? 'text-green-600' : isPending ? 'text-amber-600' : 'text-gray-400',
+                  )}>
+                    {isApproved ? 'Godkendt' : isPending ? 'Afventer' : 'Ikke indsendt'}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+          <p className="mt-3 text-xs text-gray-500 border-t border-gray-100 pt-3">
+            {approvedReportCount} af {relevant.length} relevante entrepriser har godkendt slutrapport
+          </p>
+        </div>
+      )}
 
       {/* Invoice gate */}
       {project.currentMilestone === 'CASE_INVOICED' && (

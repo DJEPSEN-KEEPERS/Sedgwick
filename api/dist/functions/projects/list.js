@@ -40,6 +40,7 @@ async function listProjectsHandler(req, context) {
                 }
                 : {}),
         };
+        const STALE_BIDDING_DAYS = 5;
         const projects = await prisma_1.prisma.project.findMany({
             where,
             include: {
@@ -47,11 +48,24 @@ async function listProjectsHandler(req, context) {
                 selectedContractor: { select: { id: true, companyName: true } },
                 responsibleUser: { select: { id: true, fullName: true, email: true } },
                 entreprises: { select: { id: true, type: true, currentMilestone: true, progressPercent: true } },
+                bidInvitations: { select: { invitedAt: true } },
+                bids: { select: { id: true } },
             },
             orderBy: { updatedAt: 'desc' },
             take: pageSize,
         });
-        return { status: 200, jsonBody: projects };
+        const now = Date.now();
+        const enriched = projects.map((p) => {
+            const hasAnyBid = p.bids.length > 0;
+            let daysSinceFirstInvitation;
+            if (p.currentMilestone === 'BIDDING_IN_PROGRESS' && p.bidInvitations.length > 0) {
+                const oldest = Math.min(...p.bidInvitations.map((i) => new Date(i.invitedAt).getTime()));
+                daysSinceFirstInvitation = Math.floor((now - oldest) / 86400000);
+            }
+            const { bidInvitations, bids, ...rest } = p;
+            return { ...rest, hasAnyBid, daysSinceFirstInvitation, staleBiddingDaysThreshold: STALE_BIDDING_DAYS };
+        });
+        return { status: 200, jsonBody: enriched };
     }
     catch (err) {
         return (0, authMiddleware_1.errorResponse)(err, context);

@@ -20,6 +20,15 @@ interface DashboardStats {
   pendingApprovals: number
   oldestApprovalDays: number
   slaBreaches: number
+  staleBiddingCount: number
+}
+
+interface StaleBiddingProject {
+  id: string
+  claimId: string
+  region: string
+  daysSinceFirstInvitation: number
+  insuranceCompany?: { name: string }
 }
 
 interface RecentMessage {
@@ -55,6 +64,8 @@ interface PendingItem {
 
 interface DashboardData {
   stats: DashboardStats
+  staleBiddingProjects: StaleBiddingProject[]
+  staleBiddingDaysThreshold: number
   recentProjects: Project[]
   pendingItems: PendingItem[]
   slaProjects: Project[]
@@ -134,6 +145,7 @@ export default function SedgwickDashboard() {
     pendingApprovals: 0,
     oldestApprovalDays: 0,
     slaBreaches: 0,
+    staleBiddingCount: 0,
   }
 
   const recentProjects = data?.recentProjects ?? []
@@ -141,6 +153,8 @@ export default function SedgwickDashboard() {
   const slaProjects = data?.slaProjects ?? []
   const recentMessages = data?.recentMessages ?? []
   const topContractors = data?.topContractors ?? []
+  const staleBiddingProjects = data?.staleBiddingProjects ?? []
+  const staleBiddingDaysThreshold = data?.staleBiddingDaysThreshold ?? 5
 
   return (
     <div>
@@ -189,6 +203,14 @@ export default function SedgwickDashboard() {
           icon={AlertTriangle}
           borderColor="border-l-danger"
           onClick={() => navigate('/sedgwick/projects?sla=breached')}
+        />
+        <StatCard
+          label="Tilbud gået i stå"
+          value={stats.staleBiddingCount ?? 0}
+          sub={`Ingen tilbud i >${staleBiddingDaysThreshold} dage`}
+          icon={Clock}
+          borderColor="border-l-orange-400"
+          onClick={() => navigate('/sedgwick/projects')}
         />
       </div>
 
@@ -244,6 +266,46 @@ export default function SedgwickDashboard() {
               )}
             </CardContent>
           </Card>
+
+          {/* Stalled bidding projects */}
+          {staleBiddingProjects.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-orange-500" />
+                    Tilbud gået i stå
+                    <span className="rounded-full bg-orange-100 text-orange-700 border border-orange-200 px-2 py-0.5 text-xs font-display font-semibold">
+                      {staleBiddingProjects.length}
+                    </span>
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/sedgwick/projects')}>
+                    Se alle
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-[#e5e7eb]">
+                  {staleBiddingProjects.map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigate(`/sedgwick/projects/${p.id}`)}
+                    >
+                      <div>
+                        <p className="text-xs font-mono font-medium text-primary-700">{p.claimId}</p>
+                        <p className="text-xs text-gray-500">{p.insuranceCompany?.name ?? '—'} · {p.region}</p>
+                      </div>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-display font-semibold text-orange-700 border border-orange-200 whitespace-nowrap">
+                        <Clock className="h-3 w-3 shrink-0" />
+                        Ingen tilbud i {p.daysSinceFirstInvitation}d
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Pending Approvals Queue */}
           <Card>

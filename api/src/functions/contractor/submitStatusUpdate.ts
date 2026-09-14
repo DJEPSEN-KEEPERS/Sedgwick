@@ -58,16 +58,8 @@ async function submitStatusUpdateHandler(req: HttpRequest, context: InvocationCo
       include: { attachments: true },
     })
 
-    // Keep entreprise milestone and progress in sync
-    await prisma.entreprise.update({
-      where: { id: entrepriseId },
-      data: {
-        currentMilestone: body.milestone as never,
-        progressPercent: body.progressPercent,
-        actualStart: body.startedFlag ? new Date() : undefined,
-        actualEnd: body.completedFlag ? new Date() : undefined,
-      },
-    })
+    // Entreprise milestone/progress are intentionally NOT updated here.
+    // They are only advanced when a Sedgwick admin approves the update (approveStatusUpdate.ts).
 
     return { status: 201, jsonBody: update }
   } catch (err) {

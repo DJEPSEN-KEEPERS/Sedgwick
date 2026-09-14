@@ -23,24 +23,36 @@ async function approveFinalReportHandler(req: HttpRequest, context: InvocationCo
 
     const projectId = report.entreprise.projectId
 
-    const approved = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+    const { approved, approvedCount, totalRelevant } = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const result = await tx.finalReport.update({
         where: { id: reportId },
         data: { approvalStatus: 'APPROVED', approvedByUserId: jwtUser.sub, approvedAt: new Date() },
       })
-      await tx.project.update({
-        where: { id: projectId },
-        data: { currentMilestone: 'CASE_INVOICED', progressPercent: 100 },
+
+      // Check if ALL relevant entreprises now have an approved final report
+      const allRelevant = await tx.entreprise.findMany({
+        where: { projectId, isRelevant: true },
+        select: { id: true, finalReport: { select: { approvalStatus: true } } },
       })
-      return result
+      const total = allRelevant.length
+      const approved = allRelevant.filter((e) => e.finalReport?.approvalStatus === 'APPROVED').length
+
+      if (approved === total && total > 0) {
+        await tx.project.update({
+          where: { id: projectId },
+          data: { currentMilestone: 'CASE_INVOICED', progressPercent: 100 },
+        })
+      }
+
+      return { approved: result, approvedCount: approved, totalRelevant: total }
     })
 
-    await writeAuditLog({ userId: jwtUser.sub, entityType: 'FinalReport', entityId: reportId, action: 'APPROVE', newValue: { projectId } })
+    await writeAuditLog({ userId: jwtUser.sub, entityType: 'FinalReport', entityId: reportId, action: 'APPROVE', newValue: { projectId, approvedCount, totalRelevant } })
 
     const project = await prisma.project.findUnique({ where: { id: projectId }, select: { claimId: true } })
     if (project) await notifyFinalReportReviewed(report.submittedByUserId, true, project.claimId)
 
-    return { status: 200, jsonBody: { data: approved } }
+    return { status: 200, jsonBody: { data: approved, approvedCount, totalRelevant } }
   } catch (err) {
     return errorResponse(err, context)
   }

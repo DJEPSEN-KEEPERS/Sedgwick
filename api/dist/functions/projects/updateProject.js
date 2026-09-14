@@ -4,6 +4,11 @@ const functions_1 = require("@azure/functions");
 const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
 const auditLog_1 = require("../../lib/auditLog");
+const PROJECT_MILESTONES = [
+    'CASE_RECEIVED', 'BIDDING_IN_PROGRESS', 'CONTRACTOR_SELECTED',
+    'WORK_SCHEDULED', 'WORK_STARTED', 'WORK_COMPLETED',
+    'FINAL_REPORT_SUBMITTED', 'CASE_INVOICED', 'CASE_CLOSED',
+];
 async function updateProjectHandler(req, context) {
     try {
         const jwtUser = (0, authMiddleware_1.authenticate)(req);
@@ -14,9 +19,11 @@ async function updateProjectHandler(req, context) {
         if (!existing) {
             return { status: 404, jsonBody: { error: 'Projekt ikke fundet' } };
         }
-        // Gate: CASE_CLOSED requires the project to first be CASE_INVOICED
-        if (body.currentMilestone === 'CASE_CLOSED' && existing.currentMilestone !== 'CASE_INVOICED') {
-            return { status: 409, jsonBody: { error: 'Sagen skal faktureres før den kan lukkes' } };
+        if (body.currentMilestone !== undefined && !PROJECT_MILESTONES.includes(body.currentMilestone)) {
+            return {
+                status: 400,
+                jsonBody: { error: `Ugyldig sagsfase: '${body.currentMilestone}'. Gyldige værdier er: ${PROJECT_MILESTONES.join(', ')}` },
+            };
         }
         const updateData = {};
         const allowedFields = [
@@ -51,6 +58,30 @@ async function updateProjectHandler(req, context) {
                 responsibleUser: { select: { id: true, fullName: true, email: true } },
             },
         });
+        // Warn in audit log when milestone moves backwards (allowed, but worth tracking)
+        if (body.currentMilestone && existing.currentMilestone) {
+            const newIdx = PROJECT_MILESTONES.indexOf(body.currentMilestone);
+            const oldIdx = PROJECT_MILESTONES.indexOf(existing.currentMilestone);
+            if (newIdx !== -1 && oldIdx !== -1 && newIdx < oldIdx) {
+                await (0, auditLog_1.writeAuditLog)({
+                    userId: jwtUser.sub,
+                    entityType: 'Project',
+                    entityId: projectId,
+                    action: 'MILESTONE_REGRESSION',
+                    oldValue: { currentMilestone: existing.currentMilestone, step: oldIdx },
+                    newValue: { currentMilestone: body.currentMilestone, step: newIdx },
+                });
+            }
+        }
+        // Decrement workload when a case is closed — only on the actual transition to avoid double-counting
+        if (body.currentMilestone === 'CASE_CLOSED' &&
+            existing.currentMilestone !== 'CASE_CLOSED' &&
+            existing.selectedContractorId) {
+            await prisma_1.prisma.contractor.updateMany({
+                where: { id: existing.selectedContractorId, currentWorkload: { gt: 0 } },
+                data: { currentWorkload: { decrement: 1 } },
+            });
+        }
         await (0, auditLog_1.writeAuditLog)({
             userId: jwtUser.sub,
             entityType: 'Project',

@@ -1,6 +1,6 @@
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Edit2, Archive, FileDown, X } from 'lucide-react'
+import { ArrowLeft, Edit2, Archive, FileDown, X, RefreshCw } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { Button } from '@/components/ui/button'
 import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
@@ -34,10 +34,12 @@ export default function ProjectDetailPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'overview')
   const [confirmClose, setConfirmClose] = useState(false)
+  const [confirmReopen, setConfirmReopen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
 
   const { data: project, loading, refetch } = useApi<Project>(`/projects/${projectId}`)
   const { mutate: closeProject, loading: closing } = useMutation('delete')
+  const { mutate: reopenProject, loading: reopening } = useMutation('post')
 
   // Allow child tabs to trigger a refetch after inline updates
   const handleProjectUpdate = () => refetch()
@@ -51,6 +53,14 @@ export default function ProjectDetailPage() {
     const result = await closeProject(`/projects/${projectId}`)
     if (result) {
       setConfirmClose(false)
+      refetch()
+    }
+  }
+
+  const handleReopen = async () => {
+    const result = await reopenProject(`/projects/${projectId}/reopen`)
+    if (result) {
+      setConfirmReopen(false)
       refetch()
     }
   }
@@ -125,8 +135,23 @@ export default function ProjectDetailPage() {
                     <Archive className="h-4 w-4 mr-1" /> Luk sag
                   </Button>
                 )}
-                {project.status === 'CLOSED' && (
-                  <span className="text-xs font-medium text-gray-400 border border-gray-200 rounded-md px-2 py-1">Lukket</span>
+                {project.status === 'CLOSED' && !confirmReopen && (
+                  <Button variant="secondary" size="sm" className="text-gray-500 hover:text-green-700 hover:border-green-300"
+                    onClick={() => setConfirmReopen(true)}>
+                    <RefreshCw className="h-4 w-4 mr-1" /> Genåbn sag
+                  </Button>
+                )}
+                {confirmReopen && (
+                  <div className="flex items-center gap-2 rounded-md bg-green-50 border border-green-200 px-3 py-1.5">
+                    <span className="text-xs font-medium text-green-700">Genåbn sagen?</span>
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white border-green-600 h-7 text-xs"
+                      onClick={handleReopen} disabled={reopening}>
+                      {reopening ? '...' : 'Ja, genåbn'}
+                    </Button>
+                    <button onClick={() => setConfirmReopen(false)} className="text-gray-400 hover:text-gray-600">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
                 )}
               </>
             )}

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Search, SlidersHorizontal, LayoutGrid, List, X, Plus } from 'lucide-react'
+import { Search, SlidersHorizontal, LayoutGrid, List, X, Plus, Clock } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -404,7 +404,7 @@ export default function ProjectsPage() {
             <FilterSelect label="Status" value={filters.status} onChange={(v) => setFilters((f) => ({ ...f, status: v }))}>
               {options.statuses.map((v) => (
                 <option key={v} value={v}>
-                  {v === 'ACTIVE' ? 'Aktiv' : v === 'COMPLETED' ? 'Afsluttet' : v === 'ARCHIVED' ? 'Arkiveret' : v === 'CANCELLED' ? 'Annulleret' : v}
+                  {v === 'ACTIVE' ? 'Aktiv' : v === 'COMPLETED' ? 'Afsluttet' : v === 'ARCHIVED' ? 'Arkiveret' : v === 'CANCELLED' ? 'Annulleret' : v === 'CLOSED' ? 'Lukket' : v}
                 </option>
               ))}
             </FilterSelect>
@@ -450,6 +450,21 @@ export default function ProjectsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function StaleBiddingBadge({ project }: { project: Project }) {
+  const threshold = project.staleBiddingDaysThreshold ?? 5
+  if (
+    project.currentMilestone !== 'BIDDING_IN_PROGRESS' ||
+    project.hasAnyBid !== false ||
+    (project.daysSinceFirstInvitation ?? 0) < threshold
+  ) return null
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-display font-semibold text-orange-700 border border-orange-200 whitespace-nowrap">
+      <Clock className="h-3 w-3 shrink-0" />
+      Ingen tilbud i {project.daysSinceFirstInvitation}d
+    </span>
   )
 }
 
@@ -512,7 +527,12 @@ function ProjectsTable({
                 <td className="px-4 py-2.5 text-xs text-gray-600">{p.damageType}</td>
                 <td className="px-4 py-2.5 text-xs text-gray-600">{p.region}</td>
                 <td className="px-4 py-2.5"><PriorityBadge level={p.priorityLevel} /></td>
-                <td className="px-4 py-2.5"><MilestoneBadge milestone={p.currentMilestone} /></td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <MilestoneBadge milestone={p.currentMilestone} />
+                    <StaleBiddingBadge project={p} />
+                  </div>
+                </td>
                 <td className="px-4 py-2.5 text-xs text-gray-600">
                   {p.responsibleUser ? (
                     <span className="flex items-center gap-1">
@@ -572,8 +592,11 @@ function ProjectCardFull({ project, onClick }: { project: Project; onClick: () =
           <PriorityBadge level={project.priorityLevel} />
         </div>
         <p className="text-xs text-gray-500 mb-2">{project.address}, {project.city}</p>
-        <div className="flex items-center justify-between mb-2">
-          <MilestoneBadge milestone={project.currentMilestone} />
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <MilestoneBadge milestone={project.currentMilestone} />
+            <StaleBiddingBadge project={project} />
+          </div>
           {project.selectedContractor && (
             <span className="text-xs text-gray-500">{project.selectedContractor.companyName}</span>
           )}

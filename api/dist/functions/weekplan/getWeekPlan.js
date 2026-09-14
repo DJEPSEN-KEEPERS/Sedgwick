@@ -15,7 +15,7 @@ async function getWeekPlanHandler(req, context) {
         }
         // Load all entreprises for the project, then their week plans
         const entreprises = await prisma_1.prisma.entreprise.findMany({
-            where: { projectId, isRelevant: true },
+            where: { projectId, isRelevant: { not: false } },
             select: { id: true },
         });
         const entrepriseIds = entreprises.map((e) => e.id);

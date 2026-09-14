@@ -13,13 +13,21 @@ async function updateContractorHandler(req, context) {
         const existing = await prisma_1.prisma.contractor.findUnique({ where: { id: contractorId } });
         if (!existing)
             return { status: 404, jsonBody: { error: 'Håndværker ikke fundet' } };
-        const { regions, ...fields } = body;
+        const { regions, skillIds, ...fields } = body;
         const updated = await prisma_1.prisma.$transaction(async (tx) => {
             if (regions !== undefined) {
                 await tx.contractorRegion.deleteMany({ where: { contractorId } });
                 if (regions.length > 0) {
                     await tx.contractorRegion.createMany({
                         data: regions.map((r) => ({ contractorId, regionName: r })),
+                    });
+                }
+            }
+            if (skillIds !== undefined) {
+                await tx.contractorSkill.deleteMany({ where: { contractorId } });
+                if (skillIds.length > 0) {
+                    await tx.contractorSkill.createMany({
+                        data: skillIds.map((skillId) => ({ contractorId, skillId })),
                     });
                 }
             }

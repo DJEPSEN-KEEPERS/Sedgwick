@@ -5,7 +5,7 @@ export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED'
 export type TwoFactorMethod = 'TOTP' | 'SMS'
 
 export type PriorityLevel = 'NORMAL' | 'FASTTRACK'
-export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'CANCELLED'
+export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED' | 'CANCELLED' | 'CLOSED'
 export type ProjectMilestone =
   | 'CASE_RECEIVED'
   | 'BIDDING_IN_PROGRESS'
@@ -188,6 +188,9 @@ export interface Project {
   entreprises: Entreprise[]
   createdAt: string
   updatedAt: string
+  hasAnyBid?: boolean
+  daysSinceFirstInvitation?: number
+  staleBiddingDaysThreshold?: number
 }
 
 // ─── Entreprises ──────────────────────────────────────────────────────────────
@@ -209,6 +212,15 @@ export interface Entreprise {
   actualEnd?: string
   createdAt: string
   updatedAt: string
+  statusUpdates?: EntrepriseStatusUpdate[]
+  finalReport?: {
+    id: string
+    approvalStatus: ApprovalStatus
+    submittedAt?: string
+    summary?: string
+    answers?: FinalReportAnswer[]
+    attachments?: FinalReportAttachment[]
+  }
 }
 
 // ─── Bids ─────────────────────────────────────────────────────────────────────

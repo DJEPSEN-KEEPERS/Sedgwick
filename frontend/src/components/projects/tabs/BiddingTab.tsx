@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Star, Plus, X, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Star, Plus, X, CheckCircle2, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -26,7 +26,7 @@ export function BiddingTab({ projectId }: { projectId: string }) {
     useApi<Bid[]>(`/projects/${projectId}/bids`)
 
   const { mutate: invite } = useMutation('post')
-  const { mutate: cancelInvite } = useMutation('delete')
+  const { mutate: cancelInvite, error: cancelError, } = useMutation('delete')
   const { mutate: selectBid, loading: selecting } = useMutation('post')
   const [expandedBid, setExpandedBid] = useState<string | null>(null)
   const [confirmSelect, setConfirmSelect] = useState<string | null>(null)
@@ -112,6 +112,12 @@ export function BiddingTab({ projectId }: { projectId: string }) {
         <h3 className="text-sm font-display font-semibold text-gray-900 mb-3">
           Inviterede ({invitations?.length ?? 0})
         </h3>
+        {cancelError && (
+          <div className="mb-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{cancelError}</span>
+          </div>
+        )}
         {invLoading ? <Skeleton count={2} /> : !invitations?.length ? (
           <Empty message="Ingen invitationer endnu" />
         ) : (
@@ -139,13 +145,24 @@ export function BiddingTab({ projectId }: { projectId: string }) {
                       {inv.respondedAt ? formatDateTime(inv.respondedAt) : '—'}
                     </td>
                     <td className="px-4 py-2.5">
-                      <button
-                        onClick={() => handleCancelInvite(inv.id)}
-                        className="text-gray-400 hover:text-danger transition-colors"
-                        title="Annuller invitation"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                      {inv.bid ? (
+                        <span
+                          className="text-gray-300 cursor-not-allowed"
+                          title={inv.bid.isSelected
+                            ? 'Kan ikke annulleres – tilbuddet er valgt'
+                            : 'Kan ikke annulleres – der er afgivet tilbud'}
+                        >
+                          <X className="h-4 w-4" />
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleCancelInvite(inv.id)}
+                          className="text-gray-400 hover:text-danger transition-colors"
+                          title="Annuller invitation"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
