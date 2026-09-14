@@ -179,7 +179,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
                 </select>
               </div>
               <div>
-                <Label>Frist (SLA-deadline)</Label>
+                <Label>Frist (tilbuds-deadline)</Label>
                 <Input className="mt-1" type="date" value={form.requestedDeadline} onChange={set('requestedDeadline')} />
               </div>
               <div>
