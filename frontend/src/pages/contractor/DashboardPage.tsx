@@ -186,7 +186,7 @@ export default function ContractorDashboard() {
                   {job.requestedDeadline && (
                     <p className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                       <Clock className="h-3 w-3" />
-                      {t('common.deadline')}: {formatDate(job.requestedDeadline)}
+                      Tilbudsfrist: {formatDate(job.requestedDeadline)}
                     </p>
                   )}
                 </div>

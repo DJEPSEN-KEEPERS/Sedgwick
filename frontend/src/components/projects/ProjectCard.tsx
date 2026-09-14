@@ -37,7 +37,7 @@ export function ProjectCard({ project, linkPrefix = '/sedgwick' }: ProjectCardPr
             {project.requestedDeadline && (
               <div className="flex items-center gap-1.5 text-sm text-gray-600">
                 <Calendar className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                <span>Frist: {formatDate(project.requestedDeadline)}</span>
+                <span>Tilbudsfrist: {formatDate(project.requestedDeadline)}</span>
               </div>
             )}
             <div className="flex items-center gap-1.5 text-sm text-gray-600">

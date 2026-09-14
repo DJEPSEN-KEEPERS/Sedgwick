@@ -414,7 +414,7 @@ export default function ProjectsPage() {
             <FilterSelect label="Håndværker" value={filters.contractor} onChange={(v) => setFilters((f) => ({ ...f, contractor: v }))}>
               {options.contractors.map((v) => <option key={v} value={v}>{v}</option>)}
             </FilterSelect>
-            <FilterSelect label="SLA" value={filters.sla} onChange={(v) => setFilters((f) => ({ ...f, sla: v as Filters['sla'] }))}>
+            <FilterSelect label="Tilbudsfrist" value={filters.sla} onChange={(v) => setFilters((f) => ({ ...f, sla: v as Filters['sla'] }))}>
               <option value="at_risk">I risiko (&lt;7 dage)</option>
               <option value="breached">Overskredet</option>
             </FilterSelect>
@@ -490,7 +490,7 @@ function ProjectsTable({
     { key: 'currentMilestone', label: 'Status' },
     { key: 'responsibleUserId', label: 'Ansvarlig' },
     { key: 'selectedContractorId', label: 'Håndværker' },
-    { key: 'requestedDeadline', label: 'SLA' },
+    { key: 'requestedDeadline', label: 'Tilbudsfrist' },
     { key: 'updatedAt', label: 'Opdateret', sortable: true },
   ]
 
@@ -575,7 +575,7 @@ function FilterSelect({ label, value, onChange, children }: {
 function SlaCell({ deadline }: { deadline?: string }) {
   if (!deadline) return <span className="text-xs text-gray-400">—</span>
   const daysLeft = Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000)
-  if (daysLeft < 0) return <Badge variant="danger">Brud</Badge>
+  if (daysLeft < 0) return <Badge variant="danger">Overskredet</Badge>
   if (daysLeft <= 7) return <Badge variant="warning">{daysLeft}d</Badge>
   return <Badge variant="success">OK</Badge>
 }
