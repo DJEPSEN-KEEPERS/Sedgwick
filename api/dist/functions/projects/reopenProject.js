@@ -22,6 +22,14 @@ async function reopenProjectHandler(req, context) {
             where: { id: projectId },
             data: { status: 'ACTIVE' },
         });
+        // Increment workload for the assigned contractor if the project is not already at a terminal milestone
+        const TERMINAL_MILESTONES = ['CASE_INVOICED', 'CASE_CLOSED'];
+        if (existing.selectedContractorId && !TERMINAL_MILESTONES.includes(existing.currentMilestone ?? '')) {
+            await prisma_1.prisma.contractor.updateMany({
+                where: { id: existing.selectedContractorId },
+                data: { currentWorkload: { increment: 1 } },
+            });
+        }
         await (0, auditLog_1.writeAuditLog)({
             userId: jwtUser.sub,
             entityType: 'Project',

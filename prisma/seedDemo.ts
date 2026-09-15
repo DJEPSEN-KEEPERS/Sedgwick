@@ -116,7 +116,7 @@ async function main() {
         contactPhone: def.contactPhone,
         description: def.description,
         maxParallelProjects: 8,
-        currentWorkload: 3,
+        currentWorkload: 0,
         sedgwickRatingAvg: def.rating,
         clientRatingAvg: def.rating - 0.2,
         regions: { create: [{ regionName: def.region }] },

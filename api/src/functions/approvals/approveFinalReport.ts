@@ -38,10 +38,18 @@ async function approveFinalReportHandler(req: HttpRequest, context: InvocationCo
       const approved = allRelevant.filter((e) => e.finalReport?.approvalStatus === 'APPROVED').length
 
       if (approved === total && total > 0) {
-        await tx.project.update({
+        const project = await tx.project.update({
           where: { id: projectId },
           data: { currentMilestone: 'CASE_INVOICED', progressPercent: 100 },
+          select: { selectedContractorId: true, currentMilestone: true },
         })
+        // Decrement workload — project just reached a terminal milestone
+        if (project.selectedContractorId) {
+          await tx.contractor.updateMany({
+            where: { id: project.selectedContractorId, currentWorkload: { gt: 0 } },
+            data: { currentWorkload: { decrement: 1 } },
+          })
+        }
       }
 
       return { approved: result, approvedCount: approved, totalRelevant: total }

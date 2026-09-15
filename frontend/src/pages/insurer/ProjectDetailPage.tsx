@@ -129,7 +129,7 @@ function InsurerOverviewTab({ project }: { project: Project }) {
         <CardContent className="p-4 pt-0 space-y-2">
           <Row label="Oprettet" value={formatDate(project.createdAt)} />
           {project.requestedStartDate && <Row label="Ønsket start" value={formatDate(project.requestedStartDate)} />}
-          {project.requestedDeadline && <Row label="Frist" value={formatDate(project.requestedDeadline)} />}
+          {project.requestedDeadline && <Row label="Tilbudsfrist" value={formatDate(project.requestedDeadline)} />}
           {project.finalCompletionDate && <Row label="Afsluttet" value={formatDate(project.finalCompletionDate)} />}
         </CardContent>
       </Card>

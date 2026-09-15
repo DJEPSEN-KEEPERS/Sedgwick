@@ -22,7 +22,6 @@ export function OverviewTab({ project, onProjectUpdate }: { project: Project; on
             <Row label="Forsikrings sags-ID" value={project.insurerCaseId} mono />
             <Row label="Skadetype" value={project.damageType} />
             <Row label="Bygningstype" value={project.buildingType} />
-            {project.slaCategory && <Row label="SLA-kategori" value={project.slaCategory} />}
             {project.maxApprovedPrice !== undefined && (
               <Row label="Maks godkendt pris" value={formatCurrency(project.maxApprovedPrice)} />
             )}
@@ -68,7 +67,7 @@ export function OverviewTab({ project, onProjectUpdate }: { project: Project; on
             {project.requestedStartDate && <Row label="Ønsket start" value={formatDate(project.requestedStartDate)} />}
             {project.requestedDeadline && (
               <div className="flex items-start justify-between text-sm">
-                <span className="text-gray-500 text-xs font-display">Frist</span>
+                <span className="text-gray-500 text-xs font-display">Tilbudsfrist</span>
                 <DeadlineValue deadline={project.requestedDeadline} />
               </div>
             )}

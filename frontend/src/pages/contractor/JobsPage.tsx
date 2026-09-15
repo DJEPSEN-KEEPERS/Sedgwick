@@ -108,7 +108,7 @@ function JobCard({ job, onClick }: { job: Project; onClick: () => void }) {
       {job.requestedDeadline && (
         <p className="flex items-center gap-1 text-xs text-gray-400">
           <Clock className="h-3 w-3" />
-          Frist: {formatDate(job.requestedDeadline)}
+          Tilbudsfrist: {formatDate(job.requestedDeadline)}
         </p>
       )}
     </button>

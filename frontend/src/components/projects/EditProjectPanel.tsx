@@ -268,21 +268,13 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
                 onChange={set('maxApprovedPrice')}
               />
             </Field>
-            <Field label="SLA-kategori">
-              <input
-                type="text"
-                className="input-field w-full text-sm"
-                value={form.slaCategory}
-                onChange={set('slaCategory')}
-              />
-            </Field>
           </Section>
 
           <Section title="Datoer">
             <Field label="Ønsket startdato">
               <input type="date" className="input-field w-full text-sm" value={form.requestedStartDate} onChange={set('requestedStartDate')} />
             </Field>
-            <Field label="Frist">
+            <Field label="Tilbudsfrist">
               <input type="date" className="input-field w-full text-sm" value={form.requestedDeadline} onChange={set('requestedDeadline')} />
             </Field>
           </Section>

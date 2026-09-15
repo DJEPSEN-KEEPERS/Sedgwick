@@ -73,9 +73,12 @@ async function updateProjectHandler(req, context) {
                 });
             }
         }
-        // Decrement workload when a case is closed — only on the actual transition to avoid double-counting
-        if (body.currentMilestone === 'CASE_CLOSED' &&
-            existing.currentMilestone !== 'CASE_CLOSED' &&
+        // Decrement workload when a case reaches a terminal milestone (CASE_INVOICED or CASE_CLOSED).
+        // Guard against double-decrement: only fire when the previous milestone was not already terminal.
+        const TERMINAL_MILESTONES = ['CASE_INVOICED', 'CASE_CLOSED'];
+        if (body.currentMilestone !== undefined &&
+            TERMINAL_MILESTONES.includes(body.currentMilestone) &&
+            !TERMINAL_MILESTONES.includes(existing.currentMilestone ?? '') &&
             existing.selectedContractorId) {
             await prisma_1.prisma.contractor.updateMany({
                 where: { id: existing.selectedContractorId, currentWorkload: { gt: 0 } },
