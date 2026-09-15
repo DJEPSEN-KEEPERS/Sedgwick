@@ -88,7 +88,7 @@ async function main() {
       contactPhone: '+45 40 12 34 56',
       description: 'Specialiseret i vandskader og genopbygning',
       maxParallelProjects: 8,
-      currentWorkload: 3,
+      currentWorkload: 0,
       sedgwickRatingAvg: 4.7,
       clientRatingAvg: 4.5,
       regions: {
