@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
-import { Briefcase, ChevronRight, Clock, CheckCircle2 } from 'lucide-react'
+import { Briefcase, CheckCircle2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { Progress } from '@/components/ui/progress'
 import { getEntrepriseTypeLabel, formatDate } from '@/lib/utils'
 import type { Project, EntrepriseType } from '@/types'
+import { cn } from '@/lib/utils'
 
 type Tab = 'active' | 'completed'
 
@@ -22,11 +22,14 @@ export default function JobsPage() {
   const displayed = tab === 'active' ? active : completed
 
   return (
-    <div className="p-4 space-y-4">
-      <h1 className="text-xl font-display font-bold text-gray-900">{t('jobs.title')}</h1>
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-display font-bold text-gray-900">{t('jobs.title')}</h1>
+        <span className="text-sm text-gray-500">{displayed.length} sager</span>
+      </div>
 
       {/* Tabs */}
-      <div className="flex rounded-lg bg-gray-100 p-0.5 gap-0.5">
+      <div className="flex gap-2 mb-4">
         {([
           { key: 'active', label: t('common.active'), count: active.length },
           { key: 'completed', label: t('projects.milestones.WORK_COMPLETED'), count: completed.length },
@@ -34,20 +37,22 @@ export default function JobsPage() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 rounded-md py-2 text-xs font-display font-semibold transition-colors ${
+            className={cn(
+              'px-3 py-1.5 rounded-full text-xs font-display font-medium border transition-colors',
               tab === key
-                ? 'bg-white shadow-sm text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+                ? 'bg-primary-600 border-primary-600 text-white'
+                : 'bg-white border-[#e5e7eb] text-gray-600 hover:border-primary-400',
+            )}
           >
-            {label} {count > 0 && <span className="ml-1 text-[10px] text-gray-400">({count})</span>}
+            {label}
+            {count > 0 && <span className="ml-1.5 text-[10px] opacity-75">({count})</span>}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="space-y-3 animate-pulse">
-          {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-gray-200 rounded-xl" />)}
+        <div className="space-y-2 animate-pulse">
+          {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-200 rounded" />)}
         </div>
       ) : displayed.length === 0 ? (
         <EmptyState
@@ -56,61 +61,56 @@ export default function JobsPage() {
           description={tab === 'active' ? t('jobs.noJobs') : undefined}
         />
       ) : (
-        <div className="space-y-3">
-          {displayed.map((job) => (
-            <JobCard key={job.id} job={job} onClick={() => navigate(`/contractor/jobs/${job.id}`)} />
-          ))}
+        <div className="rounded-lg border border-[#e5e7eb] bg-white shadow-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#e5e7eb] bg-gray-50">
+                  {['Sag ID', 'Adresse', 'Skadetype', 'Status', 'Entrepriser', 'Tilbudsfrist'].map((h) => (
+                    <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {displayed.map((job) => {
+                  const myEntreprises = (job as any).entreprises ?? []
+                  return (
+                    <tr
+                      key={job.id}
+                      className="border-b border-[#e5e7eb] hover:bg-gray-50 cursor-pointer"
+                      onClick={() => navigate(`/contractor/jobs/${job.id}`)}
+                    >
+                      <td className="px-4 py-2.5 font-mono text-xs font-medium text-primary-700">{job.claimId}</td>
+                      <td className="px-4 py-2.5 text-xs text-gray-600">
+                        <div>{job.address}</div>
+                        <div className="text-gray-400">{job.postalCode} {job.city}</div>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs text-gray-600">{job.damageType}</td>
+                      <td className="px-4 py-2.5"><MilestoneBadge milestone={job.currentMilestone} /></td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex flex-wrap gap-1">
+                          {myEntreprises.map((e: any) => (
+                            <span key={e.id} className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary-700 font-medium">
+                              {getEntrepriseTypeLabel(e.type as EntrepriseType)}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs">
+                        {job.requestedDeadline ? (
+                          <span className={new Date(job.requestedDeadline) < new Date() ? 'text-red-600 font-medium' : 'text-gray-500'}>
+                            {formatDate(job.requestedDeadline)}
+                          </span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
-  )
-}
-
-function JobCard({ job, onClick }: { job: Project; onClick: () => void }) {
-  const myEntreprises = (job as any).entreprises ?? []
-
-  return (
-    <button
-      onClick={onClick}
-      className="w-full rounded-xl border border-[#e5e7eb] bg-white p-4 text-left hover:border-primary-300 transition-colors active:scale-[0.99] space-y-3"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="font-mono text-xs font-semibold text-primary-700">{job.claimId}</span>
-            <MilestoneBadge milestone={job.currentMilestone} />
-          </div>
-          <p className="text-sm font-display font-semibold text-gray-900 truncate">
-            {job.address}, {job.city}
-          </p>
-          <p className="text-xs text-gray-500">{job.damageType}</p>
-        </div>
-        <ChevronRight className="h-4 w-4 text-gray-400 shrink-0 mt-1" />
-      </div>
-
-      {/* Progress */}
-      <div className="flex items-center gap-2">
-        <Progress value={job.progressPercent} className="h-1.5 flex-1" />
-        <span className="text-xs text-gray-500 w-8 text-right">{job.progressPercent}%</span>
-      </div>
-
-      {/* Entreprises */}
-      {myEntreprises.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {myEntreprises.map((e: any) => (
-            <span key={e.id} className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary-700 font-medium">
-              {getEntrepriseTypeLabel(e.type as EntrepriseType)}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {job.requestedDeadline && (
-        <p className="flex items-center gap-1 text-xs text-gray-400">
-          <Clock className="h-3 w-3" />
-          Tilbudsfrist: {formatDate(job.requestedDeadline)}
-        </p>
-      )}
-    </button>
   )
 }

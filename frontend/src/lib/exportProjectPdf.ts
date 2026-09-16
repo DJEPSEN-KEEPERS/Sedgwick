@@ -11,7 +11,7 @@ function cur(amount?: number | null): string {
 }
 
 const MILESTONE_LABELS: Record<string, string> = {
-  CASE_RECEIVED: 'Sag modtaget',
+  CASE_RECEIVED: 'Sag oprettet',
   BIDDING_IN_PROGRESS: 'Tilbud i gang',
   CONTRACTOR_SELECTED: 'Håndværker valgt',
   WORK_SCHEDULED: 'Arbejde planlagt',

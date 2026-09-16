@@ -48,15 +48,15 @@ export default function InvitationsPage() {
   const responded = invitations?.filter((i) => i.status !== 'PENDING') ?? []
 
   return (
-    <div className="p-4 space-y-5">
-      <div>
-        <h1 className="text-xl font-display font-bold text-gray-900">Invitationer</h1>
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-display font-bold text-gray-900">Invitationer</h1>
         <p className="text-sm text-gray-500 mt-0.5">Sager du er inviteret til at byde på</p>
       </div>
 
       {loading ? (
         <div className="space-y-3 animate-pulse">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-36 bg-gray-200 rounded-xl" />)}
+          {[...Array(3)].map((_, i) => <div key={i} className="h-36 bg-gray-200 rounded-lg" />)}
         </div>
       ) : !invitations?.length ? (
         <EmptyState
@@ -124,7 +124,7 @@ function InvitationCard({
   const hasBid = !!invitation.bid
 
   return (
-    <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden">
+    <div className="rounded-lg border border-[#e5e7eb] bg-white overflow-hidden shadow-card">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-[#e5e7eb]">
         <span className="font-mono text-xs font-semibold text-primary-700">{project?.claimId}</span>

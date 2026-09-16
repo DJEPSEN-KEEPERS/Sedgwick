@@ -50,6 +50,14 @@ async function inviteContractorHandler(req: HttpRequest, context: InvocationCont
       },
     })
 
+    // Advance milestone to BIDDING_IN_PROGRESS on first invitation
+    if (project.currentMilestone === 'CASE_RECEIVED') {
+      await prisma.project.update({
+        where: { id: projectId },
+        data: { currentMilestone: 'BIDDING_IN_PROGRESS' },
+      })
+    }
+
     await writeAuditLog({
       userId: jwtUser.sub,
       entityType: 'BidInvitation',

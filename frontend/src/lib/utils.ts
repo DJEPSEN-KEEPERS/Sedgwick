@@ -64,7 +64,7 @@ export function getEntrepriseTypeLabel(type: EntrepriseType): string {
 
 export function getProjectMilestoneLabel(milestone: ProjectMilestone): string {
   const labels: Record<ProjectMilestone, string> = {
-    CASE_RECEIVED: 'Sag modtaget',
+    CASE_RECEIVED: 'Sag oprettet',
     BIDDING_IN_PROGRESS: 'Tilbud indhentes',
     CONTRACTOR_SELECTED: 'Håndværker valgt',
     WORK_SCHEDULED: 'Arbejde planlagt',

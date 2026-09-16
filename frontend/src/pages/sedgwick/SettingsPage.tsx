@@ -204,11 +204,15 @@ function UsersTab() {
     if (result) { setConfirmDeleteId(null); setCanDeactivateId(null); refetch() }
   }
 
-  // Build association options from loaded data
-  const associationOptions = [
-    ...(insurers ?? []).map((c) => ({ value: `insurer:${c.id}`, label: c.name })),
-    ...(contractors ?? []).map((c) => ({ value: `contractor:${c.id}`, label: c.companyName })),
-  ]
+  // Association options depend on selected role
+  const associationOptions = filterRole === 'INSURER_USER'
+    ? (insurers ?? []).map((c) => ({ value: `insurer:${c.id}`, label: c.name }))
+    : filterRole === 'CONTRACTOR_USER'
+      ? (contractors ?? []).map((c) => ({ value: `contractor:${c.id}`, label: c.companyName }))
+      : [
+          ...(insurers ?? []).map((c) => ({ value: `insurer:${c.id}`, label: c.name })),
+          ...(contractors ?? []).map((c) => ({ value: `contractor:${c.id}`, label: c.companyName })),
+        ]
 
   const filteredUsers = (users ?? []).filter((u) => {
     if (filterRole && u.role !== filterRole) return false
@@ -303,46 +307,48 @@ function UsersTab() {
         </Card>
       )}
 
-      {/* Filter bar */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <select
-          className="input-field text-sm h-9 pr-8"
-          value={filterRole}
-          onChange={(e) => setFilterRole(e.target.value)}
-        >
-          <option value="">Alle roller</option>
-          {Object.entries(ROLE_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
-          ))}
-        </select>
-        <select
-          className="input-field text-sm h-9 pr-8 min-w-[180px]"
-          value={filterAssociation}
-          onChange={(e) => setFilterAssociation(e.target.value)}
-        >
-          <option value="">Alle tilknytninger</option>
-          {associationOptions.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-        <select
-          className="input-field text-sm h-9 pr-8"
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
-          <option value="">Alle statusser</option>
-          <option value="ACTIVE">{t('common.active')}</option>
-          <option value="INACTIVE">{t('common.inactive')}</option>
-          <option value="SUSPENDED">Suspenderet</option>
-        </select>
-        {(filterRole || filterAssociation || filterStatus) && (
-          <button
-            className="text-xs text-gray-500 hover:text-gray-700 underline"
-            onClick={() => { setFilterRole(''); setFilterAssociation(''); setFilterStatus('') }}
-          >
-            Nulstil filter
-          </button>
-        )}
+      {/* Filter panel */}
+      <div className="bg-white border border-[#e5e7eb] rounded-lg p-4 mb-4 shadow-card">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <div>
+            <label className="label">Rolle</label>
+            <select className="input-field text-sm" value={filterRole}
+              onChange={(e) => { setFilterRole(e.target.value); setFilterAssociation('') }}>
+              <option value="">Alle</option>
+              {Object.entries(ROLE_LABELS).map(([v, l]) => (
+                <option key={v} value={v}>{l}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Tilknytning</label>
+            <select className="input-field text-sm" value={filterAssociation}
+              onChange={(e) => setFilterAssociation(e.target.value)}>
+              <option value="">Alle</option>
+              {associationOptions.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Status</label>
+            <select className="input-field text-sm" value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="">Alle</option>
+              <option value="ACTIVE">{t('common.active')}</option>
+              <option value="INACTIVE">{t('common.inactive')}</option>
+              <option value="SUSPENDED">Suspenderet</option>
+            </select>
+          </div>
+          {(filterRole || filterAssociation || filterStatus) && (
+            <div className="flex items-end">
+              <button className="text-sm text-gray-500 hover:text-gray-700"
+                onClick={() => { setFilterRole(''); setFilterAssociation(''); setFilterStatus('') }}>
+                Nulstil
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
