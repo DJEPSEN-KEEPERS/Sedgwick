@@ -21,15 +21,9 @@ async function getSignedUrlHandler(req, context) {
             }
         }
         const expiresOn = new Date(Date.now() + 60 * 60 * 1000);
-        // generateBlobSASQueryParameters requires a StorageSharedKeyCredential — can't use connection string here.
-        const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
-        const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
-        if (!accountName || !accountKey) {
-            return { status: 500, jsonBody: { error: 'Azure Storage er ikke konfigureret med account key (kræves til signerede URL\'er)' } };
-        }
+        const sharedKeyCredential = (0, blobStorage_1.getSharedKeyCredential)();
         const blobUrlObj = new URL(file.blobUrl);
         const blobName = blobUrlObj.pathname.replace(`/${blobStorage_1.CONTAINER}/`, '');
-        const sharedKeyCredential = new storage_blob_1.StorageSharedKeyCredential(accountName, accountKey);
         const sasToken = (0, storage_blob_1.generateBlobSASQueryParameters)({
             containerName: blobStorage_1.CONTAINER,
             blobName,

@@ -183,16 +183,25 @@ function InvitationCard({
             </p>
             <div className="flex flex-wrap gap-1">
               {project.attachments.map((f: any) => (
-                <a
+                <button
                   key={f.id}
-                  href={f.blobUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('accessToken') ?? ''
+                      const res = await fetch(`/api/files/${f.id}/signed-url`, {
+                        headers: { 'X-Auth-Token': token },
+                      })
+                      const { url } = res.ok ? await res.json() : {}
+                      window.open(url ?? f.blobUrl, '_blank', 'noopener,noreferrer')
+                    } catch {
+                      window.open(f.blobUrl, '_blank', 'noopener,noreferrer')
+                    }
+                  }}
                   className="inline-block rounded border border-primary-200 bg-primary-50 px-2 py-0.5 text-xs text-primary-700 hover:bg-primary-100 truncate max-w-[180px]"
                   title={f.fileName}
                 >
                   {f.fileName}
-                </a>
+                </button>
               ))}
             </div>
           </div>
