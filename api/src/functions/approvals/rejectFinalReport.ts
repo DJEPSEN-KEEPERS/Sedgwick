@@ -2,6 +2,7 @@ import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } 
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
+import { notifyFinalReportReviewed } from '../../lib/notificationService'
 
 async function rejectFinalReportHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -10,7 +11,10 @@ async function rejectFinalReportHandler(req: HttpRequest, context: InvocationCon
 
     const { reportId } = req.params
 
-    const report = await prisma.finalReport.findUnique({ where: { id: reportId } })
+    const report = await prisma.finalReport.findUnique({
+      where: { id: reportId },
+      include: { entreprise: { select: { projectId: true } } },
+    })
     if (!report) return { status: 404, jsonBody: { error: 'Slutrapport ikke fundet' } }
     if (report.approvalStatus !== 'PENDING') {
       return { status: 409, jsonBody: { error: 'Slutrapport er allerede behandlet' } }
@@ -22,6 +26,12 @@ async function rejectFinalReportHandler(req: HttpRequest, context: InvocationCon
     })
 
     await writeAuditLog({ userId: jwtUser.sub, entityType: 'FinalReport', entityId: reportId, action: 'REJECT' })
+
+    const project = await prisma.project.findUnique({
+      where: { id: report.entreprise.projectId },
+      select: { claimId: true },
+    })
+    if (project) await notifyFinalReportReviewed(report.submittedByUserId, false, project.claimId)
 
     return { status: 200, jsonBody: { data: rejected } }
   } catch (err) {

@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const functions_1 = require("@azure/functions");
 const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
+const notificationService_1 = require("../../lib/notificationService");
 async function submitBidHandler(req, context) {
     try {
         const jwtUser = (0, authMiddleware_1.authenticate)(req);
@@ -45,6 +46,9 @@ async function submitBidHandler(req, context) {
             }));
             await Promise.all(updates);
         }
+        const project = await prisma_1.prisma.project.findUnique({ where: { id: body.projectId }, select: { claimId: true } });
+        if (project)
+            await (0, notificationService_1.notifyInsurerBidReceived)(body.projectId, project.claimId);
         return { status: 201, jsonBody: bid };
     }
     catch (err) {

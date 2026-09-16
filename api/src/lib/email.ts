@@ -23,6 +23,66 @@ const ROLE_LABEL: Record<string, string> = {
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+export interface NotificationEmailParams {
+  toEmail:  string
+  fullName: string
+  title:    string
+  message:  string
+}
+
+/**
+ * Send a notification e-mail for a case event.
+ * Fire-and-forget — never throws.
+ */
+export function sendNotificationEmail(params: NotificationEmailParams): void {
+  if (!CONNECTION_STRING || !SENDER) return
+  _sendNotification(params).catch((err) =>
+    console.error('[email] Failed to send notification e-mail:', err),
+  )
+}
+
+async function _sendNotification(p: NotificationEmailParams): Promise<void> {
+  const client = new EmailClient(CONNECTION_STRING)
+  const message = {
+    senderAddress: SENDER,
+    recipients: { to: [{ address: p.toEmail, displayName: p.fullName }] },
+    content: {
+      subject: p.title + ' — Sedgwick Claims Management',
+      html: `<!DOCTYPE html>
+<html lang="da"><head><meta charset="UTF-8"/></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0"
+             style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+        <tr><td style="background:#1d3557;padding:24px 36px;">
+          <p style="margin:0;color:#fff;font-size:20px;font-weight:700;">Sedgwick Claims Management</p>
+        </td></tr>
+        <tr><td style="padding:28px 36px;">
+          <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#111827;">${p.title}</p>
+          <p style="margin:0 0 20px;font-size:14px;color:#374151;line-height:1.6;">${p.message}</p>
+          <table cellpadding="0" cellspacing="0">
+            <tr><td style="background:#1d3557;border-radius:6px;">
+              <a href="${APP_URL}" style="display:inline-block;padding:10px 24px;color:#fff;font-size:14px;font-weight:600;text-decoration:none;">
+                Åbn portalen →
+              </a>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:14px 36px;text-align:center;">
+          <p style="margin:0;font-size:11px;color:#9ca3af;">Automatisk genereret — svar venligst ikke på denne e-mail.</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`,
+      plainText: `${p.title}\n\n${p.message}\n\nÅbn portalen: ${APP_URL}`,
+    },
+  }
+  const poller = await client.beginSend(message)
+  await poller.pollUntilDone()
+}
+
 export interface PasswordResetEmailParams {
   toEmail:  string
   fullName: string

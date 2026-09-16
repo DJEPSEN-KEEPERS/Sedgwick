@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
-import { notifyStatusUpdateReviewed } from '../../lib/notificationService'
+import { notifyStatusUpdateReviewed, notifyInsurerStatusUpdateApproved } from '../../lib/notificationService'
 
 async function approveStatusUpdateHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -50,7 +50,10 @@ async function approveStatusUpdateHandler(req: HttpRequest, context: InvocationC
       where: { id: update.entreprise.projectId },
       select: { claimId: true },
     })
-    if (project) await notifyStatusUpdateReviewed(update.submittedByUserId, true, project.claimId)
+    if (project) {
+      await notifyStatusUpdateReviewed(update.submittedByUserId, true, project.claimId)
+      await notifyInsurerStatusUpdateApproved(update.entreprise.projectId, project.claimId)
+    }
 
     return { status: 200, jsonBody: { data: approved } }
   } catch (err) {

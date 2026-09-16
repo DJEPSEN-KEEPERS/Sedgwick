@@ -1,40 +1,109 @@
 import { prisma } from './prisma'
+import { sendNotificationEmail } from './email'
 
 interface CreateNotificationOptions {
   userId: string
   eventType: string
   title: string
   message: string
-  channel?: string
 }
 
+// Creates an IN_APP notification (if preference allows) and sends an email
+// via ACS (if the EMAIL preference is enabled and the user has an email address).
 export async function createNotification(opts: CreateNotificationOptions): Promise<void> {
   try {
-    // Check if user has disabled this notification type
-    const pref = await prisma.notificationPreference.findFirst({
-      where: {
-        userId: opts.userId,
-        channel: opts.channel ?? 'IN_APP',
-        eventType: opts.eventType,
-      },
+    const prefs = await prisma.notificationPreference.findMany({
+      where: { userId: opts.userId, eventType: opts.eventType },
     })
+    const isDisabled = (channel: string) =>
+      prefs.some((p) => p.channel === channel && !p.enabled)
 
-    if (pref && !pref.enabled) return
+    // IN_APP
+    if (!isDisabled('IN_APP')) {
+      await prisma.notification.create({
+        data: {
+          userId: opts.userId,
+          eventType: opts.eventType,
+          channel: 'IN_APP',
+          title: opts.title,
+          message: opts.message,
+          status: 'pending',
+        },
+      })
+    }
 
-    await prisma.notification.create({
-      data: {
-        userId: opts.userId,
-        eventType: opts.eventType,
-        channel: opts.channel ?? 'IN_APP',
-        title: opts.title,
-        message: opts.message,
-        status: 'pending',
-      },
-    })
+    // EMAIL
+    if (!isDisabled('EMAIL')) {
+      const user = await prisma.user.findUnique({
+        where: { id: opts.userId },
+        select: { email: true, fullName: true },
+      })
+      if (user) {
+        sendNotificationEmail({
+          toEmail: user.email,
+          fullName: user.fullName,
+          title: opts.title,
+          message: opts.message,
+        })
+      }
+    }
   } catch {
     // Notifications are best-effort — never throw
   }
 }
+
+// ── Insurer helpers ───────────────────────────────────────────────────────────
+
+async function notifyInsurerUsers(
+  projectId: string,
+  eventType: string,
+  title: string,
+  message: string,
+): Promise<void> {
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: {
+      insuranceCompany: {
+        select: {
+          users: { select: { userId: true } },
+        },
+      },
+    },
+  })
+  const userIds = project?.insuranceCompany?.users.map((u) => u.userId) ?? []
+  await Promise.all(
+    userIds.map((userId) => createNotification({ userId, eventType, title, message })),
+  )
+}
+
+export async function notifyInsurerBidReceived(projectId: string, claimId: string): Promise<void> {
+  await notifyInsurerUsers(
+    projectId,
+    'BID_RECEIVED',
+    'Nyt tilbud modtaget',
+    `Der er modtaget et nyt tilbud på sag ${claimId}.`,
+  )
+}
+
+export async function notifyInsurerStatusUpdateApproved(projectId: string, claimId: string): Promise<void> {
+  await notifyInsurerUsers(
+    projectId,
+    'STATUS_UPDATE',
+    'Statusopdatering godkendt',
+    `En statusopdatering på sag ${claimId} er godkendt af Sedgwick.`,
+  )
+}
+
+export async function notifyInsurerFinalReportApproved(projectId: string, claimId: string): Promise<void> {
+  await notifyInsurerUsers(
+    projectId,
+    'FINAL_REPORT_SUBMITTED',
+    'Slutrapport godkendt',
+    `Slutrapporten for sag ${claimId} er godkendt af Sedgwick.`,
+  )
+}
+
+// ── Contractor helpers ────────────────────────────────────────────────────────
 
 export async function notifyContractorBidSelected(contractorId: string, projectClaimId: string): Promise<void> {
   const users = await prisma.contractorUser.findMany({

@@ -1,6 +1,7 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
+import { notifyInsurerBidReceived } from '../../lib/notificationService'
 
 async function submitBidHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -58,6 +59,9 @@ async function submitBidHandler(req: HttpRequest, context: InvocationContext): P
       )
       await Promise.all(updates)
     }
+
+    const project = await prisma.project.findUnique({ where: { id: body.projectId }, select: { claimId: true } })
+    if (project) await notifyInsurerBidReceived(body.projectId, project.claimId)
 
     return { status: 201, jsonBody: bid }
   } catch (err) {
