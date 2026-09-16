@@ -5,7 +5,7 @@ import { Mail, MapPin, Calendar, Phone, CheckCircle, XCircle, ChevronRight, Pape
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
+import { PriorityBadge } from '@/components/ui/StatusBadges'
 import { formatDate, formatCurrency } from '@/lib/utils'
 import type { BidInvitation } from '@/types'
 
@@ -131,7 +131,6 @@ function InvitationCard({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-mono text-sm font-semibold text-primary-700">{p?.claimId}</span>
           {p?.priorityLevel && <PriorityBadge level={p.priorityLevel} />}
-          {p?.currentMilestone && <MilestoneBadge milestone={p.currentMilestone} />}
         </div>
         <Badge variant={STATUS_VARIANT[invitation.status] ?? 'gray'}>
           {STATUS_LABEL[invitation.status] ?? invitation.status}
@@ -146,8 +145,7 @@ function InvitationCard({
           {/* Sagsinformation */}
           <Section title="Sagsinformation">
             <Row label="Forsikringsselskab" value={p?.insuranceCompany?.name} />
-            {p?.insurancePolicyNumber && <Row label="Police-nr." value={p.insurancePolicyNumber} mono />}
-            {p?.insurerCaseId && <Row label="Forsikringens sags-ID" value={p.insurerCaseId} mono />}
+              {p?.insurerCaseId && <Row label="Forsikringens sags-ID" value={p.insurerCaseId} mono />}
             <Row label="Skadetype" value={p?.damageType} />
             <Row label="Bygningstype" value={p?.buildingType} />
           </Section>
