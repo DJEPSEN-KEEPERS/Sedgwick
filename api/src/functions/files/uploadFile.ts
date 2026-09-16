@@ -1,7 +1,7 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
-import { BlobServiceClient, StorageSharedKeyCredential } from '@azure/storage-blob'
 import { prisma } from '../../lib/prisma'
 import { authenticate, errorResponse } from '../../middleware/authMiddleware'
+import { getBlobServiceClient, CONTAINER } from '../../lib/blobStorage'
 import { randomUUID } from 'crypto'
 
 async function uploadFileHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
@@ -17,8 +17,10 @@ async function uploadFileHandler(req: HttpRequest, context: InvocationContext): 
     if (!project) return { status: 404, jsonBody: { error: 'Projekt ikke fundet' } }
 
     const contentType = req.headers.get('content-type') ?? 'application/octet-stream'
-    const fileName = req.headers.get('x-file-name') ?? `upload-${Date.now()}`
+    const rawName = req.headers.get('x-file-name') ?? `upload-${Date.now()}`
+    const fileName = decodeURIComponent(rawName)
     if (!req.body) return { status: 400, jsonBody: { error: 'Ingen fil modtaget' } }
+
     const chunks: Buffer[] = []
     for await (const chunk of req.body as unknown as AsyncIterable<Uint8Array>) {
       chunks.push(Buffer.from(chunk))
@@ -30,18 +32,9 @@ async function uploadFileHandler(req: HttpRequest, context: InvocationContext): 
       return { status: 413, jsonBody: { error: 'Filen overstiger maksimal størrelse på 50 MB' } }
     }
 
-    const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME!
-    const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY!
-    const containerName = process.env.AZURE_STORAGE_CONTAINER ?? 'sedgwick-files'
     const blobName = `projects/${projectId}/${randomUUID()}-${fileName}`
-
-    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey)
-    const blobServiceClient = new BlobServiceClient(
-      `https://${accountName}.blob.core.windows.net`,
-      sharedKeyCredential,
-    )
-    const containerClient = blobServiceClient.getContainerClient(containerName)
-    const blockBlobClient = containerClient.getBlockBlobClient(blobName)
+    const blobServiceClient = getBlobServiceClient()
+    const blockBlobClient = blobServiceClient.getContainerClient(CONTAINER).getBlockBlobClient(blobName)
 
     await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
       blobHTTPHeaders: { blobContentType: contentType },

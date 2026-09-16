@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const functions_1 = require("@azure/functions");
-const storage_blob_1 = require("@azure/storage-blob");
 const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
+const blobStorage_1 = require("../../lib/blobStorage");
 const crypto_1 = require("crypto");
 async function uploadBidAttachmentHandler(req, context) {
     try {
@@ -30,14 +30,9 @@ async function uploadBidAttachmentHandler(req, context) {
         if (fileSizeMb > 50) {
             return { status: 413, jsonBody: { error: 'Filen overstiger maksimal størrelse på 50 MB' } };
         }
-        const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
-        const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
-        const containerName = process.env.AZURE_STORAGE_CONTAINER ?? 'sedgwick-files';
         const blobName = `bids/${bidId}/${(0, crypto_1.randomUUID)()}-${fileName}`;
-        const sharedKeyCredential = new storage_blob_1.StorageSharedKeyCredential(accountName, accountKey);
-        const blobServiceClient = new storage_blob_1.BlobServiceClient(`https://${accountName}.blob.core.windows.net`, sharedKeyCredential);
-        const containerClient = blobServiceClient.getContainerClient(containerName);
-        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        const blobServiceClient = (0, blobStorage_1.getBlobServiceClient)();
+        const blockBlobClient = blobServiceClient.getContainerClient(blobStorage_1.CONTAINER).getBlockBlobClient(blobName);
         await blockBlobClient.upload(fileBuffer, fileBuffer.length, {
             blobHTTPHeaders: { blobContentType: contentType },
         });
