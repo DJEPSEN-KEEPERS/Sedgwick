@@ -22,10 +22,10 @@ export default function JobDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-4 space-y-4 animate-pulse">
+      <div className="space-y-4 animate-pulse">
         <div className="h-8 w-32 bg-gray-200 rounded" />
-        <div className="h-40 bg-gray-200 rounded-xl" />
-        <div className="h-60 bg-gray-200 rounded-xl" />
+        <div className="h-40 bg-gray-200 rounded" />
+        <div className="h-60 bg-gray-200 rounded" />
       </div>
     )
   }
@@ -35,20 +35,20 @@ export default function JobDetailPage() {
   const myEntreprises = project.entreprises ?? []
 
   return (
-    <div className="pb-4">
+    <div>
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-[#e5e7eb] px-4 py-3">
-        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-2">
+      <div className="mb-6">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 mb-3">
           <ArrowLeft className="h-4 w-4" />
           Tilbage
         </button>
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-1">
               <span className="font-mono text-xs font-semibold text-primary-700">{project.claimId}</span>
               <MilestoneBadge milestone={project.currentMilestone} />
             </div>
-            <h1 className="font-display font-bold text-gray-900 text-base mt-0.5 leading-tight">
+            <h1 className="text-2xl font-display font-bold text-gray-900">
               {project.address}, {project.city}
             </h1>
           </div>
@@ -56,7 +56,7 @@ export default function JobDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#e5e7eb] bg-white sticky top-[84px] z-10">
+      <div className="flex border-b border-[#e5e7eb] mb-6">
         {([
           { key: 'overview', label: 'Overblik' },
           { key: 'entreprises', label: 'Entrepriser' },
@@ -67,7 +67,7 @@ export default function JobDetailPage() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 py-3 text-xs font-display font-semibold border-b-2 transition-colors ${
+            className={`px-4 py-2.5 text-sm font-display font-medium border-b-2 transition-colors -mb-px ${
               tab === key
                 ? 'border-primary-600 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -78,7 +78,7 @@ export default function JobDetailPage() {
         ))}
       </div>
 
-      <div className="p-4">
+      <div>
         {tab === 'overview'    && <OverviewTab project={project} />}
         {tab === 'entreprises' && <EntreprisesTab projectId={project.id} allTypes />}
         {tab === 'planning'  && (
@@ -101,7 +101,7 @@ function OverviewTab({ project }: { project: Project }) {
   return (
     <div className="space-y-4">
       {/* Project info */}
-      <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 space-y-3">
+      <div className="rounded-lg border border-[#e5e7eb] bg-white p-4 space-y-3 shadow-card">
         <h3 className="font-display font-semibold text-sm text-gray-900">Sagsinfo</h3>
         <div className="space-y-2 text-sm">
           <div className="flex items-start gap-2 text-gray-600">
@@ -133,7 +133,7 @@ function OverviewTab({ project }: { project: Project }) {
         <div className="space-y-2">
           <h3 className="font-display font-semibold text-sm text-gray-900">Mine entrepriser</h3>
           {myEntreprises.map((e) => (
-            <div key={e.id} className="rounded-xl border border-[#e5e7eb] bg-white p-4 space-y-2">
+            <div key={e.id} className="rounded-lg border border-[#e5e7eb] bg-white p-4 space-y-2 shadow-card">
               <div className="flex items-center justify-between">
                 <span className="font-display font-semibold text-sm text-gray-900">
                   {getEntrepriseTypeLabel(e.type)}
@@ -163,7 +163,7 @@ function UpdatesTab({ entreprises, navigate }: { entreprises: any[]; navigate: R
         const canSubmit = e.currentMilestone !== 'SIGNED_OFF'
 
         return (
-          <div key={e.id} className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden">
+          <div key={e.id} className="rounded-lg border border-[#e5e7eb] bg-white overflow-hidden shadow-card">
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-[#e5e7eb]">
               <span className="font-display font-semibold text-sm text-gray-900">
                 {getEntrepriseTypeLabel(e.type as EntrepriseType)}
@@ -217,7 +217,7 @@ function ReportTab({ entreprises, navigate }: { entreprises: any[]; navigate: Re
         const canSubmit = e.currentMilestone === 'COMPLETED' || e.currentMilestone === 'IN_PROGRESS'
 
         return (
-          <div key={e.id} className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden">
+          <div key={e.id} className="rounded-lg border border-[#e5e7eb] bg-white overflow-hidden shadow-card">
             <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-[#e5e7eb]">
               <span className="font-display font-semibold text-sm text-gray-900">
                 {getEntrepriseTypeLabel(e.type as EntrepriseType)}

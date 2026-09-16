@@ -1,73 +1,41 @@
+import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, FolderOpen, MessageSquare, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/lib/utils'
-import { useCurrentUser } from '@/stores/authStore'
-import { getInitials } from '@/lib/utils'
-import { NotificationBell } from '@/components/ui/NotificationBell'
-import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher'
+import TopBar from './TopBar'
+import Sidebar from './Sidebar'
+import { LayoutDashboard, Briefcase, Mail, MessageSquare, User } from 'lucide-react'
 
 export default function ContractorLayout() {
   const { t } = useTranslation()
-  const user = useCurrentUser()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  const bottomNavItems = [
-    { to: '/contractor/dashboard', label: t('nav.home'), icon: LayoutDashboard },
-    { to: '/contractor/jobs', label: t('nav.jobs'), icon: FolderOpen },
-    { to: '/contractor/chat', label: t('nav.chat'), icon: MessageSquare },
-    { to: '/contractor/profile', label: t('nav.profile'), icon: User },
+  const navItems = [
+    { to: '/contractor/dashboard',   label: t('nav.home'),          icon: LayoutDashboard },
+    { to: '/contractor/jobs',        label: t('nav.jobs'),          icon: Briefcase },
+    { to: '/contractor/invitations', label: t('nav.invitations'),   icon: Mail },
+    { to: '/contractor/chat',        label: t('nav.chat'),          icon: MessageSquare },
+    { to: '/contractor/profile',     label: t('nav.profile'),       icon: User },
   ]
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#f4f6f9]">
-      {/* Mobile TopBar */}
-      <header className="flex h-14 items-center justify-between bg-primary-800 px-4 text-white shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="font-display font-bold text-lg tracking-tight">Sedgwick</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <LanguageSwitcher />
-          <NotificationBell />
-          <div
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-600 text-xs font-display font-semibold"
-            title={user.fullName}
-          >
-            {getInitials(user.fullName)}
+    <div className="flex h-screen overflow-hidden bg-[#f4f6f9]">
+      <Sidebar
+        navItems={navItems}
+        portalName={t('portal.contractor')}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        <TopBar
+          portalName={t('portal.contractor')}
+          onMenuClick={() => setSidebarOpen((v) => !v)}
+        />
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="mx-auto max-w-7xl px-4 py-4 lg:px-6 lg:py-6">
+            <Outlet />
           </div>
-        </div>
-      </header>
-
-      {/* Main scrollable area */}
-      <main className="flex-1 overflow-y-auto scrollbar-thin pb-16">
-        <Outlet />
-      </main>
-
-      {/* Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 flex h-16 items-center justify-around border-t border-gray-200 bg-white px-2 shadow-elevated z-50">
-        {bottomNavItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              cn(
-                'flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-xs font-display font-medium transition-colors',
-                isActive ? 'text-primary-600' : 'text-gray-500 hover:text-gray-700',
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <Icon
-                  className={cn('h-5 w-5', isActive ? 'text-primary-600' : 'text-gray-400')}
-                  strokeWidth={isActive ? 2.5 : 2}
-                />
-                {label}
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
+        </main>
+      </div>
     </div>
   )
 }
