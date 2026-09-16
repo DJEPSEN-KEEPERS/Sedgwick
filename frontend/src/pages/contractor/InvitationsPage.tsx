@@ -165,9 +165,9 @@ function InvitationCard({
           Skadesomfang: <span className="font-semibold text-gray-900">{project?.estimatedScope || '—'}</span>
         </div>
 
-        {project?.entreprises?.length > 0 && (
+        {project?.entreprises?.filter((e: any) => e.isRelevant).length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
-            {project.entreprises.map((e: any) => (
+            {project.entreprises.filter((e: any) => e.isRelevant).map((e: any) => (
               <span key={e.id} className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary-700 font-medium">
                 {ENTREPRISE_TYPE_DK[e.type] ?? e.type}
               </span>
