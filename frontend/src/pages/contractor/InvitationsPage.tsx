@@ -144,12 +144,10 @@ function InvitationCard({
           {project?.address}, {project?.city}
         </div>
 
-        {project?.requestedDeadline && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <Calendar className="h-3.5 w-3.5 shrink-0" />
-            Frist: {formatDate(project.requestedDeadline)}
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          Tilbudsfrist: {project?.requestedDeadline ? formatDate(project.requestedDeadline) : '—'}
+        </div>
 
         {project?.insuranceCompany?.name && (
           <div className="text-xs text-gray-500">
@@ -163,11 +161,9 @@ function InvitationCard({
           </div>
         )}
 
-        {project?.estimatedScope && (
-          <div className="text-xs text-gray-500">
-            Skadesomfang: <span className="font-semibold text-gray-900">{project.estimatedScope}</span>
-          </div>
-        )}
+        <div className="text-xs text-gray-500">
+          Skadesomfang: <span className="font-semibold text-gray-900">{project?.estimatedScope || '—'}</span>
+        </div>
 
         {project?.entreprises?.length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
