@@ -156,7 +156,7 @@
     "filters": "Filtre",
     "clearFilters": "Ryd filtre",
     "milestones": {
-      "CASE_RECEIVED": "Sag modtaget",
+      "CASE_RECEIVED": "Sag oprettet",
       "BIDDING_IN_PROGRESS": "Tilbud indhentes",
       "CONTRACTOR_SELECTED": "Håndværker valgt",
       "WORK_SCHEDULED": "Arbejde planlagt",

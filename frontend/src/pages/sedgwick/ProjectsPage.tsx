@@ -204,7 +204,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
 }
 
 const MILESTONES: { value: ProjectMilestone; label: string }[] = [
-  { value: 'CASE_RECEIVED', label: 'Sag modtaget' },
+  { value: 'CASE_RECEIVED', label: 'Sag oprettet' },
   { value: 'BIDDING_IN_PROGRESS', label: 'Tilbud indhentes' },
   { value: 'CONTRACTOR_SELECTED', label: 'Håndværker valgt' },
   { value: 'WORK_SCHEDULED', label: 'Arbejde planlagt' },
