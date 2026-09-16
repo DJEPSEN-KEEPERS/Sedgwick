@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '../../lib/prisma'
 import { authenticate, requireRoles, errorResponse } from '../../middleware/authMiddleware'
 import { writeAuditLog } from '../../lib/auditLog'
-import { notifyFinalReportReviewed } from '../../lib/notificationService'
+import { notifyFinalReportReviewed, notifyInsurerFinalReportApproved } from '../../lib/notificationService'
 
 async function approveFinalReportHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -50,7 +50,10 @@ async function approveFinalReportHandler(req: HttpRequest, context: InvocationCo
     await writeAuditLog({ userId: jwtUser.sub, entityType: 'FinalReport', entityId: reportId, action: 'APPROVE', newValue: { projectId, approvedCount, totalRelevant } })
 
     const project = await prisma.project.findUnique({ where: { id: projectId }, select: { claimId: true } })
-    if (project) await notifyFinalReportReviewed(report.submittedByUserId, true, project.claimId)
+    if (project) {
+      await notifyFinalReportReviewed(report.submittedByUserId, true, project.claimId)
+      await notifyInsurerFinalReportApproved(projectId, project.claimId)
+    }
 
     return { status: 200, jsonBody: { data: approved, approvedCount, totalRelevant } }
   } catch (err) {

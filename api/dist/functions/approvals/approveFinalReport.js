@@ -42,8 +42,10 @@ async function approveFinalReportHandler(req, context) {
         });
         await (0, auditLog_1.writeAuditLog)({ userId: jwtUser.sub, entityType: 'FinalReport', entityId: reportId, action: 'APPROVE', newValue: { projectId, approvedCount, totalRelevant } });
         const project = await prisma_1.prisma.project.findUnique({ where: { id: projectId }, select: { claimId: true } });
-        if (project)
+        if (project) {
             await (0, notificationService_1.notifyFinalReportReviewed)(report.submittedByUserId, true, project.claimId);
+            await (0, notificationService_1.notifyInsurerFinalReportApproved)(projectId, project.claimId);
+        }
         return { status: 200, jsonBody: { data: approved, approvedCount, totalRelevant } };
     }
     catch (err) {

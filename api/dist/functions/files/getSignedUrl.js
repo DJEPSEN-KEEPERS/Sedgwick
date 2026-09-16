@@ -4,6 +4,7 @@ const functions_1 = require("@azure/functions");
 const storage_blob_1 = require("@azure/storage-blob");
 const prisma_1 = require("../../lib/prisma");
 const authMiddleware_1 = require("../../middleware/authMiddleware");
+const blobStorage_1 = require("../../lib/blobStorage");
 async function getSignedUrlHandler(req, context) {
     try {
         const jwtUser = (0, authMiddleware_1.authenticate)(req);
@@ -19,16 +20,18 @@ async function getSignedUrlHandler(req, context) {
                 return { status: 403, jsonBody: { error: 'Ingen adgang' } };
             }
         }
+        const expiresOn = new Date(Date.now() + 60 * 60 * 1000);
+        // generateBlobSASQueryParameters requires a StorageSharedKeyCredential — can't use connection string here.
         const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME;
         const accountKey = process.env.AZURE_STORAGE_ACCOUNT_KEY;
-        const containerName = process.env.AZURE_STORAGE_CONTAINER ?? 'sedgwick-files';
-        // Extract blob name from the stored blobUrl path
+        if (!accountName || !accountKey) {
+            return { status: 500, jsonBody: { error: 'Azure Storage er ikke konfigureret med account key (kræves til signerede URL\'er)' } };
+        }
         const blobUrlObj = new URL(file.blobUrl);
-        const blobName = blobUrlObj.pathname.replace(`/${containerName}/`, '');
+        const blobName = blobUrlObj.pathname.replace(`/${blobStorage_1.CONTAINER}/`, '');
         const sharedKeyCredential = new storage_blob_1.StorageSharedKeyCredential(accountName, accountKey);
-        const expiresOn = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
         const sasToken = (0, storage_blob_1.generateBlobSASQueryParameters)({
-            containerName,
+            containerName: blobStorage_1.CONTAINER,
             blobName,
             permissions: storage_blob_1.BlobSASPermissions.parse('r'),
             expiresOn,

@@ -46,8 +46,10 @@ async function approveStatusUpdateHandler(req, context) {
             where: { id: update.entreprise.projectId },
             select: { claimId: true },
         });
-        if (project)
+        if (project) {
             await (0, notificationService_1.notifyStatusUpdateReviewed)(update.submittedByUserId, true, project.claimId);
+            await (0, notificationService_1.notifyInsurerStatusUpdateApproved)(update.entreprise.projectId, project.claimId);
+        }
         return { status: 200, jsonBody: { data: approved } };
     }
     catch (err) {
