@@ -144,12 +144,10 @@ function InvitationCard({
           {project?.address}, {project?.city}
         </div>
 
-        {project?.requestedDeadline && (
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
-            <Calendar className="h-3.5 w-3.5 shrink-0" />
-            Frist: {formatDate(project.requestedDeadline)}
-          </div>
-        )}
+        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+          <Calendar className="h-3.5 w-3.5 shrink-0" />
+          Tilbudsfrist: {project?.requestedDeadline ? formatDate(project.requestedDeadline) : '—'}
+        </div>
 
         {project?.insuranceCompany?.name && (
           <div className="text-xs text-gray-500">
@@ -163,15 +161,13 @@ function InvitationCard({
           </div>
         )}
 
-        {project?.estimatedScope && (
-          <div className="text-xs text-gray-500">
-            Skadesomfang: <span className="font-semibold text-gray-900">{project.estimatedScope}</span>
-          </div>
-        )}
+        <div className="text-xs text-gray-500">
+          Skadesomfang: <span className="font-semibold text-gray-900">{project?.estimatedScope || '—'}</span>
+        </div>
 
-        {project?.entreprises?.length > 0 && (
+        {project?.entreprises?.filter((e: any) => e.isRelevant).length > 0 && (
           <div className="flex flex-wrap gap-1 pt-1">
-            {project.entreprises.map((e: any) => (
+            {project.entreprises.filter((e: any) => e.isRelevant).map((e: any) => (
               <span key={e.id} className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary-700 font-medium">
                 {ENTREPRISE_TYPE_DK[e.type] ?? e.type}
               </span>
