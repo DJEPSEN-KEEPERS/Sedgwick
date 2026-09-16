@@ -129,6 +129,11 @@ function UsersTab() {
   const [deleteError, setDeleteError]                   = useState<Record<string, string>>({})
   const [canDeactivateId, setCanDeactivateId]           = useState<string | null>(null)
 
+  // Filters
+  const [filterRole, setFilterRole]           = useState('')
+  const [filterAssociation, setFilterAssociation] = useState('')
+  const [filterStatus, setFilterStatus]       = useState('')
+
   const resetCreate = () => {
     setFullName(''); setEmail(''); setRole('SEDGWICK_ADMIN')
     setPassword(''); setPhone(''); setInsurerId(''); setContractorId('')
@@ -198,6 +203,23 @@ function UsersTab() {
     const result = await deactivate(`/users/${id}`, { status: 'INACTIVE' })
     if (result) { setConfirmDeleteId(null); setCanDeactivateId(null); refetch() }
   }
+
+  // Build association options from loaded data
+  const associationOptions = [
+    ...(insurers ?? []).map((c) => ({ value: `insurer:${c.id}`, label: c.name })),
+    ...(contractors ?? []).map((c) => ({ value: `contractor:${c.id}`, label: c.companyName })),
+  ]
+
+  const filteredUsers = (users ?? []).filter((u) => {
+    if (filterRole && u.role !== filterRole) return false
+    if (filterStatus && u.status !== filterStatus) return false
+    if (filterAssociation) {
+      const [type, id] = filterAssociation.split(':')
+      if (type === 'insurer'    && u.insurerUser?.insuranceCompanyId !== id)    return false
+      if (type === 'contractor' && u.contractorUser?.contractorId    !== id)    return false
+    }
+    return true
+  })
 
   return (
     <div>
@@ -281,6 +303,48 @@ function UsersTab() {
         </Card>
       )}
 
+      {/* Filter bar */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <select
+          className="input-field text-sm h-9 pr-8"
+          value={filterRole}
+          onChange={(e) => setFilterRole(e.target.value)}
+        >
+          <option value="">Alle roller</option>
+          {Object.entries(ROLE_LABELS).map(([v, l]) => (
+            <option key={v} value={v}>{l}</option>
+          ))}
+        </select>
+        <select
+          className="input-field text-sm h-9 pr-8 min-w-[180px]"
+          value={filterAssociation}
+          onChange={(e) => setFilterAssociation(e.target.value)}
+        >
+          <option value="">Alle tilknytninger</option>
+          {associationOptions.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <select
+          className="input-field text-sm h-9 pr-8"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="">Alle statusser</option>
+          <option value="ACTIVE">{t('common.active')}</option>
+          <option value="INACTIVE">{t('common.inactive')}</option>
+          <option value="SUSPENDED">Suspenderet</option>
+        </select>
+        {(filterRole || filterAssociation || filterStatus) && (
+          <button
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
+            onClick={() => { setFilterRole(''); setFilterAssociation(''); setFilterStatus('') }}
+          >
+            Nulstil filter
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <div className="space-y-2 animate-pulse">
           {[...Array(5)].map((_, i) => <div key={i} className="h-12 bg-gray-200 rounded" />)}
@@ -297,10 +361,10 @@ function UsersTab() {
                 </tr>
               </thead>
               <tbody>
-                {(users ?? []).length === 0 ? (
+                {filteredUsers.length === 0 ? (
                   <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">{t('common.noResults')}</td></tr>
                 ) : (
-                  (users ?? []).map((u) =>
+                  filteredUsers.map((u) =>
                     editId === u.id ? (
                       // ── Edit row ──────────────────────────────────────────
                       <tr key={u.id} className="border-b border-[#e5e7eb] bg-primary-50">

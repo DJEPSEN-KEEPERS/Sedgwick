@@ -118,7 +118,7 @@ function OverviewTab({ project }: { project: Project }) {
           {project.requestedDeadline && (
             <div className="flex items-center gap-2 text-gray-600">
               <Clock className="h-4 w-4 shrink-0 text-gray-400" />
-              Frist: {formatDate(project.requestedDeadline)}
+              Tilbudsfrist: {formatDate(project.requestedDeadline)}
             </div>
           )}
         </div>

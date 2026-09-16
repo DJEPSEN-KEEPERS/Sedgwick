@@ -91,7 +91,7 @@ export default function ContractorProjectsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                  {['Sag ID', 'Adresse', 'Skadetype', 'Prioritet', 'Status', 'Fremgang', 'Entrepriser', 'Deadline'].map((h) => (
+                  {['Sag ID', 'Adresse', 'Skadetype', 'Prioritet', 'Status', 'Fremgang', 'Entrepriser', 'Tilbudsfrist'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
                   ))}
                 </tr>
