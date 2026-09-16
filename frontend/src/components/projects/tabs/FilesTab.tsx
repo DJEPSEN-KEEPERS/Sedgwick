@@ -217,6 +217,23 @@ function FileSection({ title, files, showGallery }: { title: string; files: File
 function FileRow({ file }: { file: FileRecord }) {
   const Icon = file.fileType.startsWith('video/') ? Video : file.fileType === 'application/pdf' ? FileText : FileArchive
 
+  const handleDownload = async () => {
+    try {
+      const token = localStorage.getItem('accessToken') ?? ''
+      const res = await fetch(`${BASE_URL}/files/${file.id}/signed-url`, {
+        headers: { 'X-Auth-Token': token },
+      })
+      if (res.ok) {
+        const { url } = await res.json()
+        window.open(url, '_blank', 'noopener,noreferrer')
+      } else {
+        window.open(file.blobUrl, '_blank', 'noopener,noreferrer')
+      }
+    } catch {
+      window.open(file.blobUrl, '_blank', 'noopener,noreferrer')
+    }
+  }
+
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50">
       <Icon className={`h-5 w-5 shrink-0 ${file.fileType === 'application/pdf' ? 'text-red-500' : 'text-gray-400'}`} />
@@ -227,16 +244,13 @@ function FileRow({ file }: { file: FileRecord }) {
       {file.isClientVisible && (
         <span className="text-xs bg-blue-50 text-blue-700 rounded px-1.5 py-0.5 shrink-0">Synlig for klient</span>
       )}
-      <a
-        href={file.blobUrl}
-        download={file.fileName}
-        target="_blank"
-        rel="noopener noreferrer"
+      <button
+        onClick={handleDownload}
         className="shrink-0 text-gray-400 hover:text-primary-600 transition-colors"
         title="Download"
       >
         <Download className="h-4 w-4" />
-      </a>
+      </button>
     </div>
   )
 }

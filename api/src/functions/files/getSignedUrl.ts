@@ -1,8 +1,8 @@
 import { app, type HttpRequest, type HttpResponseInit, type InvocationContext } from '@azure/functions'
-import { BlobSASPermissions, generateBlobSASQueryParameters, StorageSharedKeyCredential } from '@azure/storage-blob'
+import { BlobSASPermissions, generateBlobSASQueryParameters } from '@azure/storage-blob'
 import { prisma } from '../../lib/prisma'
 import { authenticate, errorResponse } from '../../middleware/authMiddleware'
-import { CONTAINER } from '../../lib/blobStorage'
+import { CONTAINER, getSharedKeyCredential } from '../../lib/blobStorage'
 
 async function getSignedUrlHandler(req: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> {
   try {
@@ -24,18 +24,11 @@ async function getSignedUrlHandler(req: HttpRequest, context: InvocationContext)
 
     const expiresOn = new Date(Date.now() + 60 * 60 * 1000)
 
-    // generateBlobSASQueryParameters requires a StorageSharedKeyCredential — can't use connection string here.
-    const accountName = process.env.AZURE_STORAGE_ACCOUNT_NAME
-    const accountKey  = process.env.AZURE_STORAGE_ACCOUNT_KEY
-
-    if (!accountName || !accountKey) {
-      return { status: 500, jsonBody: { error: 'Azure Storage er ikke konfigureret med account key (kræves til signerede URL\'er)' } }
-    }
+    const sharedKeyCredential = getSharedKeyCredential()
 
     const blobUrlObj = new URL(file.blobUrl)
     const blobName = blobUrlObj.pathname.replace(`/${CONTAINER}/`, '')
 
-    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey)
     const sasToken = generateBlobSASQueryParameters(
       {
         containerName: CONTAINER,
