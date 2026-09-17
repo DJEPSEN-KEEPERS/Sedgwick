@@ -10,12 +10,11 @@ export default function BidsOverviewPage() {
   const navigate = useNavigate()
   const { data: invitations, loading } = useApi<BidInvitation[]>('/contractor/invitations')
 
-  const accepted = (invitations ?? []).filter(
-    (inv) => inv.status === 'INTERESTED' && !inv.bid,
-  )
-  const submitted = (invitations ?? []).filter(
-    (inv) => inv.status === 'INTERESTED' && !!inv.bid,
-  )
+  // Hide invitations where the contractor's bid was selected (those appear under "Sager")
+  const visible = (invitations ?? []).filter((inv) => !(inv.bid as any)?.isSelected)
+
+  const accepted = visible.filter((inv) => inv.status === 'INTERESTED' && !inv.bid)
+  const submitted = visible.filter((inv) => inv.status === 'INTERESTED' && !!inv.bid)
 
   if (loading) {
     return (
@@ -31,7 +30,7 @@ export default function BidsOverviewPage() {
     )
   }
 
-  const hasAny = accepted.length > 0 || submitted.length > 0
+  const hasAny = visible.length > 0
 
   return (
     <div>
