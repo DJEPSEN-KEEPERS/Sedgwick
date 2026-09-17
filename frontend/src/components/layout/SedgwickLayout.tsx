@@ -8,7 +8,6 @@ import {
   FolderOpen,
   HardHat,
   Gavel,
-  CheckSquare,
   MessageSquare,
   Settings,
 } from 'lucide-react'
@@ -22,7 +21,6 @@ export default function SedgwickLayout() {
     { to: '/sedgwick/projects',    label: t('nav.projects'),    icon: FolderOpen },
     { to: '/sedgwick/contractors', label: t('nav.contractors'), icon: HardHat },
     { to: '/sedgwick/bids',        label: t('nav.bids'),        icon: Gavel },
-    { to: '/sedgwick/approvals',   label: t('nav.approvals'),   icon: CheckSquare },
     { to: '/sedgwick/messages',    label: t('nav.messages'),    icon: MessageSquare },
     { to: '/sedgwick/settings',    label: t('nav.settings'),    icon: Settings },
   ]
