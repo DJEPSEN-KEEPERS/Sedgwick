@@ -1,6 +1,6 @@
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Edit2, Archive, FileDown, X, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Edit2, Archive, FileDown, X, RefreshCw, Trash2 } from 'lucide-react'
 import { useApi, useMutation } from '@/hooks/useApi'
 import { Button } from '@/components/ui/button'
 import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
@@ -35,11 +35,13 @@ export default function ProjectDetailPage() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') ?? 'overview')
   const [confirmClose, setConfirmClose] = useState(false)
   const [confirmReopen, setConfirmReopen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
 
   const { data: project, loading, refetch } = useApi<Project>(`/projects/${projectId}`)
   const { mutate: closeProject, loading: closing } = useMutation('delete')
   const { mutate: reopenProject, loading: reopening } = useMutation('post')
+  const { mutate: permanentDelete, loading: deleting } = useMutation('delete')
 
   // Allow child tabs to trigger a refetch after inline updates
   const handleProjectUpdate = () => refetch()
@@ -54,6 +56,13 @@ export default function ProjectDetailPage() {
     if (result) {
       setConfirmClose(false)
       refetch()
+    }
+  }
+
+  const handlePermanentDelete = async () => {
+    const result = await permanentDelete(`/projects/${projectId}/permanent`)
+    if (result) {
+      navigate('/sedgwick/projects')
     }
   }
 
@@ -110,7 +119,18 @@ export default function ProjectDetailPage() {
             <p className="text-sm text-gray-500">{project.address}, {project.postalCode} {project.city}, {project.region}</p>
           </div>
           <div className="flex gap-2 shrink-0 items-center flex-wrap">
-            {confirmClose ? (
+            {confirmDelete ? (
+              <div className="flex items-center gap-2 rounded-md bg-red-50 border border-red-300 px-3 py-1.5">
+                <span className="text-xs font-medium text-red-800">Slet sagen permanent? Dette kan ikke fortrydes.</span>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white border-red-600 h-7 text-xs"
+                  onClick={handlePermanentDelete} disabled={deleting}>
+                  {deleting ? '...' : 'Ja, slet permanent'}
+                </Button>
+                <button onClick={() => setConfirmDelete(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : confirmClose ? (
               <div className="flex items-center gap-2 rounded-md bg-red-50 border border-red-200 px-3 py-1.5">
                 <span className="text-xs font-medium text-red-700">Luk sag permanent?</span>
                 <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white border-red-600 h-7 text-xs"
@@ -153,6 +173,10 @@ export default function ProjectDetailPage() {
                     </button>
                   </div>
                 )}
+                <Button variant="secondary" size="sm" className="text-gray-400 hover:text-red-600 hover:border-red-300"
+                  onClick={() => setConfirmDelete(true)}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Slet sag
+                </Button>
               </>
             )}
           </div>
