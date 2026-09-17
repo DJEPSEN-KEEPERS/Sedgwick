@@ -3,18 +3,19 @@ import { Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import TopBar from './TopBar'
 import Sidebar from './Sidebar'
-import { LayoutDashboard, Briefcase, Mail, MessageSquare, User } from 'lucide-react'
+import { LayoutDashboard, Briefcase, Mail, ClipboardList, MessageSquare, User } from 'lucide-react'
 
 export default function ContractorLayout() {
   const { t } = useTranslation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const navItems = [
-    { to: '/contractor/dashboard',   label: t('nav.home'),          icon: LayoutDashboard },
-    { to: '/contractor/jobs',        label: t('nav.jobs'),          icon: Briefcase },
-    { to: '/contractor/invitations', label: t('nav.invitations'),   icon: Mail },
-    { to: '/contractor/chat',        label: t('nav.chat'),          icon: MessageSquare },
-    { to: '/contractor/profile',     label: t('nav.profile'),       icon: User },
+    { to: '/contractor/dashboard',    label: t('nav.home'),          icon: LayoutDashboard },
+    { to: '/contractor/jobs',         label: t('nav.jobs'),          icon: Briefcase },
+    { to: '/contractor/invitations',  label: t('nav.invitations'),   icon: Mail },
+    { to: '/contractor/pending-bids', label: 'Afventende tilbud',    icon: ClipboardList },
+    { to: '/contractor/chat',         label: t('nav.chat'),          icon: MessageSquare },
+    { to: '/contractor/profile',      label: t('nav.profile'),       icon: User },
   ]
 
   return (

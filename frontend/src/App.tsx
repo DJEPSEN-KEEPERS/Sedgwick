@@ -43,6 +43,7 @@ const ContractorStatusUpdatePage = lazy(() => import('@/pages/contractor/StatusU
 const ContractorFinalReportPage  = lazy(() => import('@/pages/contractor/FinalReportPage'))
 const ContractorProfilePage      = lazy(() => import('@/pages/contractor/ProfilePage'))
 const ContractorChatPage         = lazy(() => import('@/pages/contractor/ChatPage'))
+const ContractorPendingBidsPage  = lazy(() => import('@/pages/contractor/PendingBidsPage'))
 
 const PageLoader = () => (
   <div className="flex h-screen items-center justify-center">
@@ -124,6 +125,7 @@ export default function App() {
           <Route path="dashboard"                       element={<ContractorDashboard />} />
           <Route path="projects"                        element={<ContractorProjectsPage />} />
           <Route path="invitations"                     element={<ContractorInvitationsPage />} />
+          <Route path="pending-bids"                    element={<ContractorPendingBidsPage />} />
           <Route path="bids/submit/:projectId"          element={<ContractorBidSubmitPage />} />
           <Route path="jobs"                            element={<ContractorJobsPage />} />
           <Route path="jobs/:projectId"                 element={<ContractorJobDetailPage />} />
