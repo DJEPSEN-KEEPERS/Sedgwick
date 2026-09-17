@@ -148,6 +148,40 @@ export async function notifyFinalReportReviewed(
   })
 }
 
+export async function notifyContractorBidNotSelected(contractorId: string, projectClaimId: string): Promise<void> {
+  const users = await prisma.contractorUser.findMany({
+    where: { contractorId },
+    select: { userId: true },
+  })
+  await Promise.all(
+    users.map((u: any) =>
+      createNotification({
+        userId: u.userId,
+        eventType: 'BID_NOT_SELECTED',
+        title: 'Dit tilbud er ikke valgt',
+        message: `Dit tilbud på sag ${projectClaimId} er ikke valgt — en anden håndværker er tildelt opgaven.`,
+      }),
+    ),
+  )
+}
+
+export async function notifyContractorInvitationClosed(contractorId: string, projectClaimId: string): Promise<void> {
+  const users = await prisma.contractorUser.findMany({
+    where: { contractorId },
+    select: { userId: true },
+  })
+  await Promise.all(
+    users.map((u: any) =>
+      createNotification({
+        userId: u.userId,
+        eventType: 'INVITATION_CLOSED',
+        title: 'Invitation lukket',
+        message: `Sag ${projectClaimId} er tildelt en anden håndværker. Invitationen er nu lukket.`,
+      }),
+    ),
+  )
+}
+
 export async function notifyNewInvitation(contractorId: string, projectClaimId: string): Promise<void> {
   const users = await prisma.contractorUser.findMany({
     where: { contractorId },

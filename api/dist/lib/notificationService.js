@@ -7,6 +7,8 @@ exports.notifyInsurerFinalReportApproved = notifyInsurerFinalReportApproved;
 exports.notifyContractorBidSelected = notifyContractorBidSelected;
 exports.notifyStatusUpdateReviewed = notifyStatusUpdateReviewed;
 exports.notifyFinalReportReviewed = notifyFinalReportReviewed;
+exports.notifyContractorBidNotSelected = notifyContractorBidNotSelected;
+exports.notifyContractorInvitationClosed = notifyContractorInvitationClosed;
 exports.notifyNewInvitation = notifyNewInvitation;
 const prisma_1 = require("./prisma");
 const email_1 = require("./email");
@@ -103,6 +105,30 @@ async function notifyFinalReportReviewed(submittedByUserId, approved, projectCla
         title: approved ? 'Slutrapport godkendt' : 'Slutrapport afvist',
         message: `Din slutrapport for sag ${projectClaimId} er ${approved ? 'godkendt' : 'afvist'}.`,
     });
+}
+async function notifyContractorBidNotSelected(contractorId, projectClaimId) {
+    const users = await prisma_1.prisma.contractorUser.findMany({
+        where: { contractorId },
+        select: { userId: true },
+    });
+    await Promise.all(users.map((u) => createNotification({
+        userId: u.userId,
+        eventType: 'BID_NOT_SELECTED',
+        title: 'Dit tilbud er ikke valgt',
+        message: `Dit tilbud på sag ${projectClaimId} er ikke valgt — en anden håndværker er tildelt opgaven.`,
+    })));
+}
+async function notifyContractorInvitationClosed(contractorId, projectClaimId) {
+    const users = await prisma_1.prisma.contractorUser.findMany({
+        where: { contractorId },
+        select: { userId: true },
+    });
+    await Promise.all(users.map((u) => createNotification({
+        userId: u.userId,
+        eventType: 'INVITATION_CLOSED',
+        title: 'Invitation lukket',
+        message: `Sag ${projectClaimId} er tildelt en anden håndværker. Invitationen er nu lukket.`,
+    })));
 }
 async function notifyNewInvitation(contractorId, projectClaimId) {
     const users = await prisma_1.prisma.contractorUser.findMany({

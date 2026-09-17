@@ -7,11 +7,13 @@ import type { EntrepriseType } from '@/types'
 
 const EVENT_TYPES = [
   { key: 'BID_SELECTED', label: 'Mit bud er valgt' },
+  { key: 'BID_NOT_SELECTED', label: 'Mit bud er ikke valgt' },
+  { key: 'NEW_INVITATION', label: 'Ny invitation' },
+  { key: 'INVITATION_CLOSED', label: 'Invitation lukket (sag tildelt anden)' },
   { key: 'STATUS_UPDATE_APPROVED', label: 'Statusopdatering godkendt' },
   { key: 'STATUS_UPDATE_REJECTED', label: 'Statusopdatering afvist' },
   { key: 'FINAL_REPORT_APPROVED', label: 'Slutrapport godkendt' },
   { key: 'FINAL_REPORT_REJECTED', label: 'Slutrapport afvist' },
-  { key: 'NEW_INVITATION', label: 'Ny invitation' },
   { key: 'NEW_MESSAGE', label: 'Ny besked' },
 ]
 
