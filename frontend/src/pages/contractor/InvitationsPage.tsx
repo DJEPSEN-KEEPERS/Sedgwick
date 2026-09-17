@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApi, useMutation } from '@/hooks/useApi'
-import { Mail, MapPin, Calendar, Phone, CheckCircle, XCircle, ChevronRight, Paperclip, Building2 } from 'lucide-react'
+import { Mail, MapPin, Phone, CheckCircle, XCircle, ChevronRight, Paperclip, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { EmptyState } from '@/components/ui/EmptyState'

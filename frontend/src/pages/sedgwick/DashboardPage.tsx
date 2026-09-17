@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi, useMutation } from '@/hooks/useApi'
-import { FolderOpen, Gavel, CheckSquare, AlertTriangle, Clock, Star } from 'lucide-react'
+import { FolderOpen, Gavel, AlertTriangle, Clock, Star } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MilestoneBadge, PriorityBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
+import { MilestoneBadge, PriorityBadge } from '@/components/ui/StatusBadges'
 import { Progress } from '@/components/ui/progress'
 import { formatDateTime, formatRelativeTime, getInitials, formatCurrency, getEntrepriseTypeLabel } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -114,27 +114,6 @@ export default function SedgwickDashboard() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { data, loading, error, refetch } = useApi<DashboardData>('/dashboard')
-  const { mutate: approve } = useMutation('post')
-  const { mutate: reject } = useMutation('post')
-
-  const handleApprove = async (item: PendingItem) => {
-    const path =
-      item.type === 'statusUpdate'
-        ? `/status-updates/${item.id}/approve`
-        : `/final-reports/${item.id}/approve`
-    await approve(path)
-    refetch()
-  }
-
-  const handleReject = async (item: PendingItem) => {
-    const path =
-      item.type === 'statusUpdate'
-        ? `/status-updates/${item.id}/reject`
-        : `/final-reports/${item.id}/reject`
-    await reject(path)
-    refetch()
-  }
-
   if (loading) return <PageSkeleton />
 
   const stats = data?.stats ?? {
@@ -149,7 +128,6 @@ export default function SedgwickDashboard() {
   }
 
   const recentProjects = data?.recentProjects ?? []
-  const pendingItems = data?.pendingItems ?? []
   const slaProjects = data?.slaProjects ?? []
   const recentMessages = data?.recentMessages ?? []
   const topContractors = data?.topContractors ?? []
@@ -187,14 +165,6 @@ export default function SedgwickDashboard() {
           icon={Gavel}
           borderColor="border-l-accent"
           onClick={() => navigate('/sedgwick/bids')}
-        />
-        <StatCard
-          label={t('dashboard.awaitingApproval')}
-          value={stats.pendingApprovals}
-          sub={`${t('dashboard.oldest')}: ${stats.oldestApprovalDays}d`}
-          icon={CheckSquare}
-          borderColor="border-l-warning"
-          onClick={() => navigate('/sedgwick/approvals')}
         />
         <StatCard
           label={t('dashboard.slaBreaches')}
@@ -307,72 +277,6 @@ export default function SedgwickDashboard() {
             </Card>
           )}
 
-          {/* Pending Approvals Queue */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">
-                  {t('dashboard.approvalQueue')}
-                  {pendingItems.length > 0 && (
-                    <span className="ml-2 rounded-full bg-warning px-2 py-0.5 text-xs text-white">
-                      {pendingItems.length}
-                    </span>
-                  )}
-                </CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/sedgwick/approvals')}>
-                  {t('dashboard.openQueue')}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {pendingItems.length === 0 ? (
-                <div className="px-4 py-6 text-center text-sm text-gray-400">
-                  {t('dashboard.noApprovals')}
-                </div>
-              ) : (
-                <div className="divide-y divide-[#e5e7eb]">
-                  {pendingItems.slice(0, 5).map((item) => (
-                    <div key={item.id} className="flex items-start gap-3 px-4 py-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-warning/10 text-xs font-display font-semibold text-warning">
-                        {getInitials(item.contractorName)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-display font-semibold text-gray-900">
-                            {item.contractorName}
-                          </span>
-                          <Badge variant="gray" className="text-xs">
-                            {getEntrepriseTypeLabel(item.entrepriseType as never)}
-                          </Badge>
-                          <span className="text-xs text-gray-500">
-                            #{item.projectClaimId}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5">{formatRelativeTime(item.submittedAt)}</p>
-                        {item.comments && (
-                          <p className="text-xs text-gray-600 truncate mt-0.5">{item.comments}</p>
-                        )}
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button
-                          onClick={() => handleApprove(item)}
-                          className="rounded px-2 py-1 text-xs bg-green-100 text-green-700 hover:bg-green-200 font-display font-medium"
-                        >
-                          {t('common.approve')}
-                        </button>
-                        <button
-                          onClick={() => handleReject(item)}
-                          className="rounded px-2 py-1 text-xs bg-red-100 text-red-700 hover:bg-red-200 font-display font-medium"
-                        >
-                          {t('common.reject')}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
 
         {/* Right — 2 cols */}
