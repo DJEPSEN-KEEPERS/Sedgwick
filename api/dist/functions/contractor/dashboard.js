@@ -32,29 +32,10 @@ async function contractorDashboardHandler(req, context) {
                 },
             }),
         ]);
-        const recentJobs = await prisma_1.prisma.project.findMany({
-            where: { selectedContractorId: contractorId, status: 'ACTIVE' },
-            select: {
-                id: true,
-                claimId: true,
-                address: true,
-                city: true,
-                currentMilestone: true,
-                progressPercent: true,
-                requestedDeadline: true,
-                entreprises: {
-                    where: { contractorId },
-                    select: { id: true, type: true, currentMilestone: true, progressPercent: true },
-                },
-            },
-            orderBy: { updatedAt: 'desc' },
-            take: 5,
-        });
         return {
             status: 200,
             jsonBody: {
                 stats: { activeJobs, pendingInvitations, awaitingBid, unreadMessages },
-                recentJobs,
             },
         };
     }
