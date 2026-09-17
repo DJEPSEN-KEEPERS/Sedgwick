@@ -26,19 +26,28 @@ const MILESTONE_OPTIONS: { value: EntrepriseMilestone; label: string }[] = [
   { value: 'SIGNED_OFF', label: 'Godkendt' },
 ]
 
+const CONTRACTOR_MILESTONES: { value: string; label: string; color: string }[] = [
+  { value: 'NOT_STARTED', label: 'Afventer',  color: 'bg-gray-100 text-gray-600' },
+  { value: 'IN_PROGRESS', label: 'Startet',   color: 'bg-amber-100 text-amber-700' },
+  { value: 'COMPLETED',   label: 'Afsluttet', color: 'bg-green-100 text-green-700' },
+]
+
 export function EntreprisesTab({
   projectId,
   allTypes = false,
   canSubmitFinalReport = false,
+  contractorMode = false,
 }: {
   projectId: string
   allTypes?: boolean
   canSubmitFinalReport?: boolean
+  contractorMode?: boolean
 }) {
   const { data: entreprises, loading, refetch } = useApi<Entreprise[]>(
     `/projects/${projectId}/entreprises${allTypes ? '?all=true' : ''}`,
   )
   const { mutate: toggleRelevanceMutation } = useMutation('patch')
+  const { mutate: milestoneMutation } = useMutation('patch')
   const { mutate: approveMutation } = useMutation('post')
   const { mutate: rejectMutation } = useMutation('post')
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -49,6 +58,11 @@ export function EntreprisesTab({
 
   const toggleRelevance = async (type: EntrepriseType, currentValue: boolean) => {
     await toggleRelevanceMutation(`/projects/${projectId}/entreprises/${type}/relevance`, { isRelevant: !currentValue })
+    refetch()
+  }
+
+  const updateMilestone = async (entrepriseId: string, milestone: string) => {
+    await milestoneMutation(`/contractor/entreprises/${entrepriseId}/milestone`, { milestone })
     refetch()
   }
 
@@ -68,6 +82,9 @@ export function EntreprisesTab({
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500 w-8" />
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Fag</th>
               <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Relevant</th>
+              {contractorMode && (
+                <th className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">Status</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -81,8 +98,10 @@ export function EntreprisesTab({
                   entreprise={e}
                   isExpanded={isExpanded}
                   canSubmitFinalReport={canSubmitFinalReport}
+                  contractorMode={contractorMode}
                   onToggleExpand={() => setExpanded(isExpanded ? null : type)}
                   onToggleRelevance={() => toggleRelevance(type, e?.isRelevant ?? false)}
+                  onUpdateMilestone={(milestone) => e?.id && updateMilestone(e.id, milestone)}
                   onApprove={async (updateId) => { await approveMutation(`/status-updates/${updateId}/approve`); refetch() }}
                   onReject={async (updateId) => { await rejectMutation(`/status-updates/${updateId}/reject`); refetch() }}
                 />
@@ -100,8 +119,10 @@ function EntrepriseRow({
   entreprise,
   isExpanded,
   canSubmitFinalReport,
+  contractorMode,
   onToggleExpand,
   onToggleRelevance,
+  onUpdateMilestone,
   onApprove,
   onReject,
 }: {
@@ -109,24 +130,28 @@ function EntrepriseRow({
   entreprise?: Entreprise
   isExpanded: boolean
   canSubmitFinalReport: boolean
+  contractorMode: boolean
   onToggleExpand: () => void
   onToggleRelevance: () => void
+  onUpdateMilestone: (milestone: string) => void
   onApprove: (id: string) => void
   onReject: (id: string) => void
 }) {
   const isRelevant = entreprise?.isRelevant ?? false
+  const currentMilestone = entreprise?.currentMilestone ?? 'NOT_STARTED'
+  const colSpan = contractorMode ? 4 : 3
 
   return (
     <>
       <tr
         className={cn(
           'border-b border-[#e5e7eb] hover:bg-gray-50',
-          isRelevant && 'cursor-pointer',
+          isRelevant && !contractorMode && 'cursor-pointer',
         )}
-        onClick={isRelevant ? onToggleExpand : undefined}
+        onClick={isRelevant && !contractorMode ? onToggleExpand : undefined}
       >
         <td className="px-4 py-3">
-          {isRelevant && (
+          {isRelevant && !contractorMode && (
             <span className="text-gray-400">
               {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </span>
@@ -155,11 +180,35 @@ function EntrepriseRow({
             )}
           </button>
         </td>
+        {contractorMode && (
+          <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+            {isRelevant ? (
+              <div className="flex gap-1">
+                {CONTRACTOR_MILESTONES.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => currentMilestone !== opt.value && onUpdateMilestone(opt.value)}
+                    className={cn(
+                      'text-xs font-display font-medium rounded-full px-2 py-0.5 transition-colors border',
+                      currentMilestone === opt.value
+                        ? `${opt.color} border-transparent ring-1 ring-offset-1 ring-current`
+                        : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400 hover:text-gray-600',
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="text-gray-300 text-xs">—</span>
+            )}
+          </td>
+        )}
       </tr>
 
       {isExpanded && entreprise && (
         <tr>
-          <td colSpan={3} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
+          <td colSpan={colSpan} className="bg-gray-50 border-b border-[#e5e7eb] px-8 py-4">
             <EntrepriseDetail
               entreprise={entreprise}
               canSubmitFinalReport={canSubmitFinalReport}

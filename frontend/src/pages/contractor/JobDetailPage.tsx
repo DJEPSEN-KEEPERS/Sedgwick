@@ -1,17 +1,17 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
-import { ArrowLeft, Camera, FileText, CheckCircle, Clock, MapPin, Phone, Mail, AlertCircle, Paperclip, Building2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { MilestoneBadge, ApprovalBadge } from '@/components/ui/StatusBadges'
-import { EmptyState } from '@/components/ui/EmptyState'
+import { ArrowLeft, CheckCircle, MapPin, Phone, Mail, Paperclip, Upload, ImageIcon } from 'lucide-react'
+import { MilestoneBadge } from '@/components/ui/StatusBadges'
 import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
-import { formatDate, formatCurrency, formatRelativeTime, getEntrepriseTypeLabel, getEntrepriseMilestoneLabel } from '@/lib/utils'
-import type { Project, EntrepriseType, EntrepriseMilestone, Bid } from '@/types'
+import { formatDate, formatCurrency } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import type { Project, Bid } from '@/types'
 
-type Tab = 'overview' | 'entreprises' | 'planning' | 'updates' | 'report'
+const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL ?? '/api'
+
+type Tab = 'overview' | 'entreprises' | 'planning' | 'documentation' | 'report'
 
 export default function JobDetailPage() {
   const { projectId } = useParams<{ projectId: string }>()
@@ -33,6 +33,7 @@ export default function JobDetailPage() {
   if (!project) return null
 
   const myEntreprises = project.entreprises ?? []
+  const relevantEntreprises = myEntreprises.filter((e) => e.isRelevant !== false)
 
   return (
     <div>
@@ -61,7 +62,7 @@ export default function JobDetailPage() {
           { key: 'overview', label: 'Overblik' },
           { key: 'entreprises', label: 'Entrepriser' },
           { key: 'planning', label: 'Planlægning' },
-          { key: 'updates', label: 'Statusopdateringer' },
+          { key: 'documentation', label: 'Dokumentation' },
           { key: 'report', label: 'Slutrapport' },
         ] as { key: Tab; label: string }[]).map(({ key, label }) => (
           <button
@@ -80,16 +81,16 @@ export default function JobDetailPage() {
 
       <div>
         {tab === 'overview'    && <OverviewTab project={project} projectId={project.id} />}
-        {tab === 'entreprises' && <EntreprisesTab projectId={project.id} allTypes />}
+        {tab === 'entreprises' && <EntreprisesTab projectId={project.id} allTypes contractorMode />}
         {tab === 'planning'  && (
           <WeekPlannerGrid
             projectId={project.id}
-            entreprises={myEntreprises.filter((e) => e.isRelevant !== false)}
+            entreprises={relevantEntreprises}
             canEdit
           />
         )}
-        {tab === 'updates'   && <UpdatesTab entreprises={myEntreprises} navigate={navigate} />}
-        {tab === 'report'    && <ReportTab entreprises={myEntreprises} navigate={navigate} />}
+        {tab === 'documentation' && <DocumentationTab projectId={project.id} />}
+        {tab === 'report'        && <FinalReportTab projectId={project.id} />}
       </div>
     </div>
   )
@@ -276,133 +277,163 @@ function DeadlineValue({ deadline }: { deadline: string }) {
   )
 }
 
-function UpdatesTab({ entreprises, navigate }: { entreprises: any[]; navigate: ReturnType<typeof useNavigate> }) {
-  if (entreprises.length === 0) {
-    return <EmptyState icon={Camera} title="Ingen entrepriser" description="Du har ingen entrepriser på denne sag." />
+const ACCEPT_ALL = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip'
+const MAX_MB = 25
+
+async function uploadProjectFile(projectId: string, file: File, category: string): Promise<void> {
+  const token = localStorage.getItem('accessToken') ?? ''
+  const res = await fetch(
+    `${BASE_URL}/projects/${projectId}/files?category=${encodeURIComponent(category)}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-File-Name': encodeURIComponent(file.name),
+        'X-Auth-Token': token,
+      },
+      body: file,
+    },
+  )
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error((err as any).error ?? `Upload fejlede (${res.status})`)
   }
+}
+
+function FileUploadArea({
+  projectId,
+  category,
+  accept = ACCEPT_ALL,
+  maxFiles = 20,
+  label = 'Træk filer hertil eller klik for at vælge',
+  hint = `Maks ${MAX_MB} MB`,
+  onUploaded,
+}: {
+  projectId: string
+  category: string
+  accept?: string
+  maxFiles?: number
+  label?: string
+  hint?: string
+  onUploaded: () => void
+}) {
+  const [isDragging, setIsDragging] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFiles = useCallback(async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setError('')
+    setUploading(true)
+    try {
+      const arr = Array.from(files).filter((f) => f.size <= MAX_MB * 1024 * 1024).slice(0, maxFiles)
+      await Promise.all(arr.map((f) => uploadProjectFile(projectId, f, category)))
+      onUploaded()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Upload fejlede')
+    } finally {
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }, [projectId, category, maxFiles, onUploaded])
 
   return (
-    <div className="space-y-4">
-      {entreprises.map((e) => {
-        const latestUpdate = e.statusUpdates?.[0]
-        const canSubmit = e.currentMilestone !== 'SIGNED_OFF'
-
-        return (
-          <div key={e.id} className="rounded-lg border border-[#e5e7eb] bg-white overflow-hidden shadow-card">
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-[#e5e7eb]">
-              <span className="font-display font-semibold text-sm text-gray-900">
-                {getEntrepriseTypeLabel(e.type as EntrepriseType)}
-              </span>
-              <Badge variant="info">{getEntrepriseMilestoneLabel(e.currentMilestone)}</Badge>
-            </div>
-
-            <div className="p-4 space-y-3">
-              {latestUpdate ? (
-                <div className="text-xs text-gray-500">
-                  <span className="font-semibold text-gray-900">Seneste opdatering: </span>
-                  {latestUpdate.comments || getEntrepriseMilestoneLabel(latestUpdate.milestone)}
-                  <span className="text-gray-400 ml-1">· {formatRelativeTime(latestUpdate.createdAt)}</span>
-                  {latestUpdate.approvalStatus && (
-                    <span className="ml-2">
-                      <ApprovalBadge status={latestUpdate.approvalStatus} />
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-gray-400">Ingen opdateringer endnu</p>
-              )}
-
-              {canSubmit && (
-                <Button
-                  size="sm"
-                  className="w-full gap-2"
-                  onClick={() => navigate(`/contractor/status-update/${e.id}`)}
-                >
-                  <Camera className="h-4 w-4" />
-                  Ny statusopdatering
-                </Button>
-              )}
-            </div>
-          </div>
-        )
-      })}
+    <div>
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 cursor-pointer transition-colors',
+          isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 bg-gray-50 hover:border-primary-400 hover:bg-gray-100',
+          uploading && 'opacity-60 pointer-events-none',
+        )}
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => { e.preventDefault(); setIsDragging(false); handleFiles(e.dataTransfer.files) }}
+        onClick={() => inputRef.current?.click()}
+      >
+        <Upload className="h-6 w-6 text-gray-400 mb-2" />
+        <p className="text-sm font-display font-medium text-gray-700">{uploading ? 'Uploader...' : label}</p>
+        <p className="mt-0.5 text-xs text-gray-400">{hint}</p>
+        <input ref={inputRef} type="file" className="hidden" accept={accept} multiple onChange={(e) => handleFiles(e.target.files)} />
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   )
 }
 
-function ReportTab({ entreprises, navigate }: { entreprises: any[]; navigate: ReturnType<typeof useNavigate> }) {
-  if (entreprises.length === 0) {
-    return <EmptyState icon={FileText} title="Ingen entrepriser" />
-  }
+function FileList({ files }: { files: any[] }) {
+  if (files.length === 0) return null
+  return (
+    <div className="space-y-1 mt-3">
+      {files.map((f: any) => (
+        <div key={f.id} className="flex items-center gap-2 rounded-md border border-[#e5e7eb] bg-white px-3 py-2">
+          {f.fileType?.startsWith('image/') ? (
+            <ImageIcon className="h-4 w-4 text-primary-500 shrink-0" />
+          ) : (
+            <Paperclip className="h-4 w-4 text-gray-400 shrink-0" />
+          )}
+          <span className="flex-1 text-xs text-gray-700 truncate">{f.fileName}</span>
+          <span className="text-xs text-gray-400 shrink-0">{formatDate(f.createdAt)}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function DocumentationTab({ projectId }: { projectId: string }) {
+  const { data: files, refetch } = useApi<any>(`/projects/${projectId}/files`)
+  const uploaded = Object.values(files?.statusUpdatePhotos ?? {}).flat() as any[]
 
   return (
-    <div className="space-y-4">
-      {entreprises.map((e) => {
-        const report = e.finalReport
-        const canSubmit = e.currentMilestone === 'COMPLETED' || e.currentMilestone === 'IN_PROGRESS'
+    <div>
+      <div className="mb-5">
+        <h3 className="text-sm font-display font-semibold text-gray-900 mb-1">Dokumentation</h3>
+        <p className="text-xs text-gray-500">Upload billeder og filer som dokumentation for arbejdet på denne sag.</p>
+      </div>
+      <FileUploadArea
+        projectId={projectId}
+        category="status-update"
+        accept="image/*,.pdf,.doc,.docx"
+        label="Træk billeder eller filer hertil"
+        hint="Billeder, PDF, Word · maks 25 MB per fil"
+        onUploaded={refetch}
+      />
+      <FileList files={uploaded} />
+    </div>
+  )
+}
 
-        return (
-          <div key={e.id} className="rounded-lg border border-[#e5e7eb] bg-white overflow-hidden shadow-card">
-            <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-[#e5e7eb]">
-              <span className="font-display font-semibold text-sm text-gray-900">
-                {getEntrepriseTypeLabel(e.type as EntrepriseType)}
-              </span>
-            </div>
+function FinalReportTab({ projectId }: { projectId: string }) {
+  const { data: files, refetch } = useApi<any>(`/projects/${projectId}/files`)
+  const uploaded = Object.values(files?.finalReportFiles ?? {}).flat() as any[]
+  const hasReport = uploaded.length > 0
 
-            <div className="p-4 space-y-3">
-              {report ? (
-                <div className="space-y-2">
-                  {report.approvalStatus === 'REJECTED' ? (
-                    <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
-                      <AlertCircle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-red-800">Slutrapport afvist af Sedgwick</p>
-                        {report.submittedAt && (
-                          <p className="text-xs text-red-700 mt-0.5">Indsendt {formatDate(report.submittedAt)}</p>
-                        )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-semibold text-gray-900">Slutrapport indsendt</span>
-                    </div>
-                  )}
-                  {report.approvalStatus !== 'REJECTED' && report.submittedAt && (
-                    <p className="text-xs text-gray-500">{formatDate(report.submittedAt)}</p>
-                  )}
-                  <ApprovalBadge status={report.approvalStatus} />
-                  {report.approvalStatus === 'REJECTED' && (
-                    <Button
-                      size="sm"
-                      className="w-full gap-2 mt-1 border-red-300 text-red-700 hover:bg-red-50"
-                      variant="secondary"
-                      onClick={() => navigate(`/contractor/final-report/${e.id}`)}
-                    >
-                      <AlertCircle className="h-4 w-4" />
-                      Rediger og genindsend
-                    </Button>
-                  )}
-                </div>
-              ) : canSubmit ? (
-                <Button
-                  size="sm"
-                  className="w-full gap-2"
-                  onClick={() => navigate(`/contractor/final-report/${e.id}`)}
-                >
-                  <FileText className="h-4 w-4" />
-                  Indsend slutrapport
-                </Button>
-              ) : (
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <AlertCircle className="h-4 w-4" />
-                  Entreprisen skal være afsluttet før slutrapport kan indsendes
-                </div>
-              )}
-            </div>
+  return (
+    <div>
+      <div className="mb-5">
+        <h3 className="text-sm font-display font-semibold text-gray-900 mb-1">Slutrapport</h3>
+        <p className="text-xs text-gray-500">Upload slutrapporten for sagen som ét samlet dokument eller billede.</p>
+      </div>
+
+      {hasReport ? (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 flex items-center gap-3 mb-4">
+          <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+          <div>
+            <p className="text-sm font-display font-semibold text-green-900">Slutrapport indsendt</p>
+            <p className="text-xs text-green-700 mt-0.5">{uploaded.length} fil{uploaded.length !== 1 ? 'er' : ''} uploadet</p>
           </div>
-        )
-      })}
+        </div>
+      ) : null}
+
+      <FileUploadArea
+        projectId={projectId}
+        category="final-report"
+        accept=".pdf,.doc,.docx,image/*"
+        label={hasReport ? 'Upload yderligere filer' : 'Upload slutrapport'}
+        hint="PDF, Word, billeder · maks 25 MB"
+        onUploaded={refetch}
+      />
+      <FileList files={uploaded} />
     </div>
   )
 }
