@@ -13,7 +13,7 @@ export default function ContractorLayout() {
     { to: '/contractor/dashboard',    label: t('nav.home'),          icon: LayoutDashboard },
     { to: '/contractor/jobs',         label: t('nav.jobs'),          icon: Briefcase },
     { to: '/contractor/invitations',  label: t('nav.invitations'),   icon: Mail },
-    { to: '/contractor/pending-bids', label: 'Afventende tilbud',    icon: ClipboardList },
+    { to: '/contractor/pending-bids', label: 'Tilbud',               icon: ClipboardList },
     { to: '/contractor/chat',         label: t('nav.chat'),          icon: MessageSquare },
     { to: '/contractor/profile',      label: t('nav.profile'),       icon: User },
   ]
