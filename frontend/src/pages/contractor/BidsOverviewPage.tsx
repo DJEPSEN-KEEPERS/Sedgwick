@@ -71,7 +71,7 @@ export default function BidsOverviewPage() {
               label="Afleveret tilbud"
               count={submitted.length}
               color="green"
-              description="Sager hvor du har indsendt et tilbud"
+              description="Sager hvor du har indsendt et tilbud, men afventer godkendelse fra Sedgwick"
             />
             {submitted.length === 0 ? (
               <p className="text-sm text-gray-400 italic px-1">Ingen sager i denne kategori</p>
