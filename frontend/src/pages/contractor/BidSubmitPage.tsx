@@ -4,9 +4,9 @@ import { useApi, useMutation } from '@/hooks/useApi'
 import { ArrowLeft, CheckCircle, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StepForm } from '@/components/ui/StepForm'
-import { formatCurrency, getEntrepriseTypeLabel } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-import type { Project, EntrepriseType } from '@/types'
+import type { Project } from '@/types'
 
 const BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL ?? '/api'
 const ACCEPT = 'image/*,.pdf,.doc,.docx,.xls,.xlsx,.zip'
@@ -36,10 +36,7 @@ export default function BidSubmitPage() {
   const { data: project, loading } = useApi<Project>(projectId ? `/projects/${projectId}` : null)
   const { mutate: submit, loading: submitting, error } = useMutation('post')
 
-  // Step 1: Entreprise relevance
-  const [relevance, setRelevance] = useState<Record<string, boolean>>({})
-
-  // Step 2: Bid details + files
+  // Bid details + files
   const [materialsCost, setMaterialsCost] = useState('')
   const [laborCost, setLaborCost] = useState('')
   const [comments, setComments] = useState('')
@@ -51,7 +48,7 @@ export default function BidSubmitPage() {
   const [uploadError, setUploadError] = useState('')
 
   const entreprises = project?.entreprises ?? []
-  const relevanceWithDefaults = { ...Object.fromEntries(entreprises.map((e) => [e.id, e.isRelevant])), ...relevance }
+  const relevanceWithDefaults = Object.fromEntries(entreprises.map((e) => [e.id, e.isRelevant]))
 
   const addFiles = useCallback((list: FileList | null) => {
     if (!list) return
@@ -117,44 +114,6 @@ export default function BidSubmitPage() {
   }
 
   const steps = [
-    {
-      label: 'Entrepriser',
-      isValid: true,
-      content: (
-        <div className="space-y-3">
-          <p className="text-sm text-gray-600">
-            Marker hvilke entrepriser du kan udføre. Dette hjælper Sedgwick med at vurdere dit bud.
-          </p>
-          {entreprises.length === 0 ? (
-            <p className="text-sm text-gray-400">Ingen entrepriser defineret for denne sag.</p>
-          ) : (
-            entreprises.map((e) => (
-              <label
-                key={e.id}
-                className={`flex items-center justify-between rounded-xl border p-4 cursor-pointer transition-colors ${
-                  relevanceWithDefaults[e.id]
-                    ? 'border-primary-400 bg-primary-50'
-                    : 'border-gray-200 bg-white'
-                }`}
-              >
-                <div>
-                  <p className="font-display font-semibold text-sm text-gray-900">
-                    {getEntrepriseTypeLabel(e.type as EntrepriseType)}
-                  </p>
-                  {e.description && <p className="text-xs text-gray-500 mt-0.5">{e.description}</p>}
-                </div>
-                <input
-                  type="checkbox"
-                  checked={!!relevanceWithDefaults[e.id]}
-                  onChange={(ev) => setRelevance((r) => ({ ...r, [e.id]: ev.target.checked }))}
-                  className="h-5 w-5 rounded accent-primary-600"
-                />
-              </label>
-            ))
-          )}
-        </div>
-      ),
-    },
     {
       label: 'Bud',
       isValid: matVal > 0 && labVal > 0 && comments.trim().length > 0,
@@ -298,12 +257,6 @@ export default function BidSubmitPage() {
               <div className="flex justify-between border-t border-gray-200 pt-2">
                 <span className="text-gray-700 font-semibold">Samlet Budbeløb</span>
                 <span className="font-bold text-primary-700 text-base">{formatCurrency(totalBid)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Entrepriser (relevant)</span>
-                <span className="font-semibold text-gray-900">
-                  {Object.values(relevanceWithDefaults).filter(Boolean).length} / {entreprises.length}
-                </span>
               </div>
               {comments && (
                 <div>

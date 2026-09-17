@@ -38,7 +38,7 @@ export default function InvitationsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Hide invitations where this contractor's bid was selected (those go under "Sager")
-  const visible = (invitations ?? []).filter((inv) => !(inv.bid as any)?.isSelected)
+  const visible = (invitations ?? []).filter((inv) => !inv.bid)
 
   const selectedInv = visible.find((inv) => inv.id === selectedId) ?? null
 
