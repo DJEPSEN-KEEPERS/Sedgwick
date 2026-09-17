@@ -5,7 +5,7 @@ import { Briefcase, CheckCircle2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
-import { getEntrepriseTypeLabel, formatDate } from '@/lib/utils'
+import { getEntrepriseTypeLabel } from '@/lib/utils'
 import type { Project, EntrepriseType } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -66,14 +66,14 @@ export default function JobsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                  {['Sag ID', 'Adresse', 'Skadetype', 'Status', 'Entrepriser', 'Tilbudsfrist'].map((h) => (
+                  {['Sag ID', 'Adresse', 'Skadetype', 'Status', 'Entrepriser'].map((h) => (
                     <th key={h} className="px-4 py-2.5 text-left text-xs font-display font-medium text-gray-500">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {displayed.map((job) => {
-                  const myEntreprises = (job as any).entreprises ?? []
+                  const relevantEntreprises = ((job as any).entreprises ?? []).filter((e: any) => e.isRelevant)
                   return (
                     <tr
                       key={job.id}
@@ -89,19 +89,12 @@ export default function JobsPage() {
                       <td className="px-4 py-2.5"><MilestoneBadge milestone={job.currentMilestone} /></td>
                       <td className="px-4 py-2.5">
                         <div className="flex flex-wrap gap-1">
-                          {myEntreprises.map((e: any) => (
+                          {relevantEntreprises.length > 0 ? relevantEntreprises.map((e: any) => (
                             <span key={e.id} className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary-700 font-medium">
                               {getEntrepriseTypeLabel(e.type as EntrepriseType)}
                             </span>
-                          ))}
+                          )) : <span className="text-gray-400 text-xs">—</span>}
                         </div>
-                      </td>
-                      <td className="px-4 py-2.5 text-xs">
-                        {job.requestedDeadline ? (
-                          <span className={new Date(job.requestedDeadline) < new Date() ? 'text-red-600 font-medium' : 'text-gray-500'}>
-                            {formatDate(job.requestedDeadline)}
-                          </span>
-                        ) : '—'}
                       </td>
                     </tr>
                   )
