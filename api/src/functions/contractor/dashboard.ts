@@ -10,7 +10,7 @@ async function contractorDashboardHandler(req: HttpRequest, context: InvocationC
     const contractorId = jwtUser.linkedEntityId
     if (!contractorId) return { status: 400, jsonBody: { error: 'Bruger er ikke tilknyttet en håndværkervirksomhed' } }
 
-    const [activeJobs, pendingInvitations, unreadMessages] = await Promise.all([
+    const [activeJobs, pendingInvitations, awaitingBid, unreadMessages] = await Promise.all([
       prisma.project.count({
         where: {
           selectedContractorId: contractorId,
@@ -19,6 +19,9 @@ async function contractorDashboardHandler(req: HttpRequest, context: InvocationC
       }),
       prisma.bidInvitation.count({
         where: { contractorId, status: 'PENDING' },
+      }),
+      prisma.bidInvitation.count({
+        where: { contractorId, status: 'INTERESTED', bid: null },
       }),
       prisma.chatMessage.count({
         where: {
@@ -52,7 +55,7 @@ async function contractorDashboardHandler(req: HttpRequest, context: InvocationC
     return {
       status: 200,
       jsonBody: {
-        stats: { activeJobs, pendingInvitations, unreadMessages },
+        stats: { activeJobs, pendingInvitations, awaitingBid, unreadMessages },
         recentJobs,
       },
     }

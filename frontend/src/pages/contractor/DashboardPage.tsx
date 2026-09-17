@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
-import { Briefcase, Mail, MessageSquare, RefreshCw } from 'lucide-react'
+import { Briefcase, Mail, MessageSquare, RefreshCw, ClipboardList } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
 import { StatCard } from '@/components/ui/StatCard'
@@ -19,7 +19,7 @@ interface InboxData {
 }
 
 interface ContractorDashboardData {
-  stats: { activeJobs: number; pendingInvitations: number; unreadMessages: number }
+  stats: { activeJobs: number; pendingInvitations: number; awaitingBid: number; unreadMessages: number }
   recentJobs: Array<{
     id: string
     claimId: string
@@ -37,7 +37,7 @@ export default function ContractorDashboard() {
   const { data, loading } = useApi<ContractorDashboardData>('/contractor/dashboard')
   const { data: inboxData } = useApi<InboxData>('/messages/inbox')
 
-  const stats = data?.stats ?? { activeJobs: 0, pendingInvitations: 0, unreadMessages: 0 }
+  const stats = data?.stats ?? { activeJobs: 0, pendingInvitations: 0, awaitingBid: 0, unreadMessages: 0 }
   const recentJobs = data?.recentJobs ?? []
   const inboxItems = inboxData?.items?.filter((i) => i.latestMessage) ?? []
 
@@ -48,10 +48,15 @@ export default function ContractorDashboard() {
         <p className="text-sm text-gray-500 mt-0.5">Dine aktive sager og aktivitet</p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 mb-8">
-        <StatCard label="Aktive sager" value={stats.activeJobs} icon={Briefcase} />
+      {/* Stats — 2×2 grid */}
+      <div className="grid grid-cols-2 gap-4 mb-8">
+        {/* Top-left */}
         <StatCard label="Afventende invitationer" value={stats.pendingInvitations} icon={Mail} accent={stats.pendingInvitations > 0} />
+        {/* Top-right */}
+        <StatCard label="Afventende tilbud" value={stats.awaitingBid} icon={ClipboardList} accent={stats.awaitingBid > 0} />
+        {/* Bottom-left */}
+        <StatCard label="Aktive sager" value={stats.activeJobs} icon={Briefcase} />
+        {/* Bottom-right */}
         <StatCard label="Ulæste beskeder" value={stats.unreadMessages} icon={MessageSquare} accent={stats.unreadMessages > 0} />
       </div>
 
