@@ -1,10 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import { useApi } from '@/hooks/useApi'
-import { Briefcase, Mail, MessageSquare, RefreshCw, ClipboardList } from 'lucide-react'
+import { Briefcase, Mail, MessageSquare, ClipboardList } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MilestoneBadge } from '@/components/ui/StatusBadges'
 import { StatCard } from '@/components/ui/StatCard'
-import { formatDate, formatRelativeTime, getInitials } from '@/lib/utils'
+import { formatRelativeTime, getInitials } from '@/lib/utils'
 
 interface InboxItem {
   projectId: string
@@ -20,25 +19,14 @@ interface InboxData {
 
 interface ContractorDashboardData {
   stats: { activeJobs: number; pendingInvitations: number; awaitingBid: number; unreadMessages: number }
-  recentJobs: Array<{
-    id: string
-    claimId: string
-    address: string
-    city: string
-    currentMilestone: string
-    progressPercent: number
-    requestedDeadline?: string
-    entreprises: Array<{ id: string; type: string; currentMilestone: string; progressPercent: number }>
-  }>
 }
 
 export default function ContractorDashboard() {
   const navigate = useNavigate()
-  const { data, loading } = useApi<ContractorDashboardData>('/contractor/dashboard')
+  const { data } = useApi<ContractorDashboardData>('/contractor/dashboard')
   const { data: inboxData } = useApi<InboxData>('/messages/inbox')
 
   const stats = data?.stats ?? { activeJobs: 0, pendingInvitations: 0, awaitingBid: 0, unreadMessages: 0 }
-  const recentJobs = data?.recentJobs ?? []
   const inboxItems = inboxData?.items?.filter((i) => i.latestMessage) ?? []
 
   return (
@@ -97,60 +85,6 @@ export default function ContractorDashboard() {
         </Card>
       )}
 
-      {/* Recent jobs */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 text-gray-400" />
-              <CardTitle className="text-sm">Senest opdaterede sager</CardTitle>
-            </div>
-            <button
-              onClick={() => navigate('/contractor/jobs')}
-              className="text-xs text-primary-600 hover:underline"
-            >
-              Se alle
-            </button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="space-y-1 p-4 animate-pulse">
-              {[...Array(5)].map((_, i) => <div key={i} className="h-10 bg-gray-200 rounded" />)}
-            </div>
-          ) : recentJobs.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-gray-400">Ingen sager endnu</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#e5e7eb] bg-gray-50">
-                    {['Sag ID', 'Adresse', 'Status', 'Tilbudsfrist'].map((h) => (
-                      <th key={h} className="px-4 py-2 text-left text-xs font-display font-medium text-gray-500">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentJobs.map((j) => (
-                    <tr
-                      key={j.id}
-                      className="border-b border-[#e5e7eb] hover:bg-gray-50 cursor-pointer"
-                      onClick={() => navigate(`/contractor/jobs/${j.id}`)}
-                    >
-                      <td className="px-4 py-2.5 font-mono text-xs font-medium text-primary-700">{j.claimId}</td>
-                      <td className="px-4 py-2.5 text-xs text-gray-600">{j.address}, {j.city}</td>
-                      <td className="px-4 py-2.5"><MilestoneBadge milestone={j.currentMilestone as never} /></td>
-                      <td className="px-4 py-2.5 text-xs text-gray-500">
-                        {j.requestedDeadline ? formatDate(j.requestedDeadline) : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
 }
