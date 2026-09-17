@@ -7,7 +7,7 @@ async function bidsOverviewHandler(req, context) {
     try {
         const jwtUser = (0, authMiddleware_1.authenticate)(req);
         (0, authMiddleware_1.requireRoles)(jwtUser, 'SEDGWICK_ADMIN');
-        const [awaitingInvitations, receivedBids, recentDecisions] = await Promise.all([
+        const [awaitingInvitations, awaitingBidInvitations, receivedBids, recentDecisions] = await Promise.all([
             prisma_1.prisma.bidInvitation.findMany({
                 where: { status: 'PENDING' },
                 include: {
@@ -15,6 +15,15 @@ async function bidsOverviewHandler(req, context) {
                     contractor: { select: { companyName: true } },
                 },
                 orderBy: { invitedAt: 'desc' },
+                take: 20,
+            }),
+            prisma_1.prisma.bidInvitation.findMany({
+                where: { status: 'INTERESTED', bid: null },
+                include: {
+                    project: { select: { id: true, claimId: true } },
+                    contractor: { select: { companyName: true } },
+                },
+                orderBy: { respondedAt: 'desc' },
                 take: 20,
             }),
             prisma_1.prisma.bid.findMany({
@@ -45,6 +54,13 @@ async function bidsOverviewHandler(req, context) {
                     claimId: i.project.claimId,
                     contractorName: i.contractor.companyName,
                     invitedAt: i.invitedAt.toISOString(),
+                })),
+                awaitingBid: awaitingBidInvitations.map((i) => ({
+                    id: i.id,
+                    projectId: i.project.id,
+                    claimId: i.project.claimId,
+                    contractorName: i.contractor.companyName,
+                    respondedAt: i.respondedAt?.toISOString() ?? i.invitedAt.toISOString(),
                 })),
                 bidsReceived: receivedBids.map((b) => ({
                     id: b.id,

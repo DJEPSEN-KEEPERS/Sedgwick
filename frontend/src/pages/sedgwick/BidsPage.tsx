@@ -6,6 +6,7 @@ import { formatCurrency, formatDateTime, formatRelativeTime } from '@/lib/utils'
 
 interface BidActivity {
   awaitingResponse: InvitationItem[]
+  awaitingBid: AwaitingBidItem[]
   bidsReceived: BidItem[]
   recentDecisions: DecisionItem[]
 }
@@ -16,6 +17,14 @@ interface InvitationItem {
   claimId: string
   contractorName: string
   invitedAt: string
+}
+
+interface AwaitingBidItem {
+  id: string
+  projectId: string
+  claimId: string
+  contractorName: string
+  respondedAt: string
 }
 
 interface BidItem {
@@ -66,6 +75,27 @@ export default function BidsPage() {
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-gray-400">{formatRelativeTime(item.invitedAt)}</span>
                       <Badge variant="warning">Afventer</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+
+          <Section title={`Afventer tilbud (${data?.awaitingBid.length ?? 0})`} accent="default">
+            {!data?.awaitingBid.length ? (
+              <Empty />
+            ) : (
+              <div className="divide-y divide-[#e5e7eb]">
+                {data.awaitingBid.map((item) => (
+                  <div key={item.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer" onClick={() => go(item.projectId)}>
+                    <div>
+                      <span className="font-mono text-xs text-primary-700 mr-2">#{item.claimId}</span>
+                      <span className="text-sm font-display font-medium text-gray-900">{item.contractorName}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-400">{formatRelativeTime(item.respondedAt)}</span>
+                      <Badge variant="default">Invitation accepteret</Badge>
                     </div>
                   </div>
                 ))}
