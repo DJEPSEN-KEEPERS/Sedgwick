@@ -14,7 +14,7 @@ async function getMyJobsHandler(req: HttpRequest, context: InvocationContext): P
       where: { selectedContractorId: contractorId },
       include: {
         insuranceCompany: { select: { id: true, name: true } },
-        responsibleUser: { select: { id: true, fullName: true } },
+        contractorProjectManager: { select: { id: true, fullName: true } },
         entreprises: {
           where: { contractorId },
           select: {

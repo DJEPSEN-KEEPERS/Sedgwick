@@ -39,7 +39,7 @@ export default function JobsPage() {
     return {
       damageTypes: uniq(jobs.map((j) => j.damageType)),
       regions: uniq(jobs.map((j) => j.region)),
-      responsibleUsers: uniq(jobs.map((j) => (j as any).responsibleUser?.fullName)),
+      responsibleUsers: uniq(jobs.map((j) => (j as any).contractorProjectManager?.fullName)),
     }
   }, [jobs])
 
@@ -58,7 +58,7 @@ export default function JobsPage() {
     }
     if (filters.damageType)     list = list.filter((j) => j.damageType === filters.damageType)
     if (filters.region)         list = list.filter((j) => j.region === filters.region)
-    if (filters.responsibleUser) list = list.filter((j) => (j as any).responsibleUser?.fullName === filters.responsibleUser)
+    if (filters.responsibleUser) list = list.filter((j) => (j as any).contractorProjectManager?.fullName === filters.responsibleUser)
     if (filters.milestones.length) list = list.filter((j) => filters.milestones.includes(j.currentMilestone))
 
     return {
@@ -188,7 +188,7 @@ export default function JobsPage() {
               <tbody>
                 {displayed.map((job) => {
                   const relevantEntreprises = ((job as any).entreprises ?? []).filter((e: any) => e.isRelevant)
-                  const pm = (job as any).responsibleUser
+                  const pm = (job as any).contractorProjectManager
                   return (
                     <tr
                       key={job.id}
@@ -206,9 +206,9 @@ export default function JobsPage() {
                         {pm ? (
                           <span className="flex items-center gap-1.5">
                             <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary-100 text-[10px] font-display font-semibold text-primary-700 shrink-0">
-                              {pm.fullName.charAt(0).toUpperCase()}
+                              {(pm as any).fullName.charAt(0).toUpperCase()}
                             </span>
-                            {pm.fullName}
+                            {(pm as any).fullName}
                           </span>
                         ) : (
                           <span className="text-gray-400 italic">Ikke tildelt</span>
