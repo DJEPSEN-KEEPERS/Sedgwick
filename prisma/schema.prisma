@@ -37,8 +37,9 @@ model User {
   approvedReports      FinalReport[]            @relation("ReportApprovedBy")
   selectedBids         Bid[]                    @relation("SelectedBy")
   invitedBids          BidInvitation[]          @relation("InvitedBy")
-  responsibleProjects  Project[]                @relation("ResponsibleUser")
-  passwordResetTokens  PasswordResetToken[]
+  responsibleProjects          Project[]                @relation("ResponsibleUser")
+  contractorManagedProjects    Project[]                @relation("ContractorProjectManager")
+  passwordResetTokens          PasswordResetToken[]
 }
 
 model PasswordResetToken {
@@ -188,16 +189,18 @@ model Project {
   contactEmail          String
   currentMilestone      String    @default("CASE_RECEIVED")
   progressPercent       Int       @default(0)
-  selectedContractorId  String?
-  responsibleUserId     String?
-  status                String    @default("ACTIVE")
+  selectedContractorId            String?
+  responsibleUserId               String?
+  contractorProjectManagerId      String?
+  status                          String    @default("ACTIVE")
   finalCompletionDate   DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  insuranceCompany      InsuranceCompany         @relation(fields: [insuranceCompanyId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  selectedContractor    Contractor?              @relation(fields: [selectedContractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  responsibleUser       User?                    @relation("ResponsibleUser", fields: [responsibleUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  insuranceCompany             InsuranceCompany         @relation(fields: [insuranceCompanyId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  selectedContractor           Contractor?              @relation(fields: [selectedContractorId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  responsibleUser              User?                    @relation("ResponsibleUser", fields: [responsibleUserId], references: [id], onUpdate: NoAction, onDelete: NoAction)
+  contractorProjectManager     User?                    @relation("ContractorProjectManager", fields: [contractorProjectManagerId], references: [id], onUpdate: NoAction, onDelete: NoAction)
   requiredSkills        ProjectRequiredSkill[]
   attachments           ProjectAttachment[]
   entreprises           Entreprise[]

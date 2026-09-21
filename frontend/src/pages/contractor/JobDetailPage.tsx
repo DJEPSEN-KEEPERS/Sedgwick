@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useApi } from '@/hooks/useApi'
-import { ArrowLeft, CheckCircle, MapPin, Phone, Mail, Paperclip, Upload, ImageIcon } from 'lucide-react'
+import { useApi, useMutation } from '@/hooks/useApi'
+import { ArrowLeft, CheckCircle, MapPin, Phone, Mail, Paperclip, Upload, ImageIcon, UserCircle } from 'lucide-react'
 import { MilestoneBadge } from '@/components/ui/StatusBadges'
 import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { EntreprisesTab } from '@/components/projects/tabs/EntreprisesTab'
@@ -96,6 +96,52 @@ export default function JobDetailPage() {
   )
 }
 
+interface TeamMember { id: string; fullName: string; email: string }
+
+function ProjectManagerSection({ projectId, currentPm }: { projectId: string; currentPm?: { id: string; fullName: string } | null }) {
+  const { data: team } = useApi<TeamMember[]>('/contractor/my-team')
+  const { mutate: setPm, loading } = useMutation('patch')
+  const [selected, setSelected] = useState<string>(currentPm?.id ?? '')
+  const [saved, setSaved] = useState(false)
+
+  const handleSave = async () => {
+    const result = await setPm(`/contractor/jobs/${projectId}/project-manager`, { userId: selected || null })
+    if (result) { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  }
+
+  const isDirty = selected !== (currentPm?.id ?? '')
+
+  return (
+    <InfoSection title="Projektleder">
+      <div className="flex items-center gap-2">
+        <UserCircle className="h-4 w-4 text-gray-400 shrink-0" />
+        <select
+          className="flex-1 text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+          value={selected}
+          onChange={(e) => { setSelected(e.target.value); setSaved(false) }}
+        >
+          <option value="">— Ikke tildelt —</option>
+          {(team ?? []).map((m) => (
+            <option key={m.id} value={m.id}>{m.fullName}</option>
+          ))}
+        </select>
+        {isDirty && (
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="shrink-0 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-display font-medium text-white hover:bg-primary-700 disabled:opacity-50"
+          >
+            {loading ? '...' : 'Gem'}
+          </button>
+        )}
+        {saved && !isDirty && (
+          <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+        )}
+      </div>
+    </InfoSection>
+  )
+}
+
 function OverviewTab({ project, projectId }: { project: Project; projectId: string }) {
   const { data: bid } = useApi<Bid>(`/contractor/bids/${projectId}`)
 
@@ -110,11 +156,15 @@ function OverviewTab({ project, projectId }: { project: Project; projectId: stri
     }
   }
 
+  const pm = (project as any).contractorProjectManager
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
       {/* ── Left column ── */}
       <div className="space-y-4">
+
+        <ProjectManagerSection projectId={projectId} currentPm={pm} />
 
         <InfoSection title="Sagsinformation">
           <Row label="Forsikringsselskab" value={project.insuranceCompany?.name} />
