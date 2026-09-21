@@ -182,22 +182,26 @@ function EntrepriseRow({
         </td>
         {contractorMode && (
           <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-            <div className="flex gap-1">
-              {CONTRACTOR_MILESTONES.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => currentMilestone !== opt.value && onUpdateMilestone(opt.value)}
-                  className={cn(
-                    'text-xs font-display font-medium rounded-full px-2 py-0.5 transition-colors border',
-                    currentMilestone === opt.value
-                      ? `${opt.color} border-transparent ring-1 ring-offset-1 ring-current`
-                      : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400 hover:text-gray-600',
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+            {isRelevant ? (
+              <div className="flex gap-1">
+                {CONTRACTOR_MILESTONES.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => currentMilestone !== opt.value && onUpdateMilestone(opt.value)}
+                    className={cn(
+                      'text-xs font-display font-medium rounded-full px-2 py-0.5 transition-colors border',
+                      currentMilestone === opt.value
+                        ? `${opt.color} border-transparent ring-1 ring-offset-1 ring-current`
+                        : 'bg-white text-gray-400 border-gray-200 hover:border-gray-400 hover:text-gray-600',
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className="text-gray-300 text-xs">—</span>
+            )}
           </td>
         )}
       </tr>
