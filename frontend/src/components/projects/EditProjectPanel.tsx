@@ -237,16 +237,16 @@ export function EditProjectPanel({ project, open, onClose, onSaved }: Props) {
             </Field>
             <Field label="Beskrivelse">
               <textarea
-                className="input-field w-full text-sm resize-none"
-                rows={3}
+                className="input-field w-full text-sm resize-y min-h-[100px]"
+                rows={5}
                 value={form.damageDescription}
                 onChange={set('damageDescription')}
               />
             </Field>
             <Field label="Estimeret omfang">
               <textarea
-                className="input-field w-full text-sm resize-none"
-                rows={2}
+                className="input-field w-full text-sm resize-y min-h-[60px]"
+                rows={3}
                 value={form.estimatedScope}
                 onChange={set('estimatedScope')}
               />

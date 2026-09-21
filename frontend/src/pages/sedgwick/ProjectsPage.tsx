@@ -116,7 +116,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
               </div>
               <div className="sm:col-span-2">
                 <Label>Beskrivelse *</Label>
-                <textarea className="input-field mt-1 w-full min-h-[72px] resize-y"
+                <textarea className="input-field mt-1 w-full min-h-[100px] resize-y"
                   placeholder="Beskriv skaden..." value={form.damageDescription}
                   onChange={set('damageDescription')} required />
               </div>

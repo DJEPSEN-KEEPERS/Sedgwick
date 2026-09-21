@@ -31,11 +31,11 @@ export function OverviewTab({ project, onProjectUpdate }: { project: Project; on
         <Card>
           <CardHeader><CardTitle className="text-sm">Skadesomfang</CardTitle></CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="text-sm text-gray-700 leading-relaxed">{project.damageDescription}</p>
+            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{project.damageDescription}</p>
             {project.estimatedScope && (
               <div className="mt-3 pt-3 border-t border-gray-100">
                 <p className="text-xs font-display font-medium text-gray-500 mb-1">Estimeret omfang</p>
-                <p className="text-sm text-gray-700">{project.estimatedScope}</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{project.estimatedScope}</p>
               </div>
             )}
           </CardContent>
