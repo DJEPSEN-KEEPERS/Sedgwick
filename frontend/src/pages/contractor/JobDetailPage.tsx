@@ -180,12 +180,12 @@ function OverviewTab({ project, projectId }: { project: Project; projectId: stri
         {(project.damageDescription || project.estimatedScope) && (
           <InfoSection title="Skadesomfang">
             {project.damageDescription && (
-              <p className="text-sm text-gray-700 leading-relaxed">{project.damageDescription}</p>
+              <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{project.damageDescription}</p>
             )}
             {project.estimatedScope && (
               <div className={project.damageDescription ? 'mt-3 pt-3 border-t border-gray-100' : ''}>
                 <p className="text-xs font-display font-medium text-gray-500 mb-1">Estimeret omfang</p>
-                <p className="text-sm text-gray-700">{project.estimatedScope}</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{project.estimatedScope}</p>
               </div>
             )}
           </InfoSection>

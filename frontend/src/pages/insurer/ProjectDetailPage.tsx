@@ -120,7 +120,7 @@ function InsurerOverviewTab({ project }: { project: Project }) {
           <Row label="Adresse" value={`${project.address}, ${project.postalCode} ${project.city}`} />
           <Row label="Bygningstype" value={project.buildingType} />
           <Row label="Skadetype" value={project.damageType} />
-          <p className="text-xs text-gray-700 mt-2">{project.damageDescription}</p>
+          <p className="text-xs text-gray-700 mt-2 whitespace-pre-wrap">{project.damageDescription}</p>
         </CardContent>
       </Card>
 

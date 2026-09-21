@@ -94,12 +94,12 @@ function PendingBidCard({
           {(p?.damageDescription || p?.estimatedScope) && (
             <Section title="Skadesomfang">
               {p?.damageDescription && (
-                <p className="text-sm text-gray-700 leading-relaxed">{p.damageDescription}</p>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{p.damageDescription}</p>
               )}
               {p?.estimatedScope && (
                 <div className={p?.damageDescription ? 'mt-3 pt-3 border-t border-gray-100' : ''}>
                   <p className="text-xs font-display font-medium text-gray-500 mb-1">Estimeret omfang</p>
-                  <p className="text-sm text-gray-700">{p.estimatedScope}</p>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{p.estimatedScope}</p>
                 </div>
               )}
             </Section>
