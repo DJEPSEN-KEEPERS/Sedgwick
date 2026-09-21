@@ -28,7 +28,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
   const [form, setForm] = useState({
     insuranceCompanyId: '', claimId: '',
     insurerCaseId: '', insurancePolicyNumber: '',
-    damageType: 'Vandskade', damageDescription: '',
+    damageType: 'Vandskade', damageDescription: '', estimatedScope: '',
     buildingType: 'Enfamiliehus',
     address: '', postalCode: '', city: '', region: 'Hovedstaden',
     contactName: '', contactPhone: '', contactEmail: '',
@@ -44,6 +44,7 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
     const payload: Record<string, unknown> = {
       insuranceCompanyId: form.insuranceCompanyId,
       damageType: form.damageType, damageDescription: form.damageDescription,
+      estimatedScope: form.estimatedScope || undefined,
       buildingType: form.buildingType,
       address: form.address, postalCode: form.postalCode, city: form.city, region: form.region,
       contactName: form.contactName, contactPhone: form.contactPhone, contactEmail: form.contactEmail,
@@ -119,6 +120,12 @@ function CreateProjectModal({ onClose, onCreated }: { onClose: () => void; onCre
                 <textarea className="input-field mt-1 w-full min-h-[100px] resize-y"
                   placeholder="Beskriv skaden..." value={form.damageDescription}
                   onChange={set('damageDescription')} required />
+              </div>
+              <div className="sm:col-span-2">
+                <Label>Estimeret omfang</Label>
+                <textarea className="input-field mt-1 w-full min-h-[60px] resize-y"
+                  placeholder="Estimeret omfang af skaden..." value={form.estimatedScope}
+                  onChange={set('estimatedScope')} />
               </div>
             </div>
           </fieldset>
