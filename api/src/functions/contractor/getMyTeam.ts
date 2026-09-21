@@ -13,10 +13,10 @@ async function handler(req: HttpRequest, context: InvocationContext): Promise<Ht
     const team = await prisma.contractorUser.findMany({
       where: { contractorId },
       include: { user: { select: { id: true, fullName: true, email: true } } },
-      orderBy: { user: { fullName: 'asc' } },
     })
 
-    return { status: 200, jsonBody: team.map((t) => t.user) }
+    const members = team.map((t) => t.user).sort((a, b) => a.fullName.localeCompare(b.fullName, 'da'))
+    return { status: 200, jsonBody: members }
   } catch (err) {
     return errorResponse(err, context)
   }
