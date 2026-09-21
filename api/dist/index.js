@@ -19,8 +19,10 @@ require("./functions/projects/get");
 require("./functions/projects/createProject");
 require("./functions/projects/updateProject");
 require("./functions/projects/deleteProject");
+require("./functions/projects/permanentDeleteProject");
 require("./functions/projects/getRecommendations");
 require("./functions/projects/auditLog");
+require("./functions/projects/reopenProject");
 // Entreprises
 require("./functions/entreprises/listEntreprises");
 require("./functions/entreprises/updateEntrepriseRelevance");
@@ -87,8 +89,13 @@ require("./functions/contractor/getEntrepriseDetail");
 require("./functions/contractor/submitStatusUpdate");
 require("./functions/contractor/submitFinalReport");
 require("./functions/contractor/getMyProfile");
+require("./functions/contractor/getMyTeam");
+require("./functions/contractor/setProjectManager");
+require("./functions/contractor/updateEntrepriseMilestone");
 // Public API
 require("./functions/public/createProjectPublic");
 require("./functions/public/listProjectsPublic");
 require("./functions/public/getProjectPublic");
 require("./functions/public/ingest");
+// Ping (UptimeRobot keepalive)
+require("./functions/ping");

@@ -11,7 +11,6 @@ import { ProgressTab } from '@/components/projects/tabs/ProgressTab'
 import { WeekPlannerGrid } from '@/components/projects/WeekPlannerGrid'
 import { MessagesTab } from '@/components/projects/tabs/MessagesTab'
 import { FilesTab } from '@/components/projects/tabs/FilesTab'
-import { AuditTab } from '@/components/projects/tabs/AuditTab'
 import { EditProjectPanel } from '@/components/projects/EditProjectPanel'
 import { exportProjectPdf } from '@/lib/exportProjectPdf'
 import { cn } from '@/lib/utils'
@@ -25,7 +24,6 @@ const TABS = [
   { key: 'planning',     label: 'Planlægning' },
   { key: 'messages',     label: 'Beskeder' },
   { key: 'files',        label: 'Filer' },
-  { key: 'audit',        label: 'Audit' },
 ]
 
 export default function ProjectDetailPage() {
@@ -217,7 +215,6 @@ export default function ProjectDetailPage() {
       )}
       {activeTab === 'messages'    && <MessagesTab projectId={project.id} />}
       {activeTab === 'files'       && <FilesTab projectId={project.id} />}
-      {activeTab === 'audit'       && <AuditTab projectId={project.id} />}
 
       <EditProjectPanel
         project={project}
