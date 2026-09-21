@@ -22,8 +22,6 @@ async function handler(req, context) {
         });
         if (!entreprise)
             return { status: 404, jsonBody: { error: 'Entreprise ikke fundet' } };
-        if (!entreprise.isRelevant)
-            return { status: 400, jsonBody: { error: 'Entreprisen er ikke markeret som relevant' } };
         const projectId = entreprise.project.id;
         const isSelected = entreprise.project.selectedContractorId === contractorId;
         if (!isSelected) {

@@ -39,13 +39,17 @@ export default function ContractorDashboard() {
       {/* Stats — 2×2 grid */}
       <div className="grid grid-cols-2 gap-4 mb-8">
         {/* Top-left */}
-        <StatCard label="Afventende invitationer" value={stats.pendingInvitations} icon={Mail} accent={stats.pendingInvitations > 0} />
+        <StatCard label="Afventende invitationer" value={stats.pendingInvitations} icon={Mail} accent={stats.pendingInvitations > 0}
+          onClick={() => navigate('/contractor/invitations')} />
         {/* Top-right */}
-        <StatCard label="Afventende tilbud" value={stats.awaitingBid} icon={ClipboardList} accent={stats.awaitingBid > 0} />
+        <StatCard label="Afventende tilbud" value={stats.awaitingBid} icon={ClipboardList} accent={stats.awaitingBid > 0}
+          onClick={() => navigate('/contractor/pending-bids')} />
         {/* Bottom-left */}
-        <StatCard label="Aktive sager" value={stats.activeJobs} icon={Briefcase} />
+        <StatCard label="Aktive sager" value={stats.activeJobs} icon={Briefcase}
+          onClick={() => navigate('/contractor/jobs')} />
         {/* Bottom-right */}
-        <StatCard label="Ulæste beskeder" value={stats.unreadMessages} icon={MessageSquare} accent={stats.unreadMessages > 0} />
+        <StatCard label="Ulæste beskeder" value={stats.unreadMessages} icon={MessageSquare} accent={stats.unreadMessages > 0}
+          onClick={() => navigate('/contractor/chat')} />
       </div>
 
       {/* Messages inbox */}
