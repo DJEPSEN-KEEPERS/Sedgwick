@@ -13,9 +13,9 @@ async function handler(req, context) {
         const team = await prisma_1.prisma.contractorUser.findMany({
             where: { contractorId },
             include: { user: { select: { id: true, fullName: true, email: true } } },
-            orderBy: { user: { fullName: 'asc' } },
         });
-        return { status: 200, jsonBody: team.map((t) => t.user) };
+        const members = team.map((t) => t.user).sort((a, b) => a.fullName.localeCompare(b.fullName, 'da'));
+        return { status: 200, jsonBody: members };
     }
     catch (err) {
         return (0, authMiddleware_1.errorResponse)(err, context);
