@@ -9,11 +9,15 @@ interface StatCardProps {
   trend?: { value: number; label: string }
   className?: string
   accent?: boolean
+  onClick?: () => void
 }
 
-export function StatCard({ label, value, icon: Icon, trend, className, accent }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, trend, className, accent, onClick }: StatCardProps) {
   return (
-    <Card className={cn('relative overflow-hidden', className)}>
+    <Card
+      className={cn('relative overflow-hidden', onClick && 'cursor-pointer hover:shadow-elevated transition-shadow', className)}
+      onClick={onClick}
+    >
       <CardContent className="p-5 flex flex-col justify-between min-h-[140px]">
         <div className="flex items-start justify-between">
           <p className="text-xs font-display font-medium uppercase tracking-wide text-gray-500 leading-tight max-w-[calc(100%-3rem)]">
