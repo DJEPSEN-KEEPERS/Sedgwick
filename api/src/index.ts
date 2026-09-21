@@ -19,8 +19,10 @@ import './functions/projects/get'
 import './functions/projects/createProject'
 import './functions/projects/updateProject'
 import './functions/projects/deleteProject'
+import './functions/projects/permanentDeleteProject'
 import './functions/projects/getRecommendations'
 import './functions/projects/auditLog'
+import './functions/projects/reopenProject'
 
 // Entreprises
 import './functions/entreprises/listEntreprises'
@@ -99,9 +101,15 @@ import './functions/contractor/getEntrepriseDetail'
 import './functions/contractor/submitStatusUpdate'
 import './functions/contractor/submitFinalReport'
 import './functions/contractor/getMyProfile'
+import './functions/contractor/getMyTeam'
+import './functions/contractor/setProjectManager'
+import './functions/contractor/updateEntrepriseMilestone'
 
 // Public API
 import './functions/public/createProjectPublic'
 import './functions/public/listProjectsPublic'
 import './functions/public/getProjectPublic'
 import './functions/public/ingest'
+
+// Ping (UptimeRobot keepalive)
+import './functions/ping'
